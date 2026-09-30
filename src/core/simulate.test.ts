@@ -313,6 +313,19 @@ describe('simulate: sleep pattern', () => {
   });
 });
 
+describe('simulate: asleepSteps', () => {
+  it('counts the steps spent asleep, and adds up across chunks', () => {
+    const pet = makePet({ id: 'asleep-count', state: { sleepState: 'asleep', sleepStartedAt: T0, energy: 2000 } });
+    const r = simulate(pet, T0 + 18 * STEP);
+    expect(r.asleepSteps).toBe(18); // 3 hours below the wake energy: asleep the whole time
+    expect(simulate(makePet({ id: 'awake-count', state: { energy: 9000 } }), T0 + STEP).asleepSteps).toBeLessThanOrEqual(1);
+    const long = simulate(makePet({ id: 'day-count' }), T0 + 10 * DAY);
+    expect(long.asleepSteps).toBeGreaterThan(long.stepsRun * 0.3);
+    expect(long.asleepSteps).toBeLessThan(long.stepsRun * 0.7);
+    expect(simulate(pet, T0 + 5).asleepSteps).toBe(0);
+  });
+});
+
 describe('simulate: determinism and chunking', () => {
   it('same input gives identical output, run twice', () => {
     const pet = makePet({ id: 'determinism' });

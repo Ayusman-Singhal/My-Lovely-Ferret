@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1F done (313 tests). Next: Part 1G, the real UI (HUD, action bar, first-run naming, welcome-back summary, t() helper) and wiring the save. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Try ?debug=1, ?speed=600, ?pet=anything.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Next: Part 1H, tester tools (dev panel, About my pet, feedback, error copy, iOS Safari notice). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -131,7 +131,7 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1B.3 (S) `installId` creation and storage (same IndexedDB in browser, never in exports).
 - [x] 1B.4 (M) Export backup and Import (validates checksum and schema). `navigator.storage.persist()`.
 - [x] 1B.5 (M) Tests: migrations, corrupt-file fallback, atomic write, export and import round trip.
-- [ ] 1B.6 (S) Wire-up, deferred to Part 1G: debounced save on change, save when the page becomes hidden, call `requestPersistentStorage()` at startup. One manual check in a real browser at the Phase 1 gate (Part 1J).
+- [x] 1B.6 (S) Wire-up done in Part 1G and covered by the smoke test in real Chrome (reload keeps the pet, export works).
 
 ## Part 1C: Renderer spike (decided: Canvas 2D)
 
@@ -165,13 +165,16 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1F.4 (M) Game controller (`src/game/controller.ts`) joining commands, brain, mini-game, and touch, with 15 tests. Verified by playing it in real Chrome: feed, water, play (10 catches, band 3), bed, tap to wake.
 - [x] 1F.5 (S) Temporary test bar (Feed, Water, Play, Bed) in `App.tsx`. Replaced by the real HUD and action bar in Part 1G.
 
-## Part 1G: UI
+## Part 1G: UI and saving
 
-- [ ] 1G.1 (M) HUD (needs with icon plus label or shape, never color alone) and action bar.
-- [ ] 1G.2 (M) First-run flow: adopt, name (1 to 16 graphemes), short intro, one tap prompt per interaction.
-- [ ] 1G.3 (M) "Welcome back" summary after time away.
-- [ ] 1G.4 (S) `t()` helper and `en.json`. Hindi comes in Phase 2.
-- [ ] 1G.5 (S) Portrait layout, safe areas, 44 px touch targets, `aria-live` region for pet state.
+- [x] 1G.1 (M) HUD (`Hud.tsx`: icon, label, number, level word, and bar length per need, low shown with stripes and bold, never color alone) and action bar (`ActionBar.tsx`: Feed, Water, Play, Sleep, at least 44 px, first-time hint marked by a ring and a dot).
+- [x] 1G.2 (M) First-run flow (`Onboarding.tsx`): adopt, name (1 to 16 grapheme clusters, trimmed, clear errors), a short personality introduction, then home. "Care for a friend's pet" is present and disabled.
+- [x] 1G.3 (M) Welcome-back summary (`summary.ts`, dialog): sleep hours, up to 3 notable events newest first, a mood line. Warm, never mentions how long the player was gone.
+- [x] 1G.4 (S) `t()` helper and `en.json` (`src/i18n`). A test checks every key used in the UI exists. Hindi in Phase 2.
+- [x] 1G.5 (S) Portrait layout with safe areas, 44 px targets, screen reader announcements in an `aria-live` region (only real transitions), text scale ready, reduced motion for the interface.
+- [x] 1B.6 (S) Save wired: debounced autosave, save when the page is hidden, persistent storage request, backup export and import in the menu, recovery screens for a damaged or too-new save, play without saving when IndexedDB is unavailable.
+- [x] 1G.6 (M) End-to-end smoke test in real Chrome (`npm run smoke`, also in CI): 10 steps including a reload that keeps the pet, a backup with no install id, and a summary after 8 hours away.
+- [x] 1G.7 (S) Room resized from 360 by 640 to 360 by 540 so the pet fills the screen width between the bars.
 
 ## Part 1H: Tester tools
 

@@ -19,6 +19,8 @@ export interface SimResult {
   events: HistoryEvent[];
   /** Number of 10-minute steps actually simulated (at most 4320). */
   stepsRun: number;
+  /** How many of those steps the pet spent asleep, for the welcome-back summary. */
+  asleepSteps: number;
 }
 
 /** Daily found items and their base weights (docs/PET_BEHAVIOR.md §7). Odd items favor curious pets. */
@@ -67,11 +69,12 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
       pet: { ...record, timestamps: { ...record.timestamps, lastSimulationTime: nowMs } },
       events: [],
       stepsRun: 0,
+      asleepSteps: 0,
     };
   }
 
   const rawSteps = floorDiv(nowMs - last, TUNING.stepMs);
-  if (rawSteps === 0) return { pet: record, events: [], stepsRun: 0 };
+  if (rawSteps === 0) return { pet: record, events: [], stepsRun: 0, asleepSteps: 0 };
 
   // Cap at 30 days of activity: skip the oldest steps, keep the alignment and the end time.
   const stepsRun = Math.min(rawSteps, TUNING.maxSteps);
@@ -85,6 +88,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
   let { hunger, hydration, energy, happiness } = record.state;
   let { sleepState, sleepStartedAt, lastStoleAt, lastFoundDate } = record.state;
   const events: HistoryEvent[] = [];
+  let asleepSteps = 0;
 
   for (let i = 0; i < stepsRun; i++) {
     const t = startTime + i * TUNING.stepMs;
@@ -124,6 +128,8 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
         sleepStartedAt = null;
       }
     }
+
+    if (sleepState === 'asleep') asleepSteps++;
 
     // 2. Needs.
     const rates = sleepState === 'asleep' ? TUNING.asleep : TUNING.awake;
@@ -180,5 +186,6 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
     },
     events,
     stepsRun,
+    asleepSteps,
   };
 }

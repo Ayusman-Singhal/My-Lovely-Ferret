@@ -32,6 +32,7 @@ The developer is a solo developer with no budget. Cut scope before adding it.
 | `npm test` | Vitest (node environment) |
 | `npm run size` | Bundle budget check. Fails when a budget in `scripts/budgets.json` is exceeded |
 | `node scripts/shots.mjs` | Screenshots of the dev rig gallery and the running app into `shots/` (uses installed Chrome). Look at them after changing the rig or layout |
+| `npm run smoke` | End-to-end test in real Chrome against the built app (run `npm run build` first): first run, naming, care, mini-game, reload, backup, welcome-back. Takes about 40 seconds |
 | `npm run check` | typecheck, lint, test, build, size. Run before every commit that changes code |
 
 ## Layout (guide §18)

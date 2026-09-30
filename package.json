@@ -15,6 +15,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "size": "node scripts/check-budgets.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run size"
   },
   "dependencies": {

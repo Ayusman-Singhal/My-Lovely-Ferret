@@ -12,7 +12,7 @@ Fixed before any final art (guide §25.1). Decided in the setup session: **soft 
 
 ## 2. Resolution
 
-- Logical viewport **360 by 640** (portrait). Assets authored at **2x** (720 by 1280 room).
+- Logical viewport **360 by 540** (portrait, 2:3), changed from 360 by 640 in Part 1G: with the needs bar above and the action bar below, a taller room left a large empty wall and a small pet on real phone screens. Assets authored at **2x** (720 by 1080 room).
 - Device pixel ratio capped at **2** (guide §4.4).
 - Texture atlases at most 2048 by 2048 (guide §4.4). Prefer WebP.
 - Safe areas: keep important content 16 px inside the logical edge, and keep the pet out of the top HUD band (about 64 px) and the bottom action bar (about 88 px).

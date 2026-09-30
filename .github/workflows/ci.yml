@@ -24,6 +24,8 @@ jobs:
       - run: npm ci
       # typecheck, lint (including the src/core purity rules), tests, build, bundle budget
       - run: npm run check
+      # End-to-end in real Chrome (preinstalled on the runner): first run, care, mini-game, reload, backup.
+      - run: npm run smoke
 
   # Preview hosting for testers: GitHub Pages, from main only.
   # One-time setup by the developer: repo Settings, Pages, Source = "GitHub Actions".

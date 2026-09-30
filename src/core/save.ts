@@ -65,6 +65,19 @@ export function createEmptySave(installId: string, nowMs: number, settings: Sett
   };
 }
 
+// ------------------------------------------------------- tester counters
+
+/** Count one interaction (docs/SAVE_SCHEMA.md §2). Kept on the save, shown on "About my pet". */
+export function bumpInteraction(save: SaveFile, key: string): SaveFile {
+  const counts = save.tester.interactionCounts;
+  return { ...save, tester: { ...save.tester, interactionCounts: { ...counts, [key]: (counts[key] ?? 0) + 1 } } };
+}
+
+/** A new session started at `nowMs`. */
+export function recordSession(save: SaveFile, nowMs: number): SaveFile {
+  return { ...save, tester: { ...save.tester, sessions: save.tester.sessions + 1, lastOpenDate: nowMs } };
+}
+
 // ---------------------------------------------------------------- checksum
 
 /** JSON with object keys sorted, so the same data always gives the same text and checksum. */

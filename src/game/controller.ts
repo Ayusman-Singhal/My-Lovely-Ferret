@@ -27,6 +27,13 @@ export interface GameOptions {
   onChange?(): void;
   onEvents?(events: HistoryEvent[]): void;
   onDecision?(pet: PetRecord): void;
+  /** Called after every command, from a button or from touching the pet. */
+  onCommand?(command: Command, result: CommandResult): void;
+  /**
+   * The pet changed without a command (the simulation moved time on). At most once a second, so
+   * the UI can refresh the meters and the autosave can run without a timer.
+   */
+  onPetChange?(): void;
   onPlayEnd?(result: PlayResult): void;
 }
 
@@ -79,9 +86,17 @@ export function createGame(options: GameOptions): Game {
   let toyTarget = 180;
   let lastFrame = 0;
   let pressingPet = false;
+  let petChanged = false;
+  let lastNotify = 0;
 
   const brain = createBrain({
-    pet: { get: () => pet, set: (p) => (pet = p) },
+    pet: {
+      get: () => pet,
+      set: (p) => {
+        pet = p;
+        petChanged = true;
+      },
+    },
     clock: options.clock,
     world,
     onDecision: () => options.onDecision?.(pet),
@@ -102,6 +117,7 @@ export function createGame(options: GameOptions): Game {
       world.waterInBowl = true;
       brain.request('drink');
     }
+    options.onCommand?.(command, result);
     options.onChange?.();
     return result;
   };
@@ -146,6 +162,11 @@ export function createGame(options: GameOptions): Game {
       lastScene = scene;
       const dt = lastFrame === 0 ? 0 : Math.min(100, frameMs - lastFrame);
       lastFrame = frameMs;
+      if (petChanged && frameMs - lastNotify >= 1000) {
+        petChanged = false;
+        lastNotify = frameMs;
+        options.onPetChange?.();
+      }
       if (!chase) {
         brain.tick(frameMs, scene);
         return;

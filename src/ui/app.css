@@ -1,11 +1,24 @@
+/* Portrait phone layout first (guide §9.3). Colors are the palette in docs/ART_STYLE.md. */
 :root {
   --bg: #f6ecdc;
   --ink: #3b2f26;
+  --muted: #6f5d4e;
+  --wall: #ebd3b5;
+  --brown: #8a6244;
+  --brown-dark: #4a3626;
+  --card: #fffaf1;
+  --gold: #f2c75c;
+  --focus: #1d5fa8;
+  --error: #a3311f;
   color-scheme: light;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
 }
 
 html,
@@ -14,71 +27,357 @@ body {
   height: 100%;
   background: var(--bg);
   color: var(--ink);
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* Portrait phone frame, also on desktop (guide §9.3). */
-.frame {
+#app {
+  height: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.loading {
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ layout */
+.app {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   width: 100%;
   max-width: 430px;
   height: 100dvh;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.stage {
-  width: 100%;
-  max-height: 100%;
+.stage-wrap {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* TEMPORARY test bar (Part 1F). The real HUD and action bar replace it in Part 1G. */
-.frame {
-  position: relative;
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
-.testbar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: env(safe-area-inset-bottom);
-  padding: 8px 12px 12px;
-  background: #f6ecdce6;
+.bottom {
+  padding: 4px 12px 10px;
 }
 
-.testmsg {
+/* --------------------------------------------------------------------- HUD */
+.hud {
+  padding: 8px 12px 4px;
+}
+
+.hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.hud-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.hud-sleep {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.meters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 0.75rem;
+}
+
+.meter-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.meter-bar {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e6d6be;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--brown);
+}
+
+/* Low is shown by stripes and a bold word as well as the short bar, never by color alone. */
+.meter[data-level='low'] .meter-fill {
+  background: repeating-linear-gradient(135deg, var(--brown-dark) 0 4px, var(--gold) 4px 8px);
+}
+
+.meter[data-level='low'] .meter-level {
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.meter-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-level {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------- action bar */
+.status {
   margin: 0 0 8px;
-  min-height: 1.3em;
+  min-height: 2.6em;
   font-size: 0.9rem;
   text-align: center;
 }
 
-.testbtns {
-  display: flex;
+.actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
-.testbtns button {
-  flex: 1;
-  min-height: 44px;
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
   border: 0;
-  border-radius: 10px;
-  background: #8a6244;
-  color: #f6ecdc;
-  font: inherit;
+  border-radius: 14px;
+  background: var(--brown);
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
-.testbtns button:disabled {
+.action:disabled {
   opacity: 0.5;
 }
 
-.frame {
-  user-select: none;
-  -webkit-user-select: none;
+/* The first-time hint marks its button with a gold ring and a dot. */
+.action[data-hinted='true'] {
+  box-shadow: 0 0 0 3px var(--gold);
+  position: relative;
+}
+
+.action[data-hinted='true']::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+/* --------------------------------------------------- cards, sheets, forms */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(59 47 38 / 0.45);
+}
+
+.card,
+.sheet {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.card-title,
+.title {
+  margin: 0 0 12px;
+  font-size: 1.3rem;
+}
+
+.sheet {
+  max-width: none;
+  border-radius: 18px 18px 0 0;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+.sheet.full {
+  margin-top: auto;
+  border-radius: 18px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row > button {
+  flex: 1;
+}
+
+.card button,
+.sheet button {
+  min-height: 48px;
+  padding: 8px 16px;
+  border: 2px solid var(--brown);
+  border-radius: 12px;
+  background: transparent;
+  font-weight: 600;
+}
+
+.card button.primary,
+.sheet button.primary {
+  background: var(--brown);
+  color: var(--bg);
+}
+
+.card button:disabled,
+.sheet button:disabled {
+  opacity: 0.5;
+}
+
+input[type='text'] {
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--brown);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 1.05rem;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+label {
+  font-weight: 600;
+}
+
+.sheet .muted {
+  margin-bottom: 12px;
+}
+
+.muted {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.error {
+  min-height: 1.3em;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.summary {
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+
+.summary li {
+  margin-bottom: 6px;
+}
+
+.banner {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 0 0 12px 12px;
+  background: var(--error);
+  color: #fff;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Reduced motion: no transitions in the interface (the pet is calmed in the renderer, Phase 2). */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

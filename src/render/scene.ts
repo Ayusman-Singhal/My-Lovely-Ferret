@@ -22,7 +22,7 @@ export interface SceneOptions {
   onFrame?: (nowMs: number, scene: Scene) => void;
   /** Draw extra things (props) under the ferret, on the same canvas, every frame. */
   onDraw?: (ctx: CanvasRenderingContext2D) => void;
-  /** Pointer events in logical room coordinates (360 by 640), with real timestamps. */
+  /** Pointer events in logical room coordinates (360 by 540), with real timestamps. */
   onPointer?: {
     down(x: number, y: number, realMs: number): void;
     move(x: number, y: number, realMs: number): void;
@@ -57,7 +57,7 @@ function makeCanvas(ratio: number): { canvas: HTMLCanvasElement; ctx: CanvasRend
 export function createScene(host: HTMLElement, options: SceneOptions): Scene {
   const ratio = cappedPixelRatio(window.devicePixelRatio);
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = `position:relative;width:min(100%,calc(100dvh * ${VIEW.width} / ${VIEW.height}));aspect-ratio:${VIEW.width}/${VIEW.height}`;
+  wrapper.style.cssText = `position:relative;width:min(100%,100cqw,calc(100cqh * ${VIEW.width} / ${VIEW.height}),calc(100dvh * ${VIEW.width} / ${VIEW.height}));aspect-ratio:${VIEW.width}/${VIEW.height}`;
   const room = makeCanvas(ratio);
   const pet = makeCanvas(ratio);
   wrapper.append(room.canvas, pet.canvas);
