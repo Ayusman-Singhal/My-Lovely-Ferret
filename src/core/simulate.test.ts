@@ -156,9 +156,9 @@ describe('simulate: needs', () => {
     const pet = makePet({ state: { sleepState: 'asleep', sleepStartedAt: T0, energy: 10000 } });
     const early = simulate(pet, T0 + 2 * STEP); // 20 minutes in
     expect(early.pet.state.sleepState).toBe('asleep');
-    // Night sleeps have a 4 hour minimum.
+    // Night sleeps have a 2 hour minimum.
     const night = makePet({ nowMs: T_NIGHT, state: { sleepState: 'asleep', sleepStartedAt: T_NIGHT, energy: 10000 } });
-    expect(simulate(night, T_NIGHT + 23 * STEP).pet.state.sleepState).toBe('asleep'); // 3h50m in
+    expect(simulate(night, T_NIGHT + 11 * STEP).pet.state.sleepState).toBe('asleep'); // 1h50m in
   });
 
   it('a rested sleeper past its minimum wakes within a few hours (day class)', () => {
@@ -172,6 +172,20 @@ describe('simulate: needs', () => {
     const pet = makePet({ state: { sleepState: 'asleep', sleepStartedAt: T0 - 20 * HOUR, energy: 1000 } });
     const { pet: after } = simulate(pet, T0 + 5 * STEP);
     expect(after.state.sleepState).toBe('asleep');
+  });
+
+  it('the energy needed to wake depends on the class the sleep started in', () => {
+    // Same energy (7000, between the nap threshold 6500 and the night threshold 8500).
+    // A night sleep at 02:00 has not restored enough, so it keeps sleeping.
+    const nightSleeper = makePet({
+      nowMs: T_NIGHT + 4 * HOUR,
+      state: { sleepState: 'asleep', sleepStartedAt: T_NIGHT + 30 * 60_000, energy: 7000 },
+    });
+    const nightAfter = simulate(nightSleeper, T_NIGHT + 4 * HOUR + 5 * STEP);
+    expect(nightAfter.pet.state.sleepState).toBe('asleep');
+    // A daytime snooze at the same energy is rested enough, and wakes within a few hours.
+    const daySleeper = makePet({ state: { sleepState: 'asleep', sleepStartedAt: T0 - HOUR, energy: 7000 } });
+    expect(simulate(daySleeper, T0 + 3 * HOUR).pet.state.sleepState).toBe('awake');
   });
 
   it('30 days untouched: hunger and hydration sit exactly on the floor, nothing dies', () => {
@@ -232,17 +246,21 @@ describe('simulate: sleep pattern', () => {
     expect(total).toBeGreaterThanOrEqual(5);
   });
 
-  // The rules must produce ferret-like sleep: long blocks and short bursts, not flicker
-  // (guide §7.2). A rested pet used to flip awake and asleep every step.
-  it('does not flicker: few sleep blocks per day, sleeps at night, awake in the evening', () => {
+  // The sleep rules must feel like a ferret without becoming a time sink (guide §7.2,
+  // docs/GAME_DESIGN.md §3.3): long night blocks with short bursts (not flicker), one midday
+  // nap, and a pet that is awake when a player is likely to open the app. Measured on
+  // 2026-09-30 over 24 pets: 45% asleep overall (39% to 52%), evening about 7% asleep.
+  it('sleeps like a ferret but stays available: night blocks, a midday nap, awake mornings and evenings', () => {
     const days = 30;
+    const windows = {
+      night: { from: 23, to: 6, steps: 0, asleep: 0 }, // wraps midnight
+      morning: { from: 9, to: 12, steps: 0, asleep: 0 },
+      nap: { from: 12, to: 16, steps: 0, asleep: 0 },
+      evening: { from: 17, to: 22, steps: 0, asleep: 0 },
+    };
     let transitions = 0;
     let asleepSteps = 0;
-    let nightSteps = 0;
-    let nightAsleep = 0;
-    let eveningSteps = 0;
-    let eveningAsleep = 0;
-    const ids = ['flick-1', 'flick-2', 'flick-3', 'flick-4'];
+    const ids = ['avail-1', 'avail-2', 'avail-3', 'avail-4', 'avail-5', 'avail-6', 'avail-7', 'avail-8'];
     for (const id of ids) {
       let pet = makePet({ id });
       let prev = pet.state.sleepState;
@@ -254,23 +272,27 @@ describe('simulate: sleep pattern', () => {
         prev = pet.state.sleepState;
         if (asleep) asleepSteps++;
         const hour = Math.floor((t % DAY) / HOUR); // tz offset is 0
-        if (hour >= 23 || hour < 6) {
-          nightSteps++;
-          if (asleep) nightAsleep++;
-        }
-        if (hour >= 17 && hour < 22) {
-          eveningSteps++;
-          if (asleep) eveningAsleep++;
+        for (const w of Object.values(windows)) {
+          const inside = w.from < w.to ? hour >= w.from && hour < w.to : hour >= w.from || hour < w.to;
+          if (inside) {
+            w.steps++;
+            if (asleep) w.asleep++;
+          }
         }
       }
     }
-    const perDay = transitions / 2 / (days * ids.length); // one block = two transitions
-    expect(perDay).toBeLessThan(9);
-    const share = asleepSteps / (days * 144 * ids.length);
-    expect(share).toBeGreaterThan(0.35);
-    expect(share).toBeLessThan(0.7);
-    expect(nightAsleep / nightSteps).toBeGreaterThan(0.75);
-    expect(eveningAsleep / eveningSteps).toBeLessThan(0.2);
+    const share = (w: { steps: number; asleep: number }) => w.asleep / w.steps;
+    const blocksPerDay = transitions / 2 / (days * ids.length); // one block = two transitions
+
+    expect(blocksPerDay).toBeLessThan(9); // no flicker
+    const overall = asleepSteps / (days * 144 * ids.length);
+    expect(overall).toBeGreaterThan(0.35); // not so little that the pet feels lifeless
+    expect(overall).toBeLessThan(0.55); // not so much that players wait on it
+    expect(share(windows.night)).toBeGreaterThan(0.75);
+    expect(share(windows.morning)).toBeLessThan(0.15);
+    expect(share(windows.nap)).toBeGreaterThan(0.2);
+    expect(share(windows.nap)).toBeLessThan(0.65);
+    expect(share(windows.evening)).toBeLessThan(0.12);
   });
 
   it('uses the owner offset, not the device zone: same instant, different offset, different local class', () => {
@@ -338,26 +360,24 @@ describe('simulate: determinism and chunking', () => {
       {
         "history": [
           "PET_ADOPTED@0",
-          "PET_SLEPT_LONG@72000000",
-          "PET_FOUND_ITEM@72000000",
-          "PET_FOUND_ITEM@153000000",
-          "PET_STOLE_ITEM@168600000",
-          "PET_FOUND_ITEM@234600000",
+          "PET_FOUND_ITEM@56400000",
+          "PET_FOUND_ITEM@144000000",
+          "PET_STOLE_ITEM@207000000",
+          "PET_FOUND_ITEM@229200000",
           "PET_STOLE_ITEM@261600000",
-          "PET_FOUND_ITEM@322200000",
+          "PET_FOUND_ITEM@313200000",
           "PET_STOLE_ITEM@376800000",
           "PET_FOUND_ITEM@414600000",
           "PET_STOLE_ITEM@460800000",
-          "PET_SLEPT_LONG@503400000",
-          "PET_FOUND_ITEM@503400000",
+          "PET_FOUND_ITEM@489600000",
           "PET_STOLE_ITEM@531600000",
-          "PET_FOUND_ITEM@583800000",
+          "PET_FOUND_ITEM@577200000",
         ],
         "needs": [
           1000,
           1000,
-          9732,
-          3090,
+          9263,
+          3026,
         ],
         "sleep": "awake",
       }

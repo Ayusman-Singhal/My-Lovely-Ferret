@@ -95,12 +95,13 @@ export function simulate(record: PetRecord, nowMs: number): SimResult {
         sleepState = 'asleep';
         sleepStartedAt = t;
       }
-    } else if (energy >= TUNING.sleep.wakeEnergy) {
-      // Hand-made states may have no start time: then there is no minimum.
-      const minSleepMs =
-        sleepStartedAt === null ? 0 : TUNING.sleep.minSleepMs[hourClass(localMinuteOfDay(sleepStartedAt, tz))];
-      const rested = sleepStartedAt === null || t - sleepStartedAt >= minSleepMs;
-      if (rested && rng.int(100) < TUNING.sleep.wakePct[cls]) {
+    } else {
+      // Rules depend on the time class the sleep started in. Hand-made states may have no
+      // start time: then use the current class and no minimum length.
+      const startClass = sleepStartedAt === null ? cls : hourClass(localMinuteOfDay(sleepStartedAt, tz));
+      const restedEnough = energy >= TUNING.sleep.wakeEnergy[startClass];
+      const longEnough = sleepStartedAt === null || t - sleepStartedAt >= TUNING.sleep.minSleepMs[startClass];
+      if (restedEnough && longEnough && rng.int(100) < TUNING.sleep.wakePct[cls]) {
         sleepState = 'awake';
         if (sleepStartedAt !== null && t - sleepStartedAt >= TUNING.sleep.longSleepMs) {
           events.push({

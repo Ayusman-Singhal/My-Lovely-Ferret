@@ -153,7 +153,7 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 ## Part 1F: Interactions and mini-game
 
 - [ ] 1F.1 (M) Command layer (UI to core). Commands: feed, water, pet, start and finish play, put to bed.
-- [ ] 1F.2 (M) Effects, cooldowns, bond diminishing returns (guide §7.5).
+- [ ] 1F.2 (M) Effects, cooldowns, bond diminishing returns (guide §7.5). Feed, water, and play wake a sleeping pet and apply in one action, no extra step (`docs/GAME_DESIGN.md` §4.2).
 - [ ] 1F.3 (L) Toy-chase mini-game (about 20 s, pointer only, result is a band 0 to 3).
 - [ ] 1F.4 (M) Tests for each interaction and the bond farming protection.
 

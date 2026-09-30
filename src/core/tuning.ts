@@ -25,17 +25,21 @@ export const TUNING = {
   sleep: {
     /** Awake at or below this energy: falls asleep at once. */
     forcedSleepEnergy: 2000,
-    /** Asleep at or above this energy: may wake. Below it: keeps sleeping. */
-    wakeEnergy: 8500,
+    /**
+     * Asleep at or above this energy: may wake. Below it: keeps sleeping. By the time class the
+     * sleep STARTED in: a night sleep restores a lot, a nap or daytime snooze only a little, so
+     * naps stay short (a nap from 60% energy would otherwise last 2.5 hours or more).
+     */
+    wakeEnergy: { night: 8500, nap: 6500, day: 6500 },
     /** Percent chance per step to fall asleep while awake, by local time class. */
-    fallAsleepPct: { night: 40, nap: 20, day: 3 },
+    fallAsleepPct: { night: 30, nap: 12, day: 1 },
     /**
      * A sleep cannot end before this long, by the time class it STARTED in. Stops a rested
      * pet from flickering awake and asleep every step (guide §7.2: long sleeps, short bursts).
      */
-    minSleepMs: { night: 4 * 3_600_000, nap: 3_600_000, day: 1_800_000 },
+    minSleepMs: { night: 2 * 3_600_000, nap: 3_600_000, day: 1_800_000 },
     /** Percent chance per step to wake once rested enough, at or above wakeEnergy. */
-    wakePct: { night: 15, nap: 40, day: 40 },
+    wakePct: { night: 15, nap: 40, day: 60 },
     /** Sleeps at least this long produce PET_SLEPT_LONG. */
     longSleepMs: 6 * 3_600_000,
   },
