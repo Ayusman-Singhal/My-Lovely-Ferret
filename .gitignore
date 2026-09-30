@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.local
+.firebase/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
