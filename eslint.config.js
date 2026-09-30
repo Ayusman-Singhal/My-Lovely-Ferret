@@ -62,6 +62,6 @@ export default [
   },
   {
     files: ['scripts/**/*.mjs', '*.config.js'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly', URL: 'readonly' } },
+    languageOptions: { globals: { console: 'readonly', process: 'readonly', URL: 'readonly', setTimeout: 'readonly' } },
   },
 ];

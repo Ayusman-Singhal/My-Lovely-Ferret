@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Part 1B done and committed (126 tests). Part 1C done: renderer decided, Canvas 2D (136 tests). Next: Part 1D, placeholder rig and animations. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
+**Current status:** Phase 1, Parts 1A to 1D done (214 tests). Next: Part 1E, PetAI (autonomous behavior), which replaces the temporary demo brain. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -143,9 +143,11 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 ## Part 1D: Placeholder rig and animations
 
-- [ ] 1D.1 (L) Layered rig (body, head, ears, tail, four legs, eyes, mouth) drawn in code, with pivots.
-- [ ] 1D.2 (L) Code-driven tweens: idle breathing, blink, walk, sniff, sleep, eat, drink, happy, playful, curious, one mischief (steal).
-- [ ] 1D.3 (S) Coat palettes as tints.
+- [x] 1D.1 (L) Layered rig drawn in code with pivots (`src/render/ferretDraw.ts`, `pose.ts`): body, head, two ears, tail (2 segments), four legs, eyes, mouth, carried item. Verified in real Chrome (`node scripts/shots.mjs`).
+- [x] 1D.2 (L) Code-driven animations (`animations.ts`, `animator.ts`): idle (breathing, ear twitch), blink, walk, run (zoomies), sniff, curious, sleep, eat, drink, sneak (steal), and the reactions happy, annoyed, surprise. Blending between clips, reactions over a base clip, frame-rate hints (sleep 10 fps).
+- [x] 1D.3 (S) Coat palettes as tints (`coats.ts`): sable, cinnamon, albino, panda.
+- [x] 1D.4 (M) Room, scene, and a TEMPORARY demo brain (`room.ts`, `scene.ts`, `demoBrain.ts`) so the preview page shows a living ferret. The demo brain is deleted in Part 1E. Dev-only rig gallery at `/dev/gallery.html` (not in the production build).
+- [x] 1D.5 (M) 88 render tests: pose limits, smoothness at 60 fps, loops, one-shots end at rest, blink rate and length, no pops when switching clips, draw calls balanced and finite.
 
 ## Part 1E: PetAI (autonomous behavior)
 

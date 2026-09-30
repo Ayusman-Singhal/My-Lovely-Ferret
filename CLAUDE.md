@@ -31,6 +31,7 @@ The developer is a solo developer with no budget. Cut scope before adding it.
 | `npm run lint` | ESLint, including the `src/core` purity rules |
 | `npm test` | Vitest (node environment) |
 | `npm run size` | Bundle budget check. Fails when a budget in `scripts/budgets.json` is exceeded |
+| `node scripts/shots.mjs` | Screenshots of the dev rig gallery and the running app into `shots/` (uses installed Chrome). Look at them after changing the rig or layout |
 | `npm run check` | typecheck, lint, test, build, size. Run before every commit that changes code |
 
 ## Layout (guide §18)

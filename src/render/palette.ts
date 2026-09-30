@@ -19,6 +19,6 @@ export const PALETTE = {
 } as const;
 
 /** Logical viewport (docs/ART_STYLE.md §2). */
-export const VIEW = { width: 360, height: 640, floorY: 470 } as const;
+export const VIEW = { width: 360, height: 640, floorY: 420 } as const;
 
 export const css = (color: number): string => `#${color.toString(16).padStart(6, '0')}`;

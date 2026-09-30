@@ -17,8 +17,11 @@ export interface RenderLoop {
 }
 
 export interface LoopOptions {
-  /** Minimum time between drawn frames. 0 = every display frame, 33 = 30 fps low-power mode. */
-  minFrameMs?: number;
+  /**
+   * Minimum time between drawn frames. 0 = every display frame, 33 = 30 fps low-power mode.
+   * A function is read before every frame, so it can follow the current animation.
+   */
+  minFrameMs?: number | (() => number);
 }
 
 export function createRenderLoop(
@@ -26,7 +29,8 @@ export function createRenderLoop(
   deps: LoopDeps,
   options: LoopOptions = {},
 ): RenderLoop {
-  const minFrameMs = options.minFrameMs ?? 0;
+  const minFrame = options.minFrameMs ?? 0;
+  const minFrameMs = (): number => (typeof minFrame === 'function' ? minFrame() : minFrame);
   let frameId: number | null = null;
   let wanted = false;
   let lastDrawn = -Infinity;
@@ -40,7 +44,7 @@ export function createRenderLoop(
   const onFrame = (timeMs: number): void => {
     frameId = null;
     if (destroyed || deps.isHidden()) return; // resumes from the visibility handler
-    if (timeMs - lastDrawn < minFrameMs) {
+    if (timeMs - lastDrawn < minFrameMs()) {
       schedule(); // too early for the frame cap: wait for the next display frame
       return;
     }

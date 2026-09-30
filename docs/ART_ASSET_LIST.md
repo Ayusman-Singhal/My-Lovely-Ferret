@@ -21,20 +21,20 @@ Status values: `todo`, `placeholder` (drawn in code, 0 KB), `final` (real art, i
 
 | Animation | Type | Status |
 |---|---|---|
-| idle breathing | loop | todo |
-| blink | timed frame swap | todo |
-| ear movement (twitch, perk) | timed | todo |
-| walk | loop, faster variant for playful | todo |
-| sniff | loop, nose twitch | todo |
-| sleep | loop, curled, slow breathing | todo |
-| eat | loop with mouth frames | todo |
-| drink | loop with mouth frames | todo |
-| happy | reaction | todo |
-| playful (zoomies, hop) | burst | todo |
-| curious | walk then sniff at a prop | todo |
-| steal (pick up, carry, stash) | mischief behavior | todo |
-| annoyed | reaction (woken up, refusal) | todo |
-| surprise | reaction | todo |
+| idle breathing | loop | placeholder, done (Part 1D) |
+| blink | timed frame swap | placeholder, done (Part 1D) |
+| ear movement (twitch, perk) | timed | placeholder, done (Part 1D) |
+| walk | loop, faster variant for playful | placeholder, done (Part 1D) |
+| sniff | loop, nose twitch | placeholder, done (Part 1D) |
+| sleep | loop, curled, slow breathing | placeholder, done (Part 1D) |
+| eat | loop with mouth frames | placeholder, done (Part 1D) |
+| drink | loop with mouth frames | placeholder, done (Part 1D) |
+| happy | reaction | placeholder, done (Part 1D) |
+| playful (zoomies, hop) | burst | placeholder, done (Part 1D) |
+| curious (head up, ears forward) | pose loop | placeholder, done (Part 1D) |
+| steal: sneak walk carrying an item | mischief behavior | placeholder, done (Part 1D) |
+| annoyed | reaction (woken up, refusal) | placeholder, done (Part 1D) |
+| surprise | reaction | placeholder, done (Part 1D) |
 
 Phase 2 additions (guide §9.1): scratch, groom, more reactions.
 
@@ -46,7 +46,7 @@ Phase 2 additions (guide §9.1): scratch, groom, more reactions.
 | food bowl (empty, filled) | placeholder | 0 KB |
 | water bowl (empty, filled) | placeholder | 0 KB |
 | toy: ball, sock, feather, ring (favorite toy is one of these) | placeholder | 0 KB |
-| hammock | placeholder | 0 KB |
+| hammock | placeholder, drawn (Part 1D) | 0 KB |
 | sock (stealable item) | placeholder | 0 KB |
 | particles: hearts, sparkles, zzz (pooled, guide §4.4) | placeholder | 0 KB |
 

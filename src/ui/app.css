@@ -30,7 +30,10 @@ body {
     env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-.placeholder {
-  margin: 0;
-  font-size: 1.125rem;
+.stage {
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
