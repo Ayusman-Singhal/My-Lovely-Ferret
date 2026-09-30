@@ -60,6 +60,21 @@ describe('createRng', () => {
     }
   });
 
+  it('pickWeighted respects weights, skips zeros, and rejects bad input', () => {
+    const rng = createRng(11);
+    const counts: Record<string, number> = { a: 0, b: 0, c: 0 };
+    for (let i = 0; i < 4000; i++) {
+      const v = rng.pickWeighted(['a', 'b', 'c'], [3, 1, 0]);
+      counts[v] = (counts[v] ?? 0) + 1;
+    }
+    expect(counts['c']).toBe(0);
+    expect(counts['a']).toBeGreaterThan(counts['b'] as number);
+    expect((counts['a'] as number) / 4000).toBeGreaterThan(0.7);
+    expect(() => rng.pickWeighted(['a'], [0])).toThrow();
+    expect(() => rng.pickWeighted(['a', 'b'], [1])).toThrow();
+    expect(() => rng.pickWeighted([], [])).toThrow();
+  });
+
   it('pick returns an element and rejects an empty array', () => {
     const rng = createRng(5);
     expect(['a', 'b', 'c']).toContain(rng.pick(['a', 'b', 'c']));
@@ -77,9 +92,9 @@ describe('hashString', () => {
 
 describe('simulationSeed', () => {
   it('depends on both pet id and start time', () => {
-    const base = simulationSeed('pet-1', '2026-10-01T10:00:00Z');
-    expect(simulationSeed('pet-1', '2026-10-01T10:00:00Z')).toBe(base);
-    expect(simulationSeed('pet-2', '2026-10-01T10:00:00Z')).not.toBe(base);
-    expect(simulationSeed('pet-1', '2026-10-01T10:10:00Z')).not.toBe(base);
+    const base = simulationSeed('pet-1', 1_790_000_000_000);
+    expect(simulationSeed('pet-1', 1_790_000_000_000)).toBe(base);
+    expect(simulationSeed('pet-2', 1_790_000_000_000)).not.toBe(base);
+    expect(simulationSeed('pet-1', 1_790_000_600_000)).not.toBe(base);
   });
 });

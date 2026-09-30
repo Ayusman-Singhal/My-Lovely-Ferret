@@ -13,6 +13,8 @@ export interface Rng {
   chance(num: number, den: number): boolean;
   /** One element of a non-empty array. */
   pick<T>(items: readonly T[]): T;
+  /** One element, chosen with integer weights (one draw). Weights of 0 are never chosen. */
+  pickWeighted<T>(items: readonly T[], weights: readonly number[]): T;
 }
 
 /** 32-bit FNV-1a hash of a string, used to turn ids and timestamps into seeds. */
@@ -48,10 +50,27 @@ export function createRng(seed: number): Rng {
       if (items.length === 0) throw new Error('pick() needs a non-empty array');
       return items[int(items.length)] as T;
     },
+    pickWeighted<T>(items: readonly T[], weights: readonly number[]): T {
+      if (items.length === 0 || items.length !== weights.length) {
+        throw new Error('pickWeighted() needs equal-length, non-empty arrays');
+      }
+      const total = weights.reduce((sum, w) => sum + w, 0);
+      if (total <= 0) throw new Error('pickWeighted() needs a positive total weight');
+      let roll = int(total);
+      for (let i = 0; i < items.length; i++) {
+        const w = weights[i] as number;
+        if (roll < w) return items[i] as T;
+        roll -= w;
+      }
+      return items[items.length - 1] as T;
+    },
   };
 }
 
-/** Seed for one simulation run: petId plus the time it starts from (guide §7.2). */
-export function simulationSeed(petId: string, lastSimulationTime: string): number {
-  return hashString(`${petId}|${lastSimulationTime}`);
+/**
+ * Seed for one simulation step: petId plus the start time of that step in epoch ms
+ * (guide §7.2, refinement R1: per step, so chunked and one-shot runs agree).
+ */
+export function simulationSeed(petId: string, stepStartMs: number): number {
+  return hashString(`${petId}|${stepStartMs}`);
 }
