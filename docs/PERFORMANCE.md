@@ -13,7 +13,7 @@ Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enfo
 | Time to interactive, mid-range Android over 4G | under about 2 seconds | Lighthouse or DevTools throttling |
 | Frame rate | steady 60 fps on a mid-range laptop, at least 30 fps under 4x CPU throttling | DevTools |
 | Idle CPU (pet asleep, nothing animating) | near zero | DevTools Performance |
-| Texture memory | start at about 32 MB, tracked | Pixi texture stats or DevTools |
+| Texture memory | start at about 32 MB, tracked | Sum of canvas and image sizes (width x height x 4 bytes), DevTools memory |
 
 **How "initial JS" is counted.** `scripts/check-budgets.mjs` reads `dist/.vite/manifest.json`, takes the entry chunk plus everything it imports statically, gzips each file with Node's `zlib`, and sums them. Dynamically imported chunks (Firebase, lazy screens) are excluded on purpose.
 
@@ -33,8 +33,26 @@ Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enfo
 | Phase or part | Date | Initial JS gzip | Notes |
 |---|---|---|---|
 | 0B baseline | 2026-09-30 | 4.82 KB | Preact 11 and the placeholder app. No renderer yet. |
-| 1C renderer spike | | | Pixi versus Canvas 2D decision goes here. |
+| 1C renderer spike | 2026-09-30 | Canvas 2D: 1.4 KB. PixiJS 8.21.0: 116 KB (lean) to 144 KB (default) | Decision: **Canvas 2D**. See the table below. |
 | Phase 1 gate | | | Full table of section 1. |
+
+### 3.1 Renderer spike, 2026-09-30 (Part 1C)
+
+The same scene (room with a window and floor boards, plus one moving rounded shape) was built twice, at the same 360 by 640 logical size, device pixel ratio 2. Screenshots from real Chrome were pixel-identical in layout.
+
+| Variant | JS loaded at start, gzip | Scene ready, no throttle | Scene ready, slow 4G + 4x CPU (median of 5) |
+|---|---|---|---|
+| Canvas 2D | 1.4 KB | 0.13 s | **0.60 s** |
+| PixiJS 8.21.0, lean (`skipExtensionImports`, manual imports) | 116 KB | 1.3 s | **1.79 s** |
+| PixiJS 8.21.0, default import | 144 KB | 0.51 s | **1.98 s** |
+
+Method: Vite production build of each page, served with `vite preview`, driven by `playwright-core` on the installed Chrome (headless, software WebGL). Network throttled with the Chrome DevTools Protocol to 1.6 Mbps down and 150 ms latency, CPU 4x, cache off. "Scene ready" is the time from navigation until the canvas exists in the DOM (after Pixi's async init for the Pixi variants). This is a proxy for time to interactive, not Lighthouse. The unthrottled lean number is noisy (first-run chunk loading) and the fps figures from headless Chrome are not meaningful, so neither is used for the decision.
+
+Finding: PixiJS fits the 300 KB size budget but not the speed budget. The empty scene alone used about the whole 2 s time-to-interactive target on a throttled phone-like profile, before any game code, art, or fonts. The game scene is about a dozen shapes and props with no filters (docs/ART_STYLE.md), which Canvas 2D handles without a library.
+
+**Decision (developer approved, 2026-09-30): Canvas 2D.** PixiJS is removed from the project. Reconsider only with new measurements if the scene's needs grow a lot (many sprites, shaders).
+
+Rule kept from this spike: `npm run size` counts the entry chunk and its static imports. A dynamic import that always fires at startup would slip past it, so never use dynamic `import()` for code needed for the first paint. Dynamic imports are for lazy features only (Firebase, shop, history, passport).
 
 ## 4. Decisions made to stay within budget
 
@@ -43,6 +61,7 @@ Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enfo
 | 2026-09-30 | Preact 11 instead of React | Few KB instead of tens (guide §3). |
 | 2026-09-30 | Checksum is FNV-1a, not SHA-256 (proposed D3) | No crypto dependency or async work for saves. |
 | 2026-09-30 | Placeholder rig drawn in code | 0 KB of art for Phase 1 (`ART_STYLE.md`). |
+| 2026-09-30 | Canvas 2D instead of PixiJS | 116 to 144 KB gzip and about 1.2 to 1.4 s slower scene-ready under throttle (section 3.1). |
 
 ## 5. Platform targets (guide §25.6)
 

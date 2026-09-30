@@ -58,3 +58,11 @@ Sources: WebKit blog "Full Third-Party Cookie Blocking and More" (https://webkit
 - **`navigator.storage.persist()`:** Baseline widely available since December 2021, HTTPS only, not available in Web Workers. Each browser decides on its own whether to grant it (some prompt, some decide silently), so a `false` result is normal. The save must never depend on it. `requestPersistentStorage()` in `src/platform/web/persist.ts` treats every failure as `false`.
 - **`CompressionStream`:** Baseline widely available since May 2023 (per MDN). Needed only for the Phase 4 transfer bundle. Exact per-browser version numbers were not in the fetched text: check the MDN compatibility table and the Capacitor WebView before Phase 4.
 - **Test environment:** `fake-indexeddb` 6.2.5 (Apache-2.0, no dependencies, dev only) tests the real IndexedDB wrapper in Node. It does not replace one manual check in a real browser (done at the Phase 1 gate).
+
+## 2026-09-30: renderer spike inputs (Part 1C)
+
+Source: `npm view` on the npm registry; measurements from the spike (see `docs/PERFORMANCE.md` §3.1).
+
+- **pixi.js** 8.21.0, MIT. Ships as ES modules with many lazily loaded chunks. Its own docs (`node_modules/pixi.js/skills`) describe `skipExtensionImports` plus manual `import 'pixi.js/app'` style imports for custom builds. The lean build saved about 28 KB gzip against the default and still loaded both the WebGL and the Canvas renderer chunks. Removed after the decision.
+- **playwright-core** 1.63.0, Apache-2.0, no dependencies, dev only. Drives the Chrome already installed on this machine (`channel: 'chrome'`), so no browser download is needed. Used for real-browser checks and throttled startup measurements. Microsoft Edge was not found at its usual path.
+- Headless Chrome with software rendering (SwiftShader) is fine for correctness and relative startup timing, not for frame rate. Real fps and battery checks need a real device (Phase 1 gate, guide §19).

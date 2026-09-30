@@ -2,7 +2,7 @@
 
 A web-first virtual pet game. One person adopts a ferret and can share its care with one other person, who may eventually become the permanent owner. Core promise: **raise one pet with someone you care about.**
 
-Stack: TypeScript, Vite, Preact, PixiJS (trial, with a Canvas 2D fallback), Vitest, Playwright. Zero-cost Firebase Spark "mailbox" for shared care (Phase 3 onward, lazy-loaded). Capacitor wraps the same code as an Android app (Phase 5).
+Stack: TypeScript, Vite, Preact, Canvas 2D (no PixiJS, decided from measurements), Vitest, Playwright (`playwright-core` driving the installed Chrome). Zero-cost Firebase Spark "mailbox" for shared care (Phase 3 onward, lazy-loaded). Capacitor wraps the same code as an Android app (Phase 5).
 
 `PET_GAME_GUIDE_v3.md` is the source of truth. Cite its sections (for example "guide §10.6") in code comments, docs, and reports. If the guide and this file disagree, ask the developer.
 
@@ -41,7 +41,7 @@ src/core/      pure TypeScript. Simulation, personality, bond, care days, owners
 src/sync/      Mailbox interface, MemoryMailbox, Outbox, BudgetManager
   firebase/    FirebaseMailbox (dynamic import only)
 src/platform/  SaveStore, PurchaseService, Notifications, Share, Camera (web/ and capacitor/)
-src/render/    Pixi scene, room, pet rig, particles, asset loader
+src/render/    Canvas 2D scene, room, pet rig, particles, render-on-demand loop, asset loader
 src/ui/        Preact components (HUD, menus, shop, passport, settings)
 src/i18n/      t() helper, en.json, hi.json
 public/        atlases, audio, icons, manifest, service worker
@@ -89,7 +89,7 @@ Do not trust memory or the guide for facts that change: Firebase Spark quotas an
 ## Decisions already made
 
 - Preact (not React), with `preact/compat` only if a dependency needs it.
-- PixiJS is a trial. At the end of Phase 1's renderer spike, measure real bytes. If PixiJS breaks the budget, fall back to Canvas 2D.
+- Renderer: **Canvas 2D**, not PixiJS (decided 2026-09-30 from measurements). PixiJS adds 116 to 144 KB gzip and pushes scene-ready time to about 1.8 to 2.0 s (slow 4G, 4x CPU) against 0.6 s for Canvas 2D, which would use up the 2 s time-to-interactive budget. Do not add PixiJS back without new measurements and the developer's approval.
 - Art: layered-sprite rig animated in code. Phase 1 uses a code-drawn flat-color placeholder rig. Final art is drawn later in a free tool (Krita, Inkscape). Style: soft flat vector, small palette (`docs/ART_STYLE.md`).
 - General audience, 13+, minimal data collection.
 - Adoption is free until Phase 6. The closed beta is free. Web build is a closed preview, not the shipped product.

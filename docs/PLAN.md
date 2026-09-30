@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Part 1B done and committed (126 tests). Next: Part 1C, the renderer spike (PixiJS versus Canvas 2D). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
+**Current status:** Phase 1, Part 1B done and committed (126 tests). Part 1C done: renderer decided, Canvas 2D (136 tests). Next: Part 1D, placeholder rig and animations. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -13,7 +13,7 @@ Decided in the setup session (2026-09-30), from guide §3 defaults unless noted:
 | # | Decision |
 |---|---|
 | 1 | Preact for UI (not React). |
-| 2 | PixiJS trial in the Phase 1 renderer spike. Fall back to Canvas 2D if measured bytes break the budget. |
+| 2 | **Canvas 2D** (decided 2026-09-30 after the Part 1C spike). PixiJS was tried and removed: too slow to start on a throttled phone profile. |
 | 3 | Art: layered-sprite rig animated in code. |
 | 4 | Audience: general, 13+, minimal data collection. |
 | 5 | Adoption free until Phase 6 (in-app purchase then). Closed beta is free. Free "care for a friend's pet" path always exists. |
@@ -33,7 +33,7 @@ Open items that do not block Phase 1:
 
 - Hindi translator and reviewer (needed at Phase 2, guide §25.9).
 - Android minimum OS and WebView version (Phase 5, guide §25.6).
-- Whether to keep Pixi (decided by numbers in P1.C).
+- (Resolved) Pixi versus Canvas 2D: Canvas 2D, see Part 1C.
 
 ## Proposed deviations from the guide (approve or reject at the Phase 0 gate)
 
@@ -43,6 +43,7 @@ Open items that do not block Phase 1:
 | D2 | Traits are integers 0 to 100 | Guide says 0 to 1. No floats in `core`. |
 | D3 | Save checksum is FNV-1a 32-bit | Guide says "checksum". Detects corruption only. Works over plain http. Transfer bundle keeps SHA-256 (Phase 4). |
 | D4 | TypeScript pinned to 6.x | TypeScript 7 is latest, but typescript-eslint 8.71 needs below 6.1. See `docs/VERIFY_LOG.md`. |
+| D5 | Canvas 2D renderer instead of the guide's default PixiJS | Approved 2026-09-30 from measurements (`docs/PERFORMANCE.md` §3.1). The guide allows this fallback (§3 Open Decision 2). |
 | R1 | Simulation RNG seeded per 10-minute step, from petId and the step start time | Refines "seed from petId + lastSimulationTime" so chunked and one-shot runs give the same result. Not a change of intent. |
 
 ## Phase 1 gate pass criteria (proposed, developer confirms at Phase 1 start)
@@ -132,12 +133,13 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1B.5 (M) Tests: migrations, corrupt-file fallback, atomic write, export and import round trip.
 - [ ] 1B.6 (S) Wire-up, deferred to Part 1G: debounced save on change, save when the page becomes hidden, call `requestPersistentStorage()` at startup. One manual check in a real browser at the Phase 1 gate (Part 1J).
 
-## Part 1C: Renderer spike (decides Pixi or Canvas 2D)
+## Part 1C: Renderer spike (decided: Canvas 2D)
 
-- [ ] 1C.1 (M) Tree-shaken PixiJS scene: room background and one moving placeholder shape.
-- [ ] 1C.2 (S) Measure gzipped bundle contribution. Record in `docs/PERFORMANCE.md`.
-- [ ] 1C.3 (S) Decide Pixi or Canvas 2D. Record the decision and numbers in this file.
-- [ ] 1C.4 (M) Render-on-demand loop, pause when hidden, DPR cap 2.
+- [x] 1C.1 (M) Same scene built twice, PixiJS 8.21.0 and Canvas 2D (`src/render/canvasScene.ts` kept), verified in real Chrome with screenshots.
+- [x] 1C.2 (S) Measured gzip size and scene-ready time under slow 4G plus 4x CPU. Recorded in `docs/PERFORMANCE.md` §3.1.
+- [x] 1C.3 (S) **Decision: Canvas 2D** (developer approved 2026-09-30). PixiJS 116 to 144 KB gzip, scene ready about 1.8 to 2.0 s throttled, against 1.4 KB and 0.6 s. PixiJS removed. Recorded as deviation D5 (allowed fallback, guide §3 Open Decision 2).
+- [x] 1C.4 (M) Render-on-demand loop with pause when hidden, frame cap for low-power mode, DPR cap 2 (`src/render/loop.ts`, 10 tests).
+- [ ] 1C.5 (S) Later, at Part 1J: a reusable startup-time measurement script under `scripts/` (the spike used a throwaway one), and a real-browser check that a settled loop uses no frames.
 
 ## Part 1D: Placeholder rig and animations
 
