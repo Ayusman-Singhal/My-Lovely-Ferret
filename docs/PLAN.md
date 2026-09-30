@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 0. Parts 0A to 0D done and committed (4 commits on main). Remote `origin` set. Waiting: developer OK for first push (0C.8), Pages source set to GitHub Actions (0C.7), and Phase 0 gate approval (0E.3).
+**Current status:** Phase 1, Part 1A done and committed. Next: commit, then Part 1B (save). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -86,8 +86,8 @@ Open items that do not block Phase 1:
 - [x] 0C.4 (S) Commit.
 - [x] 0C.5 (developer) Create an empty public GitHub repo, give Claude the URL.
 - [x] 0C.6 (S) `git remote add origin <url>` (done, origin = github.com/Ayusman-Singhal/My-Lovely-Ferret). **First push needs developer OK, still pending.**
-- [ ] 0C.7 (developer) Settings, Pages, Source = GitHub Actions.
-- [ ] 0C.8 (S) After push: confirm Actions run is green and the Pages URL serves the app.
+- [x] 0C.7 (developer) Settings, Pages, Source = GitHub Actions. (Pages was already enabled: first deploy passed.)
+- [x] 0C.8 (S) After push: confirm Actions run is green and the Pages URL serves the app. (Run 36725417130: check and deploy green. https://ayusman-singhal.github.io/My-Lovely-Ferret/ returns 200 with the /My-Lovely-Ferret/ base path.)
 
 ## Part 0D: Phase 1 spec docs
 
@@ -104,7 +104,7 @@ Open items that do not block Phase 1:
 
 - [x] 0E.1 (S) Tick every Phase 0 task. Update the status line.
 - [x] 0E.2 (S) Report to the developer: files created, measured bundle size, deviations from the guide.
-- [ ] 0E.3 **Gate:** developer approves. Do not start Phase 1 before this.
+- [x] 0E.3 **Gate:** developer approved on 2026-09-30 ("yes proceed"). Deviations D1 to D4 and R1 accepted. Phase 1 gate criteria confirmed as proposed. Phase 1 started.
 
 ---
 
@@ -114,13 +114,14 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 ## Part 1A: Core foundation (pure TypeScript)
 
-- [ ] 1A.1 (S) Fixed-point helpers (hundredths, clamp, display conversion).
-- [ ] 1A.2 (S) Time source abstraction (injectable clock, monotonic within a session, jump handling per guide §7.3).
-- [ ] 1A.3 (M) Types: `PetState`, `Personality`, `Needs`, `SleepState`, `Mood`, history events.
-- [ ] 1A.4 (M) Pet creation from a pet id seed (traits, coat, favorites).
-- [ ] 1A.5 (L) `simulate(state, elapsed, seed)` in 10-minute steps: decay, sleep pattern, floors, 30-day cap, memorable events.
-- [ ] 1A.6 (S) Derived `mood` function.
-- [ ] 1A.7 (M) Tests: one hour, one day, several days, 30-day cap, sleep recovery, floors, negative elapsed, determinism (run twice and compare).
+- [x] 1A.1 (S) Fixed-point helpers (`fixed.ts`), tuning constants (`tuning.ts`).
+- [x] 1A.2 (S) Time helpers and clocks (`time.ts`): owner-offset local minute and date, hour classes, manual clock, session clock with backward-jump handling (guide §7.3).
+- [x] 1A.3 (M) Types (`types.ts`), name validation (`name.ts`).
+- [x] 1A.4 (M) Pet creation from a pet id seed (`pet.ts`), fixed draw order, pinned by a test.
+- [x] 1A.5 (L) `simulate(record, nowMs)` in 10-minute steps (`simulate.ts`): decay, sleep pattern, floors, 30-day cap, memorable events.
+- [x] 1A.6 (S) Derived mood (`mood.ts`).
+- [x] 1A.7 (M) Tests: one hour, one day, 30 days, cap, sleep recovery, floors, negative elapsed, determinism, chunk invariance, sleep-pattern guards (78 tests).
+- [x] 1A.8 (S) Tune the sleep pattern from measurements and record it in `docs/GAME_DESIGN.md` §3.3.
 
 ## Part 1B: Save
 

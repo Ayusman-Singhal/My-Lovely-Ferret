@@ -65,20 +65,21 @@ Enrichment is not an input in Phase 1 (guide §7.1).
 
 ### 3.3 Sleep
 
-Local hour classes (owner time):
+Local hour classes (owner time). Numbers live in `src/core/tuning.ts`.
 
-| Class | Local time | Chance to fall asleep per step (awake) | Chance to wake per step (asleep, energy at or above 8500) |
-|---|---|---|---|
-| night | 22:00 to 06:59 | 60% | 10% |
-| nap | 12:00 to 15:59 | 30% | 40% |
-| day | all other hours | 5% | 40% |
+| Class | Local time | Fall asleep per step (awake) | Minimum sleep (by the class the sleep **started** in) | Wake chance per step (once rested) |
+|---|---|---|---|---|
+| night | 22:00 to 06:59 | 40% | 4 hours | 15% |
+| nap | 12:00 to 15:59 | 20% | 1 hour | 40% |
+| day | all other hours | 3% | 30 minutes | 40% |
 
 - Awake with `energy <= 2000`: falls asleep at once, whatever the hour class.
-- Asleep with `energy < 8500`: keeps sleeping (no wake chance).
-- Asleep with `energy = 10000`: wakes at once.
-- Personality tilts the chances by up to plus or minus 10 points (curiosity lowers the fall-asleep chance, affection raises the night value). Final tilt values go in `PET_BEHAVIOR.md` after tuning.
-- Result: long sleeps at night with a short wake burst or two, and a midday nap. Ferret-like (guide §7.2).
-- Full-night check for the tests: starting at 22:00 with energy 4000, the pet is asleep for at least 4 hours and no need falls below the floor.
+- Asleep with `energy < 8500`: keeps sleeping, however long it has slept.
+- Asleep with `energy >= 8500` **and** the minimum sleep for its start class served: wakes with the class's wake chance each step. Full energy alone never wakes the pet.
+- Why the minimum exists: without it a rested pet fell asleep by chance at night, hit full energy, and woke on the next step, flipping awake and asleep every 10 minutes (16 to 30 sleep blocks per day in the first measurement, found by a test on 2026-09-30). The minimum gives ferret-like long sleeps with short bursts (guide §7.2).
+- Personality tilt, in percentage points: `-trunc((curiosity - 50) / 10)` on the fall-asleep chance in every class (curious pets stay up a little longer, up to 4 points), and `+trunc((affection - 50) / 10)` at night (affectionate pets settle sooner).
+- **Measured** with 12 sample pets over 30 days untouched (2026-09-30): asleep 50% to 61% of the time (about 12 to 15 hours a day, close to real ferrets), about 4 to 7 sleep blocks per day, night hours (23:00 to 05:59) about 90% asleep, evening (17:00 to 21:59) mostly awake. This is a tuning starting point, revisit after playing it (Part 1J).
+- Test guards: a night sleep starting at 22:00 with energy 4000 lasts at least 4 hours; the no-flicker test bounds blocks per day, the asleep share, and the night and evening shares.
 
 ### 3.4 Long absence
 
