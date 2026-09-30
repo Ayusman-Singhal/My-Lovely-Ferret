@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 0. Parts 0A to 0D done, files written, `npm run check` green. Nothing is committed yet: commits (0B.12, 0C.4, 0D.8) wait for the developer to set git identity. Next: 0E gate report, then developer approval.
+**Current status:** Phase 0. Parts 0A to 0D done and committed (4 commits on main). Remote `origin` set. Waiting: developer OK for first push (0C.8), Pages source set to GitHub Actions (0C.7), and Phase 0 gate approval (0E.3).
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -61,7 +61,7 @@ Open items that do not block Phase 1:
 
 - [x] 0A.1 (S) Write `CLAUDE.md` at the repo root.
 - [x] 0A.2 (S) Write this file, `docs/PLAN.md`.
-- [ ] 0A.3 (S) Commit 0A files together with 0B (needs git identity, see 0B.12).
+- [x] 0A.3 (S) Commit 0A files together with 0B (needs git identity, see 0B.12).
 
 ## Part 0B: Repo and tooling
 
@@ -76,16 +76,16 @@ Open items that do not block Phase 1:
 - [x] 0B.9 (S) `scripts/check-budgets.mjs` and `scripts/budgets.json` (initial JS gzipped at most 300 KB).
 - [x] 0B.10 (S) Run `npm run check`. All green. Record baseline size.
 - [x] 0B.11 (S) Guard proofs, each reverted afterward: forbidden import in core fails lint, `Math.random()` in core fails lint, `document` in core fails typecheck, 1 KB budget fails `npm run size`.
-- [ ] 0B.12 (S) Commit (needs git identity).
+- [x] 0B.12 (S) Commit (needs git identity).
 
 ## Part 0C: CI and hosting
 
 - [x] 0C.1 (S) Verify current GitHub Actions versions (checkout, setup-node, upload-pages-artifact, deploy-pages). Log in `docs/VERIFY_LOG.md`.
 - [x] 0C.2 (S) `.github/workflows/ci.yml`: on push and PR run `npm ci` then `npm run check`. Deploy job on `main` push only, with `BASE_PATH` set from the repo name.
 - [x] 0C.3 (S) Verify current GitHub Pages limits and terms for free accounts. Log them.
-- [ ] 0C.4 (S) Commit.
-- [ ] 0C.5 (developer) Create an empty public GitHub repo, give Claude the URL.
-- [ ] 0C.6 (S) `git remote add origin <url>`. **Ask before the first push.**
+- [x] 0C.4 (S) Commit.
+- [x] 0C.5 (developer) Create an empty public GitHub repo, give Claude the URL.
+- [x] 0C.6 (S) `git remote add origin <url>` (done, origin = github.com/Ayusman-Singhal/My-Lovely-Ferret). **First push needs developer OK, still pending.**
 - [ ] 0C.7 (developer) Settings, Pages, Source = GitHub Actions.
 - [ ] 0C.8 (S) After push: confirm Actions run is green and the Pages URL serves the app.
 
@@ -98,7 +98,7 @@ Open items that do not block Phase 1:
 - [x] 0D.5 (S) `docs/ART_ASSET_LIST.md`: rig parts, Phase 1 animations, props, room, UI icons, with a size column.
 - [x] 0D.6 (S) `docs/PERFORMANCE.md`: budgets from guide §4, measurement method, Phase 0 baseline, platform targets (guide §25.6).
 - [x] 0D.7 (S) `docs/ASSET_LICENSES.md` (empty table and rules) and finish `docs/VERIFY_LOG.md`.
-- [ ] 0D.8 (S) Commit.
+- [x] 0D.8 (S) Commit.
 
 ## Part 0E: Phase 0 gate
 
