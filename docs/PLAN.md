@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Part 1A done and committed. Next: commit, then Part 1B (save). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
+**Current status:** Phase 1, Part 1B done and committed (126 tests). Next: Part 1C, the renderer spike (PixiJS versus Canvas 2D). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -125,11 +125,12 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 ## Part 1B: Save
 
-- [ ] 1B.1 (M) Save schema v1 and migration chain skeleton (`docs/SAVE_SCHEMA.md`).
-- [ ] 1B.2 (M) `SaveStore` interface and IndexedDB implementation (atomic write, verify, swap, one previous version, checksum, fallback if corrupt).
-- [ ] 1B.3 (S) `installId` creation and storage (same IndexedDB in browser, never in exports).
-- [ ] 1B.4 (M) Export backup and Import (validates checksum and schema). `navigator.storage.persist()`.
-- [ ] 1B.5 (M) Tests: migrations, corrupt-file fallback, atomic write, export and import round trip.
+- [x] 1B.1 (M) Save schema v1 and migration chain skeleton (`docs/SAVE_SCHEMA.md`).
+- [x] 1B.2 (M) `SaveStore` interface and IndexedDB implementation (atomic write, verify, swap, one previous version, checksum, fallback if corrupt).
+- [x] 1B.3 (S) `installId` creation and storage (same IndexedDB in browser, never in exports).
+- [x] 1B.4 (M) Export backup and Import (validates checksum and schema). `navigator.storage.persist()`.
+- [x] 1B.5 (M) Tests: migrations, corrupt-file fallback, atomic write, export and import round trip.
+- [ ] 1B.6 (S) Wire-up, deferred to Part 1G: debounced save on change, save when the page becomes hidden, call `requestPersistentStorage()` at startup. One manual check in a real browser at the Phase 1 gate (Part 1J).
 
 ## Part 1C: Renderer spike (decides Pixi or Canvas 2D)
 

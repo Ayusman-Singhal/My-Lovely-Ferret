@@ -99,7 +99,21 @@ IndexedDB, one database `ferret`, one object store `kv`. `localStorage` is not u
 
 **Atomic write.** Each save writes the slot that is **not** the newest, with `seq = newestSeq + 1`, inside one IndexedDB transaction, and then reads it back to verify the checksum. The previous slot stays untouched, so a failed or corrupt write can never destroy the only good copy.
 
-**Load.** Read both slots, drop any whose checksum does not match, take the one with the highest `seq`. If the newest is corrupt, the older one is used and the UI says a recovery happened. If neither is valid, the app offers "Import backup" and does not overwrite anything.
+**Load.** Read both slots. A slot is usable when its checksum matches, it parses, it migrates, and it passes `validateSave`. Take the usable slot with the highest `seq`. `loadWithInfo()` returns a status the UI reacts to:
+
+| Status | Meaning | UI |
+|---|---|---|
+| `empty` | Nothing stored | First-run flow |
+| `ok` | Newest slot used | Normal |
+| `recovered` | One slot was damaged, the other was used | Plain message: "Restored from the previous save" |
+| `corrupt` | Slots exist but none is usable | Offer "Import backup". Nothing is overwritten or deleted |
+| `too_new` | A slot was written by a newer app | Read-only: "Update the app". `save()` refuses to overwrite it |
+
+**Save.** `save()` validates first and throws rather than write an invalid save. It writes to the slot that is not the best valid one (so after a recovery it overwrites the damaged slot, never the good one), sets each pet's `lastSaved`, then reads the slot back and compares checksums. A failed or silently dropped write throws and leaves the previous slot untouched.
+
+**`installId` is authoritative in its own key** (`installId`), not in the slot. `load()` always overwrites the file's copy with it, so a restored or imported slot can never bring an old `installId` back (guide §8, §13.6).
+
+Implementation: `src/platform/saveStore.ts` (slot logic, storage-agnostic), `src/platform/web/idbBackend.ts` (IndexedDB), `src/core/save.ts` (schema, validation, migrations, backup format).
 
 **When to save.** On meaningful change (debounced), and when the page becomes hidden. Never every frame.
 

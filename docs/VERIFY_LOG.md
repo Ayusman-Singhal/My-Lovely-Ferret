@@ -49,3 +49,12 @@ GitHub Pages limits (from the docs page): published site at most 1 GB, soft band
 **Not verified:** whether GitHub Pages is available for private repositories on a free account, and any acceptable-use limits on commercial use. The docs pages fetched did not state it. Not blocking: the developer chose a public repo. Recheck before any decision to make the repo private, and before the game is monetized (Phase 6), since the closed preview is not the shipped product.
 
 Note: `npm run check` builds with `base: '/'`. The deploy job rebuilds with `BASE_PATH=/<repo-name>/` because a project site is served from a sub-path.
+
+## 2026-09-30: browser storage facts (Part 1B)
+
+Sources: WebKit blog "Full Third-Party Cookie Blocking and More" (https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/), MDN `StorageManager.persist()` and `CompressionStream` pages.
+
+- **iOS Safari 7-day rule: confirmed.** Safari's ITP deletes all script-writable storage (IndexedDB, localStorage, service worker registrations) after 7 days of Safari use without user interaction on the site. **Home Screen web apps are exempt**: they have their own use counter, and using the app resets it. So the guide's advice stands: iOS testers should use Add to Home Screen and Export backup (guide §8, §25.3). The in-app notice is built in Part 1H.
+- **`navigator.storage.persist()`:** Baseline widely available since December 2021, HTTPS only, not available in Web Workers. Each browser decides on its own whether to grant it (some prompt, some decide silently), so a `false` result is normal. The save must never depend on it. `requestPersistentStorage()` in `src/platform/web/persist.ts` treats every failure as `false`.
+- **`CompressionStream`:** Baseline widely available since May 2023 (per MDN). Needed only for the Phase 4 transfer bundle. Exact per-browser version numbers were not in the fetched text: check the MDN compatibility table and the Capacitor WebView before Phase 4.
+- **Test environment:** `fake-indexeddb` 6.2.5 (Apache-2.0, no dependencies, dev only) tests the real IndexedDB wrapper in Node. It does not replace one manual check in a real browser (done at the Phase 1 gate).

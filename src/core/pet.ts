@@ -4,11 +4,11 @@ import { localDate } from './time';
 import type { ActivityId, Coat, FoodId, PetRecord, ToyId } from './types';
 
 // Weights out of 100 (docs/GAME_DESIGN.md §10).
-const COATS: readonly Coat[] = ['sable', 'cinnamon', 'panda', 'albino'];
+export const COATS: readonly Coat[] = ['sable', 'cinnamon', 'panda', 'albino'];
 const COAT_WEIGHTS = [40, 25, 20, 15] as const;
-const FOODS: readonly FoodId[] = ['chicken', 'egg', 'salmon', 'kibble'];
-const TOYS: readonly ToyId[] = ['ball', 'sock', 'feather', 'ring'];
-const ACTIVITIES: readonly ActivityId[] = ['chase', 'dig', 'hide', 'climb'];
+export const FOODS: readonly FoodId[] = ['chicken', 'egg', 'salmon', 'kibble'];
+export const TOYS: readonly ToyId[] = ['ball', 'sock', 'feather', 'ring'];
+export const ACTIVITIES: readonly ActivityId[] = ['chase', 'dig', 'hide', 'climb'];
 
 export interface CreatePetParams {
   /** Random UUID made by the platform layer (crypto.randomUUID), never by core. */
