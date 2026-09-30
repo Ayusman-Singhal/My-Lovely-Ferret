@@ -36,6 +36,7 @@ Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enfo
 | 1C renderer spike | 2026-09-30 | Canvas 2D: 1.4 KB. PixiJS 8.21.0: 116 KB (lean) to 144 KB (default) | Decision: **Canvas 2D**. See the table below. |
 | 1D rig and animations | 2026-09-30 | 10.21 KB | Preact, core types, Canvas 2D scene, rig, 12 animations. 0 KB of art files. |
 | 1E PetAI and brain | 2026-09-30 | 14.60 KB | Adds PetAI, plan, brain, scaled clock. |
+| 1F interactions and mini-game | 2026-09-30 | 18.07 KB | Commands, mini-game, controller, pointer input, test bar. |
 | Phase 1 gate | | | Full table of section 1. |
 
 ### 3.1 Renderer spike, 2026-09-30 (Part 1C)

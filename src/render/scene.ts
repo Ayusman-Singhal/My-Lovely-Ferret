@@ -22,6 +22,12 @@ export interface SceneOptions {
   onFrame?: (nowMs: number, scene: Scene) => void;
   /** Draw extra things (props) under the ferret, on the same canvas, every frame. */
   onDraw?: (ctx: CanvasRenderingContext2D) => void;
+  /** Pointer events in logical room coordinates (360 by 640), with real timestamps. */
+  onPointer?: {
+    down(x: number, y: number, realMs: number): void;
+    move(x: number, y: number, realMs: number): void;
+    up(realMs: number): void;
+  };
   lowPower?: boolean;
 }
 
@@ -58,6 +64,24 @@ export function createScene(host: HTMLElement, options: SceneOptions): Scene {
   host.appendChild(wrapper);
   drawRoom(room.ctx);
 
+  // Pointer events work for mouse and touch alike. Never hover (guide §9.3).
+  const toLogical = (e: PointerEvent): { x: number; y: number } => {
+    const rect = wrapper.getBoundingClientRect();
+    return { x: ((e.clientX - rect.left) / rect.width) * VIEW.width, y: ((e.clientY - rect.top) / rect.height) * VIEW.height };
+  };
+  const pointer = options.onPointer;
+  const listeners: Array<[string, (e: PointerEvent) => void]> = [];
+  if (pointer) {
+    wrapper.style.touchAction = 'none'; // dragging the toy must not scroll the page
+    listeners.push(
+      ['pointerdown', (e) => { wrapper.setPointerCapture(e.pointerId); const p = toLogical(e); pointer.down(p.x, p.y, e.timeStamp); }],
+      ['pointermove', (e) => { const p = toLogical(e); pointer.move(p.x, p.y, e.timeStamp); }],
+      ['pointerup', (e) => pointer.up(e.timeStamp)],
+      ['pointercancel', (e) => pointer.up(e.timeStamp)],
+    );
+    for (const [type, fn] of listeners) wrapper.addEventListener(type, fn as EventListener);
+  }
+
   let colors = COAT_COLORS[options.coat];
   const animator = createAnimator({ seed: hashString(options.seed) });
 
@@ -72,6 +96,7 @@ export function createScene(host: HTMLElement, options: SceneOptions): Scene {
     },
     requestFrame: () => loop.request(),
     destroy() {
+      for (const [type, fn] of listeners) wrapper.removeEventListener(type, fn as EventListener);
       loop.destroy();
       wrapper.remove();
     },

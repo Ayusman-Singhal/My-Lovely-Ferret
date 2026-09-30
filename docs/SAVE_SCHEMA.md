@@ -59,6 +59,7 @@ interface PetState {
   lastStoleAt: number | null;                 // steal cooldown (12 hours)
   lastFoundDate: string | null;               // owner-local date "YYYY-MM-DD" of the last found item
   lastPlayRewardAt: number | null;            // play reward cooldown (30 minutes)
+  playStartedAt: number | null;               // set by StartPlay, cleared by FinishPlay (added in Part 1F, before any save shipped)
   daily: { date: string; pet: number; feed: number; play: number };   // counters for bond diminishing returns
 }
 

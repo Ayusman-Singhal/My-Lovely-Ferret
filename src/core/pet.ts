@@ -60,6 +60,7 @@ export function createPet(params: CreatePetParams): PetRecord {
       // The first found item comes on the next local date, not on day one.
       lastFoundDate: today,
       lastPlayRewardAt: null,
+      playStartedAt: null,
       daily: { date: today, pet: 0, feed: 0, play: 0 },
     },
     inventory: { shinies: 0, items: [] },

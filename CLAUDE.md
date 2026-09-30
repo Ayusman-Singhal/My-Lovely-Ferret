@@ -42,6 +42,7 @@ src/core/      pure TypeScript. Simulation, personality, bond, care days, owners
 src/sync/      Mailbox interface, MemoryMailbox, Outbox, BudgetManager
   firebase/    FirebaseMailbox (dynamic import only)
 src/platform/  SaveStore, PurchaseService, Notifications, Share, Camera (web/ and capacitor/)
+src/game/      controller: joins commands, brain, mini-game, and touch (no DOM, no drawing)
 src/render/    Canvas 2D scene, room, pet rig, particles, render-on-demand loop, asset loader
 src/ui/        Preact components (HUD, menus, shop, passport, settings)
 src/i18n/      t() helper, en.json, hi.json

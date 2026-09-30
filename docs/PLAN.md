@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1E done (254 tests). Next: Part 1F, interactions and the toy-chase mini-game (commands feed, water, pet, play, put to bed). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Try ?debug=1 or ?speed=600 or ?pet=anything on the URL.
+**Current status:** Phase 1, Parts 1A to 1F done (313 tests). Next: Part 1G, the real UI (HUD, action bar, first-run naming, welcome-back summary, t() helper) and wiring the save. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Try ?debug=1, ?speed=600, ?pet=anything.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -155,14 +155,15 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1E.2 (M) Personality shows in behavior: guarded by tests over 1000 decisions (steal 137 against 0, playful 219 against 145). Weights retuned after the first version showed no playful difference; see `docs/PET_BEHAVIOR.md` §3.
 - [x] 1E.3 (S) Steal is logged as a history event and starts the 12 hour cooldown (`completeBehavior`). Simulation steals and PetAI steals are kept separate so nothing is counted twice.
 - [x] 1E.4 (M) Render brain (`src/render/plan.ts`, `brain.ts`): turns decisions into walking and animation steps, keeps the simulation current while the app is open, moves the pet to the hammock to sleep and back up when it wakes, carries the sock. Temporary demo brain deleted. Preview options `?pet=`, `?speed=`, `?debug=1`.
-- [ ] 1E.5 (S) Leftover for Part 1F: the always-stocked bowls and `eatingSatisfiesNeeds` in `App.tsx` and `brain.ts` are temporary. Remove when FeedPet and GiveWater exist.
+- [x] 1E.5 (S) Temporary always-stocked bowls and `eatingSatisfiesNeeds` removed in Part 1F: bowls are filled by the feed and water commands and emptied by the pet.
 
 ## Part 1F: Interactions and mini-game
 
-- [ ] 1F.1 (M) Command layer (UI to core). Commands: feed, water, pet, start and finish play, put to bed.
-- [ ] 1F.2 (M) Effects, cooldowns, bond diminishing returns (guide §7.5). Feed, water, and play wake a sleeping pet and apply in one action, no extra step (`docs/GAME_DESIGN.md` §4.2).
-- [ ] 1F.3 (L) Toy-chase mini-game (about 20 s, pointer only, result is a band 0 to 3).
-- [ ] 1F.4 (M) Tests for each interaction and the bond farming protection.
+- [x] 1F.1 (M) Command layer (`src/core/commands.ts`): FeedPet, GiveWater, PetTouch, StartPlay, FinishPlay, PutToBed. Validated, simulated to now first, then applied. Unknown or malformed commands are dropped. 26 tests.
+- [x] 1F.2 (M) Effects, cooldowns, bond diminishing returns (100, 50, 0 and so on per type per local day), 30 minute play reward cooldown, refusals, and feed, water, and play waking a sleeping pet in one action (`docs/GAME_DESIGN.md` §4).
+- [x] 1F.3 (L) Toy-chase mini-game: pure logic (`src/core/toyChase.ts`), pointer input, toy and timer drawing, result band into FinishPlay. Touch classification for pet sessions (`src/core/touch.ts`).
+- [x] 1F.4 (M) Game controller (`src/game/controller.ts`) joining commands, brain, mini-game, and touch, with 15 tests. Verified by playing it in real Chrome: feed, water, play (10 catches, band 3), bed, tap to wake.
+- [x] 1F.5 (S) Temporary test bar (Feed, Water, Play, Bed) in `App.tsx`. Replaced by the real HUD and action bar in Part 1G.
 
 ## Part 1G: UI
 

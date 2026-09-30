@@ -43,6 +43,8 @@ export interface PetState {
   /** Owner-local "YYYY-MM-DD" of the last daily found item. */
   lastFoundDate: string | null;
   lastPlayRewardAt: number | null;
+  /** Set by StartPlay, cleared by FinishPlay. FinishPlay only counts after a StartPlay. */
+  playStartedAt: number | null;
   daily: DailyCounters;
 }
 

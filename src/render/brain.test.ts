@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { applyCommand } from '../core/commands';
 import type { AIWorld } from '../core/petAI';
 import { DAY, HOUR, T0, makePet } from '../core/testkit';
 import { createManualClock } from '../core/time';
@@ -10,7 +11,7 @@ import { ROOM } from './room';
 
 const WORLD: AIWorld = { foodInBowl: true, waterInBowl: true, hasToy: true, hasStealable: true, propNearby: false, pointerInRoom: false };
 
-function setup(pet: PetRecord, world: AIWorld = { ...WORLD }, eatingSatisfiesNeeds = false) {
+function setup(pet: PetRecord, world: AIWorld = { ...WORLD }) {
   const clock = createManualClock(pet.timestamps.lastSimulationTime);
   let current = pet;
   const events: HistoryEvent[] = [];
@@ -24,7 +25,7 @@ function setup(pet: PetRecord, world: AIWorld = { ...WORLD }, eatingSatisfiesNee
       react: () => undefined,
     },
   };
-  const brain = createBrain({ pet: { get: () => current, set: (p) => (current = p) }, clock, world, eatingSatisfiesNeeds, onEvents: (e) => events.push(...e) });
+  const brain = createBrain({ pet: { get: () => current, set: (p) => (current = p) }, clock, world, onEvents: (e) => events.push(...e) });
   let frame = 0;
   /** Run `frames` display frames of 16 ms, advancing game time by `gameMsPerFrame` each. */
   const run = (frames: number, gameMsPerFrame: number, each?: () => void): void => {
@@ -35,7 +36,21 @@ function setup(pet: PetRecord, world: AIWorld = { ...WORLD }, eatingSatisfiesNee
       each?.();
     }
   };
-  return { brain, scene, clock, run, events, base, pet: () => current, setPet: (p: PetRecord) => (current = p) };
+  /** Do what a player does: feed and water the pet whenever it gets hungry or thirsty. */
+  const care = (): void => {
+    const s = current.state;
+    if (s.hunger < 4000) {
+      current = applyCommand(current, { type: 'FeedPet', foodId: 'egg' }, clock.nowMs()).pet;
+      world.foodInBowl = true;
+      brain.request('eat');
+    }
+    if (s.hydration < 4000) {
+      current = applyCommand(current, { type: 'GiveWater' }, clock.nowMs()).pet;
+      world.waterInBowl = true;
+      brain.request('drink');
+    }
+  };
+  return { brain, scene, clock, run, care, world, events, base, pet: () => current, setPet: (p: PetRecord) => (current = p) };
 }
 
 describe('brain', () => {
@@ -98,13 +113,14 @@ describe('brain', () => {
   it('a high-mischief pet steals the sock again and again, at most every 12 hours, and logs it', () => {
     const t = setup(
       makePet({ id: 'thief', personality: { mischief: 95, curiosity: 50, affection: 50 }, state: { energy: 9000, happiness: 8000 } }),
-      { ...WORLD },
-      true, // meals restore hunger, otherwise a pet left alone for weeks is too hungry to scheme
     );
     const sockPositions = new Set<number>();
     // Game time runs about 300 times faster than screen time (5 game seconds per 16 ms frame):
     // 83 game hours pass in 60,000 frames while the pet still walks at its normal pace.
-    t.run(60_000, 5_000, () => sockPositions.add(Math.round(t.brain.sock.x)));
+    t.run(60_000, 5_000, () => {
+      sockPositions.add(Math.round(t.brain.sock.x));
+      t.care(); // a pet left to starve is too hungry to scheme, so the player keeps it fed
+    });
     const stolen = t.events.filter((e) => e.type === 'PET_STOLE_ITEM');
     expect(stolen.length).toBeGreaterThanOrEqual(3);
     for (let i = 1; i < stolen.length; i++) {

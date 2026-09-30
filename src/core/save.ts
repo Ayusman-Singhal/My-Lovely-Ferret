@@ -147,6 +147,7 @@ function checkPet(raw: unknown, p: string): void {
   timeOrNull(s['sleepStartedAt'], `${p}.state.sleepStartedAt`);
   timeOrNull(s['lastStoleAt'], `${p}.state.lastStoleAt`);
   timeOrNull(s['lastPlayRewardAt'], `${p}.state.lastPlayRewardAt`);
+  timeOrNull(s['playStartedAt'], `${p}.state.playStartedAt`);
   if (s['lastFoundDate'] !== null) str(s['lastFoundDate'], `${p}.state.lastFoundDate`);
   const daily = obj(s['daily'], `${p}.state.daily`);
   str(daily['date'], `${p}.state.daily.date`);

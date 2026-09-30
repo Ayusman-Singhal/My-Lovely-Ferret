@@ -37,3 +37,48 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* TEMPORARY test bar (Part 1F). The real HUD and action bar replace it in Part 1G. */
+.frame {
+  position: relative;
+}
+
+.testbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  padding: 8px 12px 12px;
+  background: #f6ecdce6;
+}
+
+.testmsg {
+  margin: 0 0 8px;
+  min-height: 1.3em;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.testbtns {
+  display: flex;
+  gap: 8px;
+}
+
+.testbtns button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #8a6244;
+  color: #f6ecdc;
+  font: inherit;
+}
+
+.testbtns button:disabled {
+  opacity: 0.5;
+}
+
+.frame {
+  user-select: none;
+  -webkit-user-select: none;
+}
