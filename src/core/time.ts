@@ -101,3 +101,14 @@ export function createSessionClock(readWallMs: () => number, readMonotonicMs: ()
     },
   };
 }
+
+/**
+ * A session clock that runs `speed` times faster than real time. For the dev panel and the
+ * preview page (`?speed=60` shows a day in 24 minutes), so time-based behavior can be watched
+ * without waiting. It is still the single time source: nothing patches Date (guide §25.7).
+ */
+export function createScaledClock(readWallMs: () => number, readMonotonicMs: () => number, speed: number): Clock {
+  const wallBase = readWallMs();
+  const monoBase = readMonotonicMs();
+  return { nowMs: () => wallBase + (readMonotonicMs() - monoBase) * speed };
+}

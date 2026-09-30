@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1D done (214 tests). Next: Part 1E, PetAI (autonomous behavior), which replaces the temporary demo brain. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/
+**Current status:** Phase 1, Parts 1A to 1E done (254 tests). Next: Part 1F, interactions and the toy-chase mini-game (commands feed, water, pet, play, put to bed). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Try ?debug=1 or ?speed=600 or ?pet=anything on the URL.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -151,9 +151,11 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 ## Part 1E: PetAI (autonomous behavior)
 
-- [ ] 1E.1 (M) Behavior state machine and integer utility weights from traits, needs, time of day, furniture.
-- [ ] 1E.2 (M) Personality-driven behavior differences, tested with different seeds.
-- [ ] 1E.3 (S) History events for memorable behavior.
+- [x] 1E.1 (M) Behavior scoring and weighted choice with integer utility weights from traits, needs, time of day, and the room (`src/core/petAI.ts`, 22 tests). Cooldowns, needs-first rule, dev `forceDecision` hook.
+- [x] 1E.2 (M) Personality shows in behavior: guarded by tests over 1000 decisions (steal 137 against 0, playful 219 against 145). Weights retuned after the first version showed no playful difference; see `docs/PET_BEHAVIOR.md` §3.
+- [x] 1E.3 (S) Steal is logged as a history event and starts the 12 hour cooldown (`completeBehavior`). Simulation steals and PetAI steals are kept separate so nothing is counted twice.
+- [x] 1E.4 (M) Render brain (`src/render/plan.ts`, `brain.ts`): turns decisions into walking and animation steps, keeps the simulation current while the app is open, moves the pet to the hammock to sleep and back up when it wakes, carries the sock. Temporary demo brain deleted. Preview options `?pet=`, `?speed=`, `?debug=1`.
+- [ ] 1E.5 (S) Leftover for Part 1F: the always-stocked bowls and `eatingSatisfiesNeeds` in `App.tsx` and `brain.ts` are temporary. Remove when FeedPet and GiveWater exist.
 
 ## Part 1F: Interactions and mini-game
 

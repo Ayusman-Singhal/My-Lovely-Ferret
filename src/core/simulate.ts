@@ -49,7 +49,16 @@ export function driftHappiness(happiness: number, hunger: number, hydration: num
   return clamp(happiness + delta, TUNING.floor, NEED_MAX);
 }
 
-export function simulate(record: PetRecord, nowMs: number): SimResult {
+export interface SimulateOptions {
+  /**
+   * Autonomous steals during the simulated steps (default true). The app turns this off for
+   * short gaps while it is open, because PetAI performs steals in front of the player then.
+   */
+  autonomousSteal?: boolean;
+}
+
+export function simulate(record: PetRecord, nowMs: number, options: SimulateOptions = {}): SimResult {
+  const autonomousSteal = options.autonomousSteal ?? true;
   const last = record.timestamps.lastSimulationTime;
 
   // The clock went backward: no time passes, and the pet re-anchors to the new time (guide §7.3).
@@ -138,7 +147,8 @@ export function simulate(record: PetRecord, nowMs: number): SimResult {
         events.push({ id: `PET_FOUND_ITEM-${t}`, t, type: 'PET_FOUND_ITEM', actor: 'pet', payload: { itemId: item.id } });
       }
 
-      if (lastStoleAt === null || t - lastStoleAt >= TUNING.events.stealCooldownMs) {
+      // Same rule as PetAI: only mischievous pets (docs/PET_BEHAVIOR.md §3), 12 hours apart.
+      if (autonomousSteal && mischief >= 50 && (lastStoleAt === null || t - lastStoleAt >= TUNING.events.stealCooldownMs)) {
         if (rng.int(TUNING.events.stealDivisor) < mischief) {
           lastStoleAt = t;
           const itemId = rng.pick(['sock', record.state.favoriteToy] as const);

@@ -98,7 +98,7 @@ Only memorable things (guide §7.7). Phase 1 catalog:
 | Event | When |
 |---|---|
 | `PET_SLEPT_LONG` | A continuous sleep of 6 hours or more ended. Payload: hours. |
-| `PET_STOLE_ITEM` | Autonomous steal during a wake burst (see `PET_BEHAVIOR.md`). Chance per awake step is `mischief / 20` percent, at most once per 12 hours. |
+| `PET_STOLE_ITEM` | Autonomous steal during time away (see `PET_BEHAVIOR.md`). Only pets with `mischief >= 50`. Chance per awake step is `mischief / 20` percent, at most once per 12 hours. While the app is open PetAI performs steals on screen instead, and the simulation's steals are off for gaps under 30 minutes. |
 | `PET_FOUND_ITEM` | Daily found item, once per local calendar date, at the first awake step of that date. |
 
 ## 4. Interactions

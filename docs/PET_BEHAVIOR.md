@@ -41,24 +41,28 @@ score(b) = base(b) + traitTerm(b) + needTerm(b) + timeTerm(b) + roomTerm(b)
 
 | Behavior | base | traitTerm | needTerm | timeTerm | roomTerm |
 |---|---|---|---|---|---|
-| `idle` | 30 | +20 when `affection` under 30 | +20 when `energy` under 3000 | +10 in the day class | none |
+| `idle` | 30 | +20 when `affection` under 30, plus `(100 - mischief) / 8` (calm pets settle) | +20 when `energy` under 3000 | +10 in the day class | none |
 | `wander` | 25 | `curiosity / 4` | none | -10 in the night class | none |
-| `sniff` | 15 | `curiosity / 3` | none | none | +10 when a prop is nearby |
+| `sniff` | 15 | `curiosity / 3` plus `(100 - mischief) / 10` | none | none | +10 when a prop is nearby |
 | `curious` | 5 | `curiosity / 2` | none | none | +20 when any prop is in the room |
 | `eat` | 0 | none | `(10000 - hunger) / 100` when hunger is below 6000 | none | requires food in the bowl |
 | `drink` | 0 | none | `(10000 - hydration) / 100` when hydration is below 6000 | none | requires water in the bowl |
-| `playful` | 5 | `mischief / 3` | `energy / 200` when happiness is at least 6000 | +10 in the nap and night wake bursts | none |
+| `playful` | 5 | `mischief` | `energy / 400` when happiness is at least 6000. Needs `energy >= 2500` | +10 in the nap and night wake bursts | none |
 | `steal` | 0 | `mischief / 2` when `mischief >= 50` | none | none | requires a stealable item and no steal in the last 12 hours |
 
 Rules on top of the table:
 
 - **High affection:** while the player's pointer is in the room and `affection >= 60`, add `affection / 3` to `wander` and move toward the last touch point. The pet sleeps near the player's last touch when it goes to sleep. (Guide §7.4.)
-- **Needs first:** if `hunger` or `hydration` is under 3000 and the matching bowl has content, the matching behavior gets +50. A pet never ignores an urgent need while the bowl is stocked.
-- **No back-to-back repeats** of `steal` or `playful`. Cooldown 3 decision ticks.
+- **Needs first:** if `hunger` or `hydration` is under 3000 and the matching bowl has content, the matching behavior gets +50, and `playful` and `steal` are switched off until it is fed. A pet never plays or schemes while urgently hungry with a stocked bowl.
+- **No back-to-back repeats** of `steal` or `playful`: at least 2 decisions between two of the same kind (`AI_COOLDOWN_TICKS = 2`). A 3 tick cooldown was tried first, and it flattened the personality difference (both a mischievous and a calm pet reached the cap).
 - **Sleep** is not scored here. The sleep rules from `GAME_DESIGN.md` run first each tick.
 - **Asleep:** PetAI does nothing except check the wake rule. The render loop stops (guide §4.4) until the pet wakes or the player touches it.
 
-Personality has to be visible. Test target for Part 1E: with two fixed seeds, one high-mischief (`mischief >= 80`) and one low (`mischief <= 20`), over 1000 simulated ticks the high one picks `steal` and `playful` clearly more often, and the low one picks `idle` and `sniff` more often.
+Personality has to be visible. Test target for Part 1E, met and guarded by tests: over 1000 decisions, a high-mischief pet (85) against a low one (15) steals far more (about 137 against 0), plays about 1.5 times as often (219 against 145), and idles and sniffs less (idle 146 against 213, sniff 163 against 189).
+
+**Tuning history (2026-09-30):** the first weights (`playful` = `5 + mischief / 3 + energy / 200`, cooldown 3) gave almost the same playful count for every pet, because the energy term was shared and the cooldown capped everyone. `steal` was distinct from the start because it needs `mischief >= 50`.
+
+**Steals have two sources, kept separate.** While the app is open, PetAI performs them on screen. The elapsed-time simulation (`simulate`) logs unseen steals for time away, with the same rules (`mischief >= 50`, 12 hours apart). The brain turns the simulation's steals off for gaps under 30 minutes, so nothing is counted twice.
 
 ## 4. Traits, favorites, coat: generated from the pet id
 

@@ -3,6 +3,7 @@ import { clamp, idiv, sign, toDisplay } from './fixed';
 import {
   DAY_MS,
   createManualClock,
+  createScaledClock,
   createSessionClock,
   floorDiv,
   hourClass,
@@ -158,5 +159,24 @@ describe('session clock (guide §7.3)', () => {
     r.state.mono += 2000;
     r.state.wall += 2000;
     expect(clock.resync()).toBe('same');
+  });
+});
+
+describe('scaled clock', () => {
+  it('runs at the given speed from the wall time it started at', () => {
+    const state = { wall: 5_000_000, mono: 100 };
+    const clock = createScaledClock(() => state.wall, () => state.mono, 60);
+    expect(clock.nowMs()).toBe(5_000_000);
+    state.mono += 1000; // one real second
+    expect(clock.nowMs()).toBe(5_060_000); // one game minute
+    state.wall -= 1e9; // the device clock changing later has no effect
+    expect(clock.nowMs()).toBe(5_060_000);
+  });
+
+  it('speed 1 follows real time', () => {
+    const state = { wall: 42, mono: 0 };
+    const clock = createScaledClock(() => state.wall, () => state.mono, 1);
+    state.mono = 250;
+    expect(clock.nowMs()).toBe(292);
   });
 });

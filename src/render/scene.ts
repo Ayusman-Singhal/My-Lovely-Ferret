@@ -20,6 +20,8 @@ export interface SceneOptions {
   seed: string;
   /** Called at the start of every frame, before drawing. The brain moves the pet here. */
   onFrame?: (nowMs: number, scene: Scene) => void;
+  /** Draw extra things (props) under the ferret, on the same canvas, every frame. */
+  onDraw?: (ctx: CanvasRenderingContext2D) => void;
   lowPower?: boolean;
 }
 
@@ -79,6 +81,7 @@ export function createScene(host: HTMLElement, options: SceneOptions): Scene {
     options.onFrame?.(nowMs, scene);
     const pose = animator.update(nowMs);
     pet.ctx.clearRect(0, 0, VIEW.width, VIEW.height);
+    options.onDraw?.(pet.ctx);
     drawFerret(pet.ctx, pose, colors, { x: scene.x, y: scene.y, facing: scene.facing, scale: PET_SCALE });
     return true; // the ferret is always at least breathing
   };
