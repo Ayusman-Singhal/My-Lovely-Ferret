@@ -9,7 +9,8 @@ import { preview } from 'vite';
 mkdirSync('shots', { recursive: true });
 const server = await preview({ logLevel: 'error', preview: { port: 5188, strictPort: true } });
 const url = 'http://localhost:5188/';
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+// Software WebGL flags: CI runners have no GPU, and the 3D pet needs a WebGL context.
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const context = await browser.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, acceptDownloads: true });
 const errors = [];
 const watch = (page) => {
