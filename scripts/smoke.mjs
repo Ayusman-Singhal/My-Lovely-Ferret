@@ -137,6 +137,11 @@ try {
   ok(file.format === 'ferret-backup' && typeof file.checksum === 'string', 'it is a Ferret backup with a checksum');
   ok(!text.includes('installId'), 'no installId inside');
   ok(file.save.pets[0].pet.name === 'Mochi', 'it holds the pet');
+  ok(file.schemaVersion === 2 && file.save.pets[0].collection !== undefined, 'the backup is schema 2 and has the gift collection');
+  await page.getByRole('button', { name: 'Gifts and collection' }).click();
+  await page.getByText('Found 0 of 14.').waitFor();
+  ok((await page.locator('.album li').count()) === 14, 'the album lists every gift, all still unknown on day one');
+  await page.getByRole('button', { name: 'Close' }).click(); // back to the menu
   await page.getByRole('button', { name: 'Close' }).click();
   await page.close();
 

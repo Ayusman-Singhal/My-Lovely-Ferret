@@ -23,15 +23,25 @@ export interface SimResult {
   asleepSteps: number;
 }
 
-/** Daily found items and their base weights (docs/PET_BEHAVIOR.md §7). Odd items favor curious pets. */
+/**
+ * Gifts the pet brings now and then, and how likely each is (docs/PET_BEHAVIOR.md §7). Common ones
+ * weigh 3, odd ones favor curious pets, rare ones weigh 1. The order is the order of the album.
+ */
 export const FOUND_ITEMS = [
-  { id: 'button', odd: false },
-  { id: 'bottle_cap', odd: false },
-  { id: 'hair_tie', odd: false },
-  { id: 'paper_scrap', odd: false },
-  { id: 'feather', odd: false },
-  { id: 'foil_ball', odd: true },
-  { id: 'single_earring', odd: true },
+  { id: 'button', tier: 'common' },
+  { id: 'bottle_cap', tier: 'common' },
+  { id: 'hair_tie', tier: 'common' },
+  { id: 'paper_scrap', tier: 'common' },
+  { id: 'feather', tier: 'common' },
+  { id: 'pebble', tier: 'common' },
+  { id: 'acorn', tier: 'common' },
+  { id: 'foil_ball', tier: 'odd' },
+  { id: 'single_earring', tier: 'odd' },
+  { id: 'ribbon', tier: 'odd' },
+  { id: 'old_key', tier: 'rare' },
+  { id: 'coin', tier: 'rare' },
+  { id: 'marble', tier: 'rare' },
+  { id: 'tiny_shell', tier: 'rare' },
 ] as const;
 
 /** Apply one step's change to a need. Decay stops at the floor, recovery stops at the max. */
@@ -87,6 +97,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
 
   let { hunger, hydration, energy, happiness } = record.state;
   let { sleepState, sleepStartedAt, lastStoleAt, lastFoundDate } = record.state;
+  let collection = record.collection;
   const events: HistoryEvent[] = [];
   let asleepSteps = 0;
 
@@ -143,13 +154,16 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
     // 4. Autonomous events, only while awake.
     if (sleepState === 'awake') {
       const date = localDate(t, tz);
-      if (date !== lastFoundDate) {
+      // A gift: at random, at most one per local date, so it never feels like a daily chore.
+      if (date !== lastFoundDate && rng.int(TUNING.events.giftDivisor) < TUNING.events.giftBase + idiv(curiosity * 3, 4)) {
         lastFoundDate = date;
         const oddWeight = 1 + idiv(curiosity, 25);
         const item = rng.pickWeighted(
           FOUND_ITEMS,
-          FOUND_ITEMS.map((entry) => (entry.odd ? oddWeight : 3)),
+          FOUND_ITEMS.map((entry) => (entry.tier === 'common' ? 3 : entry.tier === 'odd' ? oddWeight : 1)),
         );
+        const before = collection[item.id];
+        collection = { ...collection, [item.id]: { first: before?.first ?? t, count: (before?.count ?? 0) + 1 } };
         events.push({ id: `PET_FOUND_ITEM-${t}`, t, type: 'PET_FOUND_ITEM', actor: 'pet', payload: { itemId: item.id } });
       }
 
@@ -181,6 +195,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
         lastFoundDate,
         currentActivity: sleepState === 'asleep' ? 'sleep' : 'idle',
       },
+      collection,
       history,
       timestamps: { ...record.timestamps, lastSimulationTime: last + rawSteps * TUNING.stepMs },
     },

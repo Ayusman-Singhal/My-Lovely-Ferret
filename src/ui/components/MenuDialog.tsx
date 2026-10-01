@@ -12,6 +12,7 @@ interface MenuDialogProps {
   beforeExport(): Promise<void>;
   onAbout(): void;
   onFeedback(): void;
+  onCollection(): void;
   /** Developer tools are shown once unlocked (`?dev=1`, or 7 taps on the version line). */
   devUnlocked: boolean;
   onDev(): void;
@@ -20,7 +21,7 @@ interface MenuDialogProps {
 }
 
 /** Export and import a backup (guide §8). Backups never contain the installId. */
-export function MenuDialog({ petName, store, beforeExport, onAbout, onFeedback, devUnlocked, onDev, onUnlockDev, onClose }: MenuDialogProps) {
+export function MenuDialog({ petName, store, beforeExport, onAbout, onFeedback, onCollection, devUnlocked, onDev, onUnlockDev, onClose }: MenuDialogProps) {
   const versionTaps = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
@@ -69,6 +70,9 @@ export function MenuDialog({ petName, store, beforeExport, onAbout, onFeedback, 
       <div class="stack">
         <button type="button" onClick={onAbout}>
           {t('menu.about')}
+        </button>
+        <button type="button" onClick={onCollection}>
+          {t('menu.collection')}
         </button>
         <button type="button" onClick={onFeedback}>
           {t('menu.feedback')}

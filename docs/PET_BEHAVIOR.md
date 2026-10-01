@@ -114,17 +114,23 @@ Phase 1 events:
 | `PET_FED` | owner | First feed of the local day, or a favorite food | foodId |
 | `PET_PLAYED` | owner | A play session with band 1 or higher | band |
 | `PET_STOLE_ITEM` | pet | `steal` behavior ends | itemId |
-| `PET_FOUND_ITEM` | pet | Daily found item | itemId |
+| `PET_FOUND_ITEM` | pet | A gift the pet brought | itemId |
 
 Full starter catalog for later phases is in guide §7.7 (`PET_GROOMED`, `PET_DRESSED`, `ROOM_CLEANED`, `MILESTONE_REACHED`, `CARETAKER_ADDED`, `CARETAKER_REMOVED`, `TRANSFER_REQUESTED`, `TRANSFER_ACCEPTED`, `OWNERSHIP_TRANSFERRED`). Add them when their feature exists.
 
-## 7. Daily found item
+## 7. Gifts (Part 1L.4, replaces the daily found item of the first preview)
 
-Once per owner-local calendar date, at the first awake step of that date, the pet "brings" something. Chosen from a small list with the seeded RNG, weighted by traits (curiosity raises odds of odd items):
+Now and then the pet brings a gift, at random. On each awake step of an owner-local date that has had no gift yet, the chance is `(giftBase + curiosity * 3 / 4) / giftDivisor` (`TUNING.events`, 250 and 30000). Measured over 60 days that is a gift about every 4 days for a dull pet and every 2.4 days for a curious one, with no fixed rhythm and at most one per date. There is no schedule to miss and no streak. The first date, the adoption date, never has one.
 
-`button`, `bottle cap`, `hair tie`, `paper scrap`, `feather`, `foil ball`, `single earring`.
+The item is drawn with the seeded RNG from 14 items in three tiers (the order is the album order):
 
-In Phase 1 it is flavor only: a history event and a line in the welcome-back summary. In Phase 2 the item feeds the shinies economy (guide §7.8). No streak, no penalty for missing a day.
+| Tier | Weight | Items |
+|---|---|---|
+| common | 3 each | `button`, `bottle_cap`, `hair_tie`, `paper_scrap`, `feather`, `pebble`, `acorn` |
+| odd | `1 + curiosity / 25` each | `foil_ball`, `single_earring`, `ribbon` |
+| rare | 1 each | `old_key`, `coin`, `marble`, `tiny_shell` |
+
+Every gift is also written into the pet's `collection` (item id, first time found, count), which the album in the menu shows: found items with the first date and the count, unfound ones as a question mark with their tier. While the app is open the player sees "{name} brought you a gift" and the pet looks pleased; after time away the gifts are lines in the welcome-back summary. In Part 1L.5 a gift will also add shinies (guide §7.8).
 
 ## 8. Welcome-back summary rules
 

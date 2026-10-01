@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Command, CommandResult } from '../../core/commands';
 import { bumpInteraction, type SaveFile } from '../../core/save';
 import type { Clock, OffsetClock } from '../../core/time';
-import type { PetRecord } from '../../core/types';
+import type { HistoryEvent, PetRecord } from '../../core/types';
 import type { Game, PlayResult, RoomTouch } from '../../game/controller';
+import { giftIn } from '../../game/collection';
 import { interactionOf, nextHint } from '../../game/hints';
 import { announcements } from '../../game/needs';
 import { devRequested, pretendAway } from '../../game/devTools';
@@ -14,6 +15,7 @@ import type { SaveStore } from '../../platform/saveStore';
 import { downloadBackup } from '../../platform/web/download';
 import { isIosBrowserNotInstalled, readIosEnv, rememberDismissed, wasDismissed } from '../../platform/web/ios';
 import { AboutDialog } from '../components/AboutDialog';
+import { CollectionDialog } from '../components/CollectionDialog';
 import { ActionBar } from '../components/ActionBar';
 import { DevPanel } from '../components/DevPanel';
 import { FeedbackDialog } from '../components/FeedbackDialog';
@@ -59,7 +61,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   const [feedback, setFeedback] = useState('');
   const [live, setLive] = useState('');
   const [counters, setCounters] = useState(save.tester.interactionCounts);
-  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'dev'>('none');
+  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'collection' | 'dev'>('none');
   const [devUnlocked, setDevUnlocked] = useState(() => devRequested(window.location.search));
   const [iosNotice, setIosNotice] = useState(() => isIosBrowserNotInstalled(readIosEnv()) && !wasDismissed(safeLocalStorage()));
   const [welcomeOpen, setWelcomeOpen] = useState(welcome !== null);
@@ -145,6 +147,14 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   };
   const onRoomTouch = (kind: RoomTouch): void => setFeedback(t(`room.${kind}`, { name }));
 
+  // A gift arrives while the app is open: say so, and the pet is pleased.
+  const onEvents = (events: HistoryEvent[]): void => {
+    const gift = giftIn(events);
+    if (gift === null) return;
+    setFeedback(t('gift.found', { name, item: tDynamic(`item.${gift}`) }));
+    gameRef.current?.brain.react('happy');
+  };
+
   const onPlayEnd = (r: PlayResult): void => {
     const message = tDynamic(`play.band.${r.band}`);
     const noReward = r.result.outcome.ok && !r.result.outcome.rewarded ? ` ${t('play.noReward', { name })}` : '';
@@ -169,7 +179,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
         <Stage
           pet={initialPet}
           clock={clock}
-          options={{ onChange: refresh, onPetChange: refresh, onCommand, onPlayEnd, onTarget, onRoomTouch }}
+          options={{ onChange: refresh, onPetChange: refresh, onCommand, onPlayEnd, onTarget, onRoomTouch, onEvents }}
           onGame={(g) => {
             gameRef.current = g;
             refresh();
@@ -229,6 +239,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
           beforeExport={() => autosave.flush()}
           onAbout={() => setDialog('about')}
           onFeedback={() => setDialog('feedback')}
+          onCollection={() => setDialog('collection')}
           devUnlocked={devUnlocked}
           onDev={() => setDialog('dev')}
           onUnlockDev={() => setDevUnlocked(true)}
@@ -236,6 +247,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
         />
       )}
       {dialog === 'about' && <AboutDialog pet={pet} tester={saveRef.current.tester} nowMs={clock.nowMs()} onClose={() => setDialog('menu')} />}
+      {dialog === 'collection' && <CollectionDialog pet={pet} onClose={() => setDialog('menu')} />}
       {dialog === 'feedback' && <FeedbackDialog pet={pet} tester={saveRef.current.tester} nowMs={clock.nowMs()} onClose={() => setDialog('menu')} />}
       {dialog === 'dev' && game && (
         <DevPanel

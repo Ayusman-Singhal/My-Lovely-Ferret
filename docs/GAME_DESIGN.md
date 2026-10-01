@@ -99,7 +99,7 @@ Only memorable things (guide §7.7). Phase 1 catalog:
 |---|---|
 | `PET_SLEPT_LONG` | A continuous sleep of 6 hours or more ended. Payload: hours. |
 | `PET_STOLE_ITEM` | Autonomous steal during time away (see `PET_BEHAVIOR.md`). Only pets with `mischief >= 50`. Chance per awake step is `mischief / 20` percent, at most once per 12 hours. While the app is open PetAI performs steals on screen instead, and the simulation's steals are off for gaps under 30 minutes. |
-| `PET_FOUND_ITEM` | Daily found item, once per local calendar date, at the first awake step of that date. |
+| `PET_FOUND_ITEM` | A gift, now and then at random (about every 2 to 4 days), at most one per local calendar date. Also recorded in the pet's `collection`. See `PET_BEHAVIOR.md` §7. |
 
 ## 4. Interactions
 
@@ -151,7 +151,7 @@ First matching rule wins. All thresholds are hundredths.
 
 ## 6. Core loop (guide §7.8)
 
-A session is 1 to 3 minutes: open, read the "what happened" summary, care for the one or two needs that are low, play the mini-game once, watch the pet. A daily found item gives a reason to return. **No timers gate care, no streak penalties, no punishment for skipping days.** No notifications in the web build.
+A session is 1 to 3 minutes: open, read the "what happened" summary, care for the one or two needs that are low, play the mini-game once, watch the pet. An occasional gift and the album of what has been found give a reason to return. **No timers gate care, no streak penalties, no punishment for skipping days.** No notifications in the web build.
 
 ## 7. Mini-game: toy chase (guide §7.8)
 

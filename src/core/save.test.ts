@@ -55,7 +55,8 @@ describe('validateSave', () => {
   });
 
   it('rejects a wrong schema version', () => {
-    expect(validateSave({ ...makeSave(), schemaVersion: 2 })).toMatch(/schemaVersion/);
+    expect(validateSave({ ...makeSave(), schemaVersion: 1 })).toMatch(/schemaVersion/);
+    expect(validateSave({ ...makeSave(), schemaVersion: 3 })).toMatch(/schemaVersion/);
   });
 
   it('rejects out-of-range and non-integer needs', () => {
@@ -209,5 +210,62 @@ describe('backup files', () => {
 
   it('names the file by UTC date', () => {
     expect(backupFileName(Date.UTC(2026, 9, 1, 23, 59, 59))).toBe('ferret-backup-20261001.json');
+  });
+});
+
+describe('the v1 to v2 migration (Part 1L.4: the collection)', () => {
+  /** A save as the first preview wrote it: no `collection`, gifts only in the history. */
+  function v1Save(): Record<string, unknown> {
+    const save = clone(makeSave(['old-a', 'old-b'])) as unknown as Record<string, unknown>;
+    const pets = save['pets'] as Array<Record<string, unknown>>;
+    for (const p of pets) delete p['collection'];
+    const found = (id: string, t: number, item: string) => ({ id, t, type: 'PET_FOUND_ITEM', actor: 'pet', payload: { itemId: item } });
+    (pets[0] as Record<string, unknown>)['history'] = [
+      found('f1', T0 + 3, 'button'),
+      { id: 'x', t: T0 + 4, type: 'PET_STOLE_ITEM', actor: 'pet', payload: { itemId: 'sock' } },
+      found('f2', T0 + 1, 'feather'),
+      found('f3', T0 + 9, 'button'),
+    ];
+    save['schemaVersion'] = 1;
+    return save;
+  }
+
+  it('gives each pet an album built from the gifts in its history, and the result is a valid v2 save', () => {
+    const result = migrate(v1Save());
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save['schemaVersion']).toBe(2);
+    expect(validateSave(result.save)).toBeNull();
+    const pets = result.save['pets'] as Array<{ collection: Record<string, { first: number; count: number }> }>;
+    expect(pets[0]?.collection).toEqual({ button: { first: T0 + 3, count: 2 }, feather: { first: T0 + 1, count: 1 } });
+    expect(pets[1]?.collection).toEqual({});
+  });
+
+  it('does not change the old save it was given', () => {
+    const input = v1Save();
+    const before = JSON.stringify(input);
+    migrate(input);
+    expect(JSON.stringify(input)).toBe(before);
+  });
+
+  it('a v1 backup file imports and ends up as a valid v2 save', () => {
+    const v1 = v1Save();
+    const body = { ...v1 };
+    delete body['installId'];
+    delete body['schemaVersion'];
+    const file = buildBackup(makeSave(), T0);
+    const parsed = JSON.parse(file) as Record<string, unknown>;
+    parsed['schemaVersion'] = 1;
+    parsed['save'] = body;
+    // The checksum covers the body: recompute it the way buildBackup does.
+    parsed['checksum'] = checksum(canonicalJson(body));
+    const result = parseBackup(JSON.stringify(parsed));
+    expect(result.ok, JSON.stringify(result)).toBe(true);
+  });
+
+  it('rejects a collection entry with a bad count', () => {
+    const s = clone(makeSave());
+    (s.pets[0] as unknown as { collection: Record<string, unknown> }).collection = { button: { first: T0, count: 0 } };
+    expect(validateSave(s)).toMatch(/count/);
   });
 });

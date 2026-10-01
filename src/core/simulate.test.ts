@@ -373,13 +373,9 @@ describe('simulate: determinism and chunking', () => {
       {
         "history": [
           "PET_ADOPTED@0",
-          "PET_FOUND_ITEM@56400000",
-          "PET_FOUND_ITEM@144000000",
-          "PET_FOUND_ITEM@229200000",
-          "PET_FOUND_ITEM@313200000",
-          "PET_FOUND_ITEM@414600000",
-          "PET_FOUND_ITEM@489600000",
-          "PET_FOUND_ITEM@577200000",
+          "PET_FOUND_ITEM@98400000",
+          "PET_FOUND_ITEM@437400000",
+          "PET_FOUND_ITEM@526800000",
         ],
         "needs": [
           1000,
@@ -394,17 +390,63 @@ describe('simulate: determinism and chunking', () => {
 });
 
 describe('simulate: memorable events', () => {
-  it('finds at most one item per owner-local date, never on the adoption date', () => {
+  it('brings a gift at random, at most one per owner-local date, never on the adoption date', () => {
     const pet = makePet({ id: 'finder', tzOffsetMin: 330 });
-    const { events } = simulate(pet, T0 + 20 * DAY);
+    const { events, pet: after } = simulate(pet, T0 + 60 * DAY);
     const found = events.filter((e) => e.type === 'PET_FOUND_ITEM');
     const dates = found.map((e) => localDate(e.t, 330));
     expect(new Set(dates).size).toBe(dates.length);
     expect(dates).not.toContain(localDate(T0, 330));
-    expect(found.length).toBeGreaterThanOrEqual(18); // an awake step exists on almost every date
+    // Now and then, not daily: about one every 2 to 4 days, so far fewer than 60 and more than a few.
+    expect(found.length).toBeGreaterThan(6);
+    expect(found.length).toBeLessThan(40);
     for (const e of found) {
       expect(FOUND_ITEMS.map((f) => f.id)).toContain(e.payload['itemId']);
     }
+    // The album follows: every gift counted, first time kept.
+    const total = Object.values(after.collection).reduce((sum, c) => sum + c.count, 0);
+    expect(total).toBe(found.length);
+    for (const [id, entry] of Object.entries(after.collection)) {
+      const first = found.find((e) => e.payload['itemId'] === id) as { t: number };
+      expect(entry.first).toBe(first.t);
+    }
+  });
+
+  it('gifts come on average every 2 to 4 days, curious pets sooner, and with no fixed rhythm', () => {
+    const gaps = (curiosity: number): number => {
+      let gifts = 0;
+      for (let i = 0; i < 30; i++) {
+        const r = simulate(makePet({ id: `rate-${curiosity}-${i}`, personality: { curiosity } }), T0 + 60 * DAY);
+        gifts += r.events.filter((e) => e.type === 'PET_FOUND_ITEM').length;
+      }
+      return (60 * 30) / gifts;
+    };
+    const dull = gaps(0);
+    const curious = gaps(100);
+    expect(dull).toBeGreaterThan(2.5);
+    expect(dull).toBeLessThan(5);
+    expect(curious).toBeGreaterThan(1.8);
+    expect(curious).toBeLessThan(3.2);
+    expect(curious).toBeLessThan(dull);
+    // Not on a schedule: the gaps between gifts of one pet vary.
+    const { events } = simulate(makePet({ id: 'rhythm' }), T0 + 90 * DAY);
+    const times = events.filter((e) => e.type === 'PET_FOUND_ITEM').map((e) => e.t);
+    const differences = new Set(times.slice(1).map((t, i) => Math.round((t - (times[i] as number)) / DAY)));
+    expect(differences.size).toBeGreaterThan(2);
+  });
+
+  it('rare gifts exist but are rarer than common ones', () => {
+    const counts = { common: 0, odd: 0, rare: 0 };
+    for (let i = 0; i < 60; i++) {
+      const r = simulate(makePet({ id: `tier-${i}`, personality: { curiosity: 50 } }), T0 + 60 * DAY);
+      for (const e of r.events) {
+        if (e.type !== 'PET_FOUND_ITEM') continue;
+        const item = FOUND_ITEMS.find((f) => f.id === e.payload['itemId']);
+        if (item) counts[item.tier]++;
+      }
+    }
+    expect(counts.rare).toBeGreaterThan(0);
+    expect(counts.common).toBeGreaterThan(counts.rare);
   });
 
   it('a high-mischief pet steals, at most once per 12 hours; a low-mischief pet steals far less', () => {

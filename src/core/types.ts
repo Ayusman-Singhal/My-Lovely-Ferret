@@ -65,6 +65,8 @@ export interface PetRecord {
   personality: Personality;
   state: PetState;
   inventory: { shinies: number; items: string[] };
+  /** Gifts the pet has brought, by item id: when first found and how many times (Part 1L.4). */
+  collection: Record<string, { first: number; count: number }>;
   home: { furniture: string[]; mess: number };
   ownership: {
     role: 'owner';

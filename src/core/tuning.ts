@@ -48,6 +48,13 @@ export const TUNING = {
     /** Autonomous steal: chance per awake step is mischief / stealDivisor (integer draw). */
     stealDivisor: 2000,
     stealCooldownMs: 12 * 3_600_000,
+    /**
+     * Gifts (Part 1L.4): on each awake step of a local date that has had none yet, the chance is
+     * (giftBase + curiosity * 3 / 4) / giftDivisor. Measured over 60 days: a gift every 4 days for a dull pet
+     * down to every 2.4 days for a curious one, at random, never on a schedule.
+     */
+    giftBase: 250,
+    giftDivisor: 30000,
   },
 
   history: { maxEvents: 500 },

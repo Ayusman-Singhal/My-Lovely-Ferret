@@ -8,7 +8,7 @@ import { localDate } from './time';
 import { TUNING } from './tuning';
 import type { PetRecord } from './types';
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 export const MAX_PETS = 2; // guide Open Decision 11
 
 export interface Settings {
@@ -169,6 +169,12 @@ function checkPet(raw: unknown, p: string): void {
   const inv = obj(r['inventory'], `${p}.inventory`);
   int(inv['shinies'], `${p}.inventory.shinies`, 0, 1_000_000_000);
   arr(inv['items'], `${p}.inventory.items`, 10_000);
+  const collection = obj(r['collection'], `${p}.collection`);
+  for (const [id, entry] of Object.entries(collection)) {
+    const e = obj(entry, `${p}.collection.${id}`);
+    time(e['first'], `${p}.collection.${id}.first`);
+    int(e['count'], `${p}.collection.${id}.count`, 1, 1_000_000);
+  }
   const home = obj(r['home'], `${p}.home`);
   arr(home['furniture'], `${p}.home.furniture`, 1000);
   int(home['mess'], `${p}.home.mess`, 0, 100);
@@ -248,9 +254,34 @@ export function validateSave(value: unknown): string | null {
 
 // -------------------------------------------------------------- migrations
 
-/** migrations[n] turns a version-n save into a version-(n+1) save. Empty until schema v2 exists. */
+/** migrations[n] turns a version-n save into a version-(n+1) save. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {};
+
+/**
+ * v1 to v2 (Part 1L.4): each pet gets a `collection`, the gifts it has brought. A v1 pet's earlier
+ * gifts are in its history, so the album starts with them (the history keeps the last 500 events, so
+ * a very old gift may be missing; nothing is invented).
+ */
+export const migrateV1toV2: Migration = (save) => {
+  const pets = Array.isArray(save['pets']) ? (save['pets'] as Array<Record<string, unknown>>) : [];
+  return {
+    ...save,
+    pets: pets.map((pet) => {
+      const collection: Record<string, { first: number; count: number }> = {};
+      const history = Array.isArray(pet['history']) ? (pet['history'] as Array<Record<string, unknown>>) : [];
+      for (const e of history) {
+        const payload = isObj(e['payload']) ? e['payload'] : {};
+        const id = payload['itemId'];
+        if (e['type'] !== 'PET_FOUND_ITEM' || typeof id !== 'string' || typeof e['t'] !== 'number') continue;
+        const had = collection[id];
+        collection[id] = { first: had ? Math.min(had.first, e['t']) : e['t'], count: (had?.count ?? 0) + 1 };
+      }
+      return { ...pet, collection };
+    }),
+  };
+};
+
+export const MIGRATIONS: Readonly<Record<number, Migration>> = { 1: migrateV1toV2 };
 
 export type MigrateResult =
   | { ok: true; save: Record<string, unknown> }
