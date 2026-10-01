@@ -20,6 +20,8 @@ Everything needed to turn the blocky ferret model into the animated pet in the g
 | `clips.json` | Machine-readable clip list the game and its tests read | Never edit by hand without telling Claude |
 | `source/` | Your `.blend` files and the downloaded original model | Working files |
 | `export/` | Raw `.glb` exports before Claude optimizes them | After export |
+| `scripts/` | Blender Python: `build_rig.py` (v1 rig), `upgrade_rig_v2.py` (spine and knees), `animate.py` (13 clips), `render_previews.py`, `export_glb.py`, `run_all.py` (all three), `fix_texture.py`, `restore_backup.py`. QA renders in `scripts/qa/` | To change a clip: edit `animate.py`, then run `run_all.py` |
+| `previews/` | Animated GIF of every clip, and `all_clips.gif` with all 13 side by side | To review motion without Blender |
 
 The final game files go to `public/models/` (Claude puts them there). Do not put anything in `public/` yourself.
 
@@ -35,15 +37,17 @@ Plus the four coat textures (`coat_sable.png`, `coat_cinnamon.png`, `coat_albino
 
 ## Checklist
 
+Steps 1 to 7 were done on 2026-10-01 by script in Blender 5.2 (see `scripts/`). Rig v2 (bendable spine, knees) and the v2 clips replaced the first pass the same day. Animated previews are in `previews/`. To change a clip, edit `animate.py` and run `run_all.py` in Blender's Python console.
+
 Tick these as you go. Each line is a stop point where you can send Claude the file.
 
-- [ ] 1. Account on Sketchfab (free), download the model, save it to `source/`. (`BLENDER_GUIDE.md` §1)
-- [ ] 2. Import to Blender, fix orientation, scale, origin, and parts. (§2 to §3)
-- [ ] 3. Build the armature with the exact bone names. (§4)
-- [ ] 4. Make the rest pose and check that bones move the right boxes. (§5)
-- [ ] 5. Animate the loops: `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`. (§6, `CLIPS.md`)
-- [ ] 6. Animate the one-shots: `happy`, `annoyed`, `surprise`, `blink`. (§6)
-- [ ] 7. Export `ferret.glb` and open it in the web viewer to check the clips. (§7 to §8)
+- [x] 1. Account on Sketchfab (free), download the model, save it to `source/`. (`BLENDER_GUIDE.md` §1)
+- [x] 2. Import to Blender, fix orientation, scale, origin, and parts. (§2 to §3)
+- [x] 3. Build the armature with the exact bone names. (§4)
+- [x] 4. Make the rest pose and check that bones move the right boxes. (§5)
+- [x] 5. Animate the loops: `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`. (§6, `CLIPS.md`)
+- [x] 6. Animate the one-shots: `happy`, `annoyed`, `surprise`, `blink`. (§6)
+- [x] 7. Export `ferret.glb` and open it in the web viewer to check the clips. (§7 to §8)
 - [ ] 8. Paint the three other coats in the texture. (§9)
 - [ ] 9. Send Claude the `.glb`. Claude runs the checks, optimizes it, and wires it in.
 

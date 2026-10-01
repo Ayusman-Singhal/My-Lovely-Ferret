@@ -1,0 +1,631 @@
+{
+ "blender": "5.2.1 LTS",
+ "file": "D:\\The-Game\\animation\\Ferret.blend",
+ "fps": 24,
+ "fps_base": 1.0,
+ "unit_system": "METRIC",
+ "unit_scale": 1.0,
+ "mode": "OBJECT",
+ "objects": [
+  {
+   "name": "cube",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    0.0781,
+    0.1671,
+    0.0109
+   ],
+   "world_max": [
+    0.2031,
+    0.4211,
+    0.3057
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_0",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.001",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.2031,
+    0.1489,
+    0.0019
+   ],
+   "world_max": [
+    -0.0781,
+    0.4178,
+    0.3046
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_1",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.002",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.2031,
+    -0.4209,
+    -0.0263
+   ],
+   "world_max": [
+    -0.0781,
+    -0.1454,
+    0.2795
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_2",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.003",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    0.0781,
+    -0.4319,
+    -0.0027
+   ],
+   "world_max": [
+    0.2031,
+    -0.1502,
+    0.3057
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_3",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.004",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.1875,
+    -0.4375,
+    0.1875
+   ],
+   "world_max": [
+    0.1875,
+    0.4375,
+    0.4375
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_4",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.005",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.125,
+    -0.7789,
+    0.2408
+   ],
+   "world_max": [
+    0.125,
+    -0.3031,
+    0.5956
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_5",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.006",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.125,
+    0.2541,
+    0.1884
+   ],
+   "world_max": [
+    0.125,
+    0.6743,
+    0.5137
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_6",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.007",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0312
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.261,
+    0.6062,
+    0.2138
+   ],
+   "world_max": [
+    0.2241,
+    0.9812,
+    0.5975
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_7",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.008",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.0999,
+    0.9812,
+    0.2359
+   ],
+   "world_max": [
+    0.1065,
+    1.0438,
+    0.3916
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_8",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.009",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -0.3059,
+    0.8125,
+    0.5042
+   ],
+   "world_max": [
+    -0.161,
+    0.875,
+    0.6491
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_9",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "cube.010",
+   "type": "MESH",
+   "parent": "Node_11",
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    0.0634,
+    0.8125,
+    0.5694
+   ],
+   "world_max": [
+    0.2083,
+    0.875,
+    0.7142
+   ],
+   "verts": 24,
+   "polys": 12,
+   "mesh_users": 1,
+   "mesh_name": "Mesh_10",
+   "materials": [
+    "Material_0"
+   ],
+   "uv_layers": [
+    "UVMap"
+   ]
+  },
+  {
+   "name": "Node_11",
+   "type": "EMPTY",
+   "parent": null,
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true
+  },
+  {
+   "name": "Plane",
+   "type": "MESH",
+   "parent": null,
+   "parent_type": "OBJECT",
+   "parent_bone": "",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "rot": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    10.0,
+    10.0,
+    10.0
+   ],
+   "collections": [
+    "Collection"
+   ],
+   "in_view_layer": true,
+   "world_min": [
+    -10.0,
+    -10.0,
+    0.0
+   ],
+   "world_max": [
+    10.0,
+    10.0,
+    0.0
+   ],
+   "verts": 4,
+   "polys": 1,
+   "mesh_users": 1,
+   "mesh_name": "Plane",
+   "materials": [],
+   "uv_layers": [
+    "UVMap"
+   ]
+  }
+ ],
+ "actions": [],
+ "materials": [
+  "Material",
+  "Material_0"
+ ],
+ "images": [
+  [
+   "Image_0",
+   [
+    64,
+    64
+   ],
+   ""
+  ],
+  [
+   "Render Result",
+   [
+    0,
+    0
+   ],
+   ""
+  ],
+  [
+   "Viewer Node",
+   [
+    256,
+    256
+   ],
+   ""
+  ]
+ ]
+}

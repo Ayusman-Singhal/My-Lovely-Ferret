@@ -14,28 +14,32 @@ The game finds things by **name**. If a name is wrong, that part stays frozen. N
 | Left and right | The animal's **left side is +X** (when the nose points to -Y). `legFL` is the front leg on the +X side |
 | Origin | The object origin of everything sits at the **ground, centered between the four feet**. Feet touch Z = 0 |
 | Rotation and scale | Applied (`Ctrl+A`, Rotation & Scale) on every mesh before rigging. Armature object at rotation 0 and scale 1 |
+| Bone roll | Every bone's local X axis lies along world X (pointing + or -), so "nod" is the same rotation axis on every bone. Forward and backward bones (`body`, `head`, `jaw`, `nose`, `eyeL`, `eyeR`, `carry`, `tail1`, `tail2`): Recalculate Roll with **Global +Z**. Up and down bones (`root`, legs, ears): **Global -Y**. Then each bone's vertical axis is local Z for forward bones, so blinks scale `eyeL` and `eyeR` on local Z. See `BLENDER_GUIDE.md` §4.4 |
 | Side view for animating | `Ctrl+Numpad 3` (Left view). The nose points to the right of the screen |
 
 ## 2. Bones
 
-16 required bones. All are plain bones in one armature named `Armature` (object) with the armature data named `ferret`. One bone per body part. Each box of the model belongs to exactly one bone.
+22 bones (rig v2, 2026-10-01): the original 16, plus `torso` (hips box, so scale never squashes the children), `chest` (bendable spine) and four paw bones (knees). All are plain bones in one armature named `Armature` (object) with the armature data named `ferret`. One bone per body part. Each box of the model belongs to exactly one bone.
 
 | Bone | Parent | Moves | Pivot (joint) |
 |---|---|---|---|
 | `root` | none | Whole pet. Not animated by clips (the game moves the pet). Stays at the origin | Ground, between the feet |
-| `body` | `root` | Breathing (scale), hops, squash, lean, curl for sleep | Center of the torso, a little above the hips |
-| `head` | `body` | Nod, tilt, look. Includes the snout box | Neck joint, where the head meets the body |
+| `body` | `root` | Hops, bob, lean, sway, lowering for sleep (location and rotation only, no scale) | Center of the torso, a little above the hips |
+| `torso` | `body` | Holds only the torso box. All squash, stretch and breathing scale goes here, so the head, legs and tail are never squashed with it | Bottom centre of the torso box |
+| `chest` | `body` | Front half of the torso. Bends against the hips for walk wiggle, gallop flex and the sleep curl. Parent of `head`, `legFL`, `legFR` | Middle of the torso |
+| `head` | `chest` | Nod, tilt, look. Includes the snout box | Neck joint, where the head meets the body |
 | `jaw` | `head` | Opens for eat, drink, pant | Hinge at the back of the mouth |
 | `nose` | `head` | Small twitch (scale and a tiny move) | Center of the nose box |
 | `earL`, `earR` | `head` | Perk, flatten, twitch | Base of each ear, at the head |
 | `eyeL`, `eyeR` | `head` | Scale on the vertical axis to blink, squint, widen | Center of each eye box |
 | `tail1` | `body` | Sway, raise, curl | Where the tail meets the hips |
 | `tail2` | `tail1` | Follows with delay (offset the timing a few frames) | Joint between the two tail boxes |
-| `legFL`, `legFR` | `body` | Swing forward and back | Top of the leg, at the shoulder |
-| `legBL`, `legBR` | `body` | Swing forward and back | Top of the leg, at the hip |
+| `legFL`, `legFR` | `chest` | Upper front leg: swing forward and back | Top of the leg, at the shoulder |
+| `legBL`, `legBR` | `body` | Upper hind leg: swing forward and back | Top of the leg, at the hip |
+| `pawFL`, `pawFR`, `pawBL`, `pawBR` | matching `leg` | Lower leg and paw. Front paws fold back, hind paws fold forward | Knee, 47% up the leg |
 | `carry` | `head` | Nothing moves it. The game attaches the carried sock to it | At the mouth, slightly in front of the jaw. A bone of length about 0.02 m |
 
-Optional (only if the torso is two boxes): `chest` with parent `body`. Then `head` and `legFL`, `legFR` use `chest` as parent. Tell Claude if you add it so the arching can be used.
+`chest` was optional in v1. Rig v2 splits the torso box in two (`scripts/upgrade_rig_v2.py`), so `chest` is now used, with `head`, `legFL`, `legFR` as its children. Future pets without a spine bend can leave `chest` and the paw bones unanimated.
 
 **Tail:** if the model's tail is one box, still make `tail1` and `tail2` and split the box in two, or put the second bone on the tail tip box. Two segments make the sway read as soft.
 
@@ -43,7 +47,7 @@ Optional (only if the torso is two boxes): `chest` with parent `body`. Then `hea
 
 ## 3. How boxes attach (no skinning needed)
 
-A blocky model does not bend. Each box simply follows its bone. In Blender, for each box: select the box, then the armature (active), `Ctrl+P`, **Bone**, and pick the bone in Pose mode. See `BLENDER_GUIDE.md` §4.5. This exports as nodes that follow joints, with no skin weights to paint, and is the smallest and fastest form in three.js.
+A blocky model does not bend. Each box simply follows its bone. In Blender, for each box: select the box, `Shift`-click the armature, switch to Pose mode, click the bone so it is active, then `Ctrl+P`, **Bone**. (`Ctrl+P > Bone` uses the active bone. It does not show a list.) See `BLENDER_GUIDE.md` §4.5. This exports as nodes that follow joints, with no skin weights to paint, and is the smallest and fastest form in three.js.
 
 If your export shows a box not following its bone, use the fallback in `BLENDER_GUIDE.md` §10.
 
@@ -55,7 +59,7 @@ The pose the game shows before any clip plays. Standing, relaxed, nose forward:
 - Head level, ears upright and slightly forward, tail low and extended behind, jaw closed, eyes fully open (scale 1.0).
 - Every bone's rotation 0, scale 1 (the armature's rest position **is** the rest pose).
 
-Every one-shot clip starts and ends on this pose.
+Every one-shot clip starts and ends on this pose. The game plays one-shots **additively**: it adds only their difference from this pose on top of the running loop. So this pose is the zero point for every reaction clip, and changing it later changes how every reaction looks.
 
 ## 5. Rotation conventions used in `CLIPS.md`
 
@@ -76,7 +80,7 @@ Numbers in `CLIPS.md` are in degrees and in percent of body size. They come from
 
 | Limit | Value |
 |---|---|
-| Bones | 16 required, at most 24 |
+| Bones | 22 in rig v2, at most 24 |
 | Triangles | At most about 500 for the whole pet (the original is 132) |
 | Materials | 1 |
 | Texture | One 64 by 64 PNG at most. Nearest-neighbor filtering is used in game, so keep it crisp pixel art |

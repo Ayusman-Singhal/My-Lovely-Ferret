@@ -28,15 +28,16 @@ Do these in order. Check each against `RIG_SPEC.md` §1.
 
 ### 3.1 Count the parts
 
-Write down which boxes you have: body, head, snout, ears, eyes, nose, tail, four legs, feet. If something is missing (for example, no separate ears or eyes), model small boxes for them now (`Shift+A > Mesh > Cube`, scale it, move it). Boxes of about 12 triangles each are fine.
+Write down which boxes you have: body, head, snout, ears, eyes, nose, tail, four legs, feet. Expect gaps: the Sketchfab page lists 88 vertices and 132 triangles (checked 2026-10-01), which is exactly **11 boxes**. So the eyes and jaw are almost certainly painted on, not separate boxes, and the tail is probably one box. Plan to add about 5 boxes: `m_eyeL`, `m_eyeR`, a lower-jaw box, and maybe a nose box and a second tail box. If something is missing (for example, no separate ears or eyes), model small boxes for them now (`Shift+A > Mesh > Cube`, scale it, move it). Boxes of about 12 triangles each are fine.
 
 ### 3.2 Fix orientation and size
 
 1. Press `Numpad 1` (Front view). The ferret should **look at you** (the nose points toward you, which is Blender -Y). If it faces another way, select everything (`A`), press `R`, `Z`, and the angle (for example `90` or `180`), `Enter`.
 2. Length check: `N` opens the sidebar. In the Item tab, Dimensions shows the size of the selected object. Select all and look at the combined size, or measure with the ruler. Nose to tail should be about 0.5 m. If not, select all, scale (`S`), then continue.
-3. **Apply transforms.** Select all meshes, `Ctrl+A > All Transforms` (or Rotation & Scale). Skip empties.
-4. Feet on the ground: in Side view (`Ctrl+Numpad 3`), the lowest point of the feet must sit at Z = 0. Select all, `G`, `Z`, move. If needed, set the 3D cursor to the world origin (`Shift+C`) and use that as reference.
-5. Centered between the feet: in Top view (`Numpad 7`), the middle of the four feet should be at X = 0, Y = 0.
+3. Feet on the ground: in Side view (`Ctrl+Numpad 3`), the lowest point of the feet must sit at Z = 0. Select all, `G`, `Z`, move. If needed, set the 3D cursor to the world origin (`Shift+C`) and use that as reference.
+4. Centered between the feet: in Top view (`Numpad 7`), the middle of the four feet should be at X = 0, Y = 0.
+
+Do **not** apply transforms yet. The boxes are still children of the imported empties, so applying now would not stick: clearing the parents in §3.3 puts the parents' rotation and scale back onto every box. Applying comes at the end of §3.3.
 
 ### 3.3 Flatten the hierarchy
 
@@ -45,8 +46,9 @@ Blockbench groups arrive as empties. You do not need them after rigging.
 1. Select all the meshes (`Select > Select All by Type > Mesh`).
 2. `Alt+P > Clear and Keep Transformation` removes the empty parents without moving anything.
 3. Delete the empty objects (`Select > Select All by Type > Empty`, `X`).
-4. Optional: join boxes that will share one bone, for example head box and snout box. Select them (the box you want as the main one last), `Ctrl+J`. Joined boxes are one object, less to manage. Do not join boxes from different bones.
-5. Rename every mesh object by body part: `m_body`, `m_head`, `m_snout`, `m_earL`, `m_earR`, `m_eyeL`, `m_eyeR`, `m_nose`, `m_tail1`, `m_tail2`, `m_legFL`, `m_legFR`, `m_legBL`, `m_legBR`. Double click the name in the Outliner, or `F2`.
+4. **Apply transforms.** Select all meshes, `Ctrl+A > All Transforms`. Every box now has location 0, rotation 0, scale 1, and its origin at the world origin (the ground between the feet, as `RIG_SPEC.md` §1 asks). If Blender says it cannot apply to a multi user mesh, the importer made some boxes share one mesh (often the legs). Fix it with `Object > Relations > Make Single User > Object & Data`, then apply again. Check: `N` panel, Item tab, every box shows Rotation 0 and Scale 1.
+5. Optional: join boxes that will share one bone, for example head box and snout box. Select them (the box you want as the main one last), `Ctrl+J`. Joined boxes are one object, less to manage. Do not join boxes from different bones.
+6. Rename every mesh object by body part: `m_body`, `m_head`, `m_snout`, `m_earL`, `m_earR`, `m_eyeL`, `m_eyeR`, `m_nose`, `m_tail1`, `m_tail2`, `m_legFL`, `m_legFR`, `m_legBL`, `m_legBR`. Double click the name in the Outliner, or `F2`.
 
 ### 3.4 One material, one texture
 
@@ -71,12 +73,12 @@ For each bone: select the first bone, then extrude with `E` and move, or duplica
 2. `body`: from the center of the torso, pointing toward the nose.
 3. `head`: from the neck joint, pointing forward through the head.
 4. `jaw`: from the hinge at the back of the mouth, pointing forward along the lower jaw. If the model has no separate jaw, make a small box for it (the lower lip) so there is something to open.
-5. `nose`: a tiny bone in the middle of the nose box.
+5. `nose`: a tiny bone in the middle of the nose box, pointing forward (toward the nose tip).
 6. `earL`, `earR`: from the base of each ear, pointing up the ear.
-7. `eyeL`, `eyeR`: a tiny bone in the middle of each eye.
+7. `eyeL`, `eyeR`: a tiny bone in the middle of each eye, pointing forward. (This makes "vertical" the bone's local Z axis, which is the axis blinks scale on.)
 8. `tail1`: from the tail root, pointing back along the first tail box. `tail2`: from the joint between tail boxes, pointing back.
 9. `legFL`, `legFR`, `legBL`, `legBR`: from the top of each leg (shoulder or hip) down along the leg.
-10. `carry`: a tiny bone (0.02 m) at the mouth, in front of the jaw.
+10. `carry`: a tiny bone (0.02 m) at the mouth, in front of the jaw, pointing forward.
 
 Rename each bone: select it, `F2`, type the exact name. Check the spelling against `RIG_SPEC.md`. Check left versus right: `L` is the **+X** side (the animal's left, see Front view).
 
@@ -101,16 +103,28 @@ Tip: with the armature selected, turn on **Display > Names** in the Armature Dat
 
 ### 4.4 Check the roll
 
-Bones that twist oddly make rotations confusing. In Edit mode select all bones and use `Armature > Bone Roll > Recalculate Roll > Global Z Axis` (or Global -Y). The goal: a bone's local "bend" axis is the same for all bones (consistent), so "nod down" is the same rotation axis for head, jaw, and body.
+Bones that twist oddly make rotations confusing. The goal: every bone's local X axis lies along world X, so "nod down" is a rotation around X for head, jaw, body, tail, and legs alike.
+
+Do **not** recalculate all bones with one setting. "Global Z" is undefined for a bone that itself points straight up or down (legs, ears), and Blender then picks a random roll. Do it in two groups, in Edit mode:
+
+1. Select the forward and backward bones: `body`, `head`, `jaw`, `nose`, `eyeL`, `eyeR`, `carry`, `tail1`, `tail2`. `Armature > Bone Roll > Recalculate Roll > Global +Z Axis`.
+2. Select the up and down bones: `root`, `legFL`, `legFR`, `legBL`, `legBR`, `earL`, `earR`. `Recalculate Roll > Global -Y Axis`.
+3. Check: Armature Data tab > Viewport Display > tick **Axes**. Every bone's red (X) axis should point straight left or right across the body. Untick Axes when done.
+
+If a bone is tilted (for example ears leaning forward), it still works: the roll just needs to keep X sideways.
 
 ### 4.5 Attach each box to its bone
 
 This is the "no skinning" way: each box follows one bone like a stiff joint.
 
+`Ctrl+P > Bone` parents to the armature's **active bone**. It does not show a list of bones, so the bone has to be picked first:
+
 1. Go to Object mode (`Tab`).
 2. Click the box (for example `m_head`), then `Shift`-click the armature (the armature must be **active**, last clicked).
-3. `Ctrl+P > Bone`. A list of bones appears. Pick the bone (`head`).
-4. Repeat for every box. Reference mapping:
+3. Switch to Pose mode (`Ctrl+Tab`). The box stays selected in the background.
+4. Click the bone (`head`) so it is the active bone (highlighted light blue).
+5. `Ctrl+P > Bone`. The box now follows that bone and does not move.
+6. Back to Object mode (`Ctrl+Tab`) and repeat for every box. Reference mapping:
 
 | Mesh | Bone |
 |---|---|
@@ -154,15 +168,15 @@ To make the next clip: click the **New** (duplicate) button next to the action n
 
 1. Set the playhead to a frame (click in the Timeline, or `Left/Right` arrows).
 2. In Pose mode, move or rotate bones (`G`, `R`, `S`). Use the **N panel > Item** for exact numbers.
-3. Press `I` to insert keyframes for the selected bones. In Blender 4.1 and newer, `I` keys the channels listed in **Preferences > Animation > Default Key Channels** (Location, Rotation, Scale by default). If you get a menu, choose **Location, Rotation, Scale**. To key every bone at once, press `A` to select all bones first.
-4. The first work on a loop clip: **frame 0**: set the starting pose, select all bones, `I`. Then go to frame `N`, and make the **same pose** (see 6.5), `I`.
+3. Press `I` to insert keyframes for the selected bones. In Blender 4.1 and newer, `I` keys the channels listed in **Preferences > Animation > Default Key Channels** (Location, Rotation, Scale by default). If you get a menu, choose **Location, Rotation, Scale**. To key every bone at once, press `A` to select all bones first, then `Shift`-click `root` and `carry` to deselect them. Those two are never keyed (`CLIPS.md` rule 7).
+4. The first work on a loop clip: **frame 0**: set the starting pose, select all bones except `root` and `carry`, `I`. Then go to frame `N`, and make the **same pose** (see 6.5), `I`.
 5. Add the in-between key poses from `CLIPS.md` (big poses first, small motion after). Use **pose-to-pose**: block the main poses, play, then refine.
 6. Play with `Space`. Playback loops inside the Start to End range.
 
 ### 6.4 Quality tips for a cute result
 
 - Aim for squash and stretch on `body` scale. The game looks best with a soft bounce.
-- Leave all bones keyed on loops. On one-shots key only the bones that move (see `CLIPS.md`, rule 2).
+- Leave all bones except `root` and `carry` keyed on loops. On one-shots key only the bones that move (see `CLIPS.md`, rule 2).
 - Use the **Graph Editor** (change an editor to Graph Editor) to smooth curves: select a curve, `T` to set interpolation, or look for popping or flat sections.
 - Overlap: after the body, move the tail 3 to 5 frames later, ears 2 to 3.
 - Check from Front view too, so legs do not cross through each other, and boxes do not intersect badly.
@@ -182,7 +196,11 @@ If you edit frame 0 later, repeat this. Frame `N` must always match frame 0.
 
 ### 6.7 One-shots
 
-Reaction clips (`happy`, `annoyed`, `surprise`, `blink`) start and end on the rest pose. Frame 0 and frame `N` are both rest. Key only the bones that move. Test by playing with the range set to `0` to `N`.
+Reaction clips (`happy`, `annoyed`, `surprise`, `blink`) start and end on the rest pose. Frame 0 and frame `N` are both rest, and both are keyed (the last key sets the clip length the game checks). Key only the bones that move. Test by playing with the range set to `0` to `N`.
+
+The game adds these clips on top of the running loop (only their change from the rest pose counts). So animate them from the standing rest pose, even though in the game `happy` may play while the pet is eating.
+
+When you switch to a one-shot in the Action Editor, bones it does not key keep whatever pose the last clip left them in. Before you animate or check a one-shot, clear the pose first: in Pose mode, `A`, then `Alt+R`, `Alt+S`, `Alt+G`.
 
 ### 6.8 Order of work
 
@@ -205,7 +223,7 @@ See the priority table in `README.md`. First `idle` and `walk`, then send a file
 | Data > Images | **Automatic** |
 | Data > Shape Keys | off |
 | Data > Armature | **Export Deformation Bones Only** off (we need every bone). Use Rest Pose Armature: leave default |
-| Animation | **Animation** on. **Mode: Actions** (all actions with fake user). Sampling animations on, rate 1. **Optimize Animation Size** on. **Always Sample Animations** off |
+| Animation | **Animation** on. **Mode: Actions** (all actions with fake user). **Sampling Animations** on, rate 1. **Optimize Animation Size** on. (Older Blender versions called the sampling option "Always Sample Animations". It is the same setting: leave it on.) |
 | Animation > Shape Keys, Lighting, Cameras | off |
 
 5. File name: `animation/export/ferret.glb`. Export.
@@ -241,8 +259,9 @@ The black-footed ferret pattern (dark mask, dark feet, dark tail tip) is the "sa
 | A clip is missing from the export | No fake user shield, or name typo | Check the shield on every action in the Action Editor list. Check the exporter's Animation mode is **Actions** |
 | A box does not follow its bone in the viewer | Bone parent was not set, or the box was not selected last | Redo §4.5 for that box |
 | A box does not follow its bone in the viewer, even after redoing | Exporter issue with bone parenting | **Fallback:** select all boxes, then the armature, `Ctrl+P > With Empty Groups`. In Edit mode on each box, select all vertices, pick its bone's vertex group (Object Data tab > Vertex Groups), set Weight 1.0, click **Assign**. Then export with skinning (Data > Armature > Skinning on) |
-| The pet faces sideways or backward in the viewer | Orientation not fixed before export | Redo §3.2, apply rotation, re-export |
-| The pet floats or sinks | Feet are not at Z = 0 | Redo §3.2 step 4 |
+| The pet faces sideways or backward in the viewer | Orientation not fixed before export | Redo §3.2, apply transforms (§3.3 step 4), re-export |
+| The pet floats or sinks | Feet are not at Z = 0 | Redo §3.2 step 3 |
+| A loop hitches even though frame `N` equals frame 0 | A repeating motion's period does not divide the loop length | `CLIPS.md` rule 10 |
 | The pet looks smooth and blurry | Texture interpolation not Closest | §3.4 |
 | The loop has a stutter | Frame `N` is not equal to frame 0 | §6.5 |
 | Bones rotate on strange axes | Bone roll differs between bones | §4.4 |

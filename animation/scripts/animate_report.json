@@ -1,0 +1,435 @@
+{
+ "clips": {
+  "idle": {
+   "frames": 96,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawBR",
+   "min_z_frame": 30,
+   "seam_error": 0.0
+  },
+  "walk": {
+   "frames": 16,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 3,
+   "seam_error": 0.0,
+   "stride_m": 0.1,
+   "ground_speed_mps": 0.1875
+  },
+  "run": {
+   "frames": 12,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawBL",
+   "min_z_frame": 3,
+   "seam_error": 0.0,
+   "stride_m": 0.24,
+   "ground_speed_mps": 0.6
+  },
+  "sniff": {
+   "frames": 42,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 4,
+   "seam_error": 0.0
+  },
+  "curious": {
+   "frames": 78,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawBR",
+   "min_z_frame": 37,
+   "seam_error": 0.0
+  },
+  "sleep": {
+   "frames": 126,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawBR",
+   "min_z_frame": 0,
+   "seam_error": 0.0
+  },
+  "eat": {
+   "frames": 24,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 0,
+   "seam_error": 0.0
+  },
+  "drink": {
+   "frames": 36,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 0,
+   "seam_error": 0.0
+  },
+  "sneak": {
+   "frames": 20,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 8,
+   "seam_error": 0.0,
+   "stride_m": 0.07,
+   "ground_speed_mps": 0.105
+  },
+  "happy": {
+   "frames": 39,
+   "loop": false,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.0046,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 38,
+   "seam_error": 0.0
+  },
+  "annoyed": {
+   "frames": 30,
+   "loop": false,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 15,
+   "seam_error": 0.0
+  },
+  "surprise": {
+   "frames": 24,
+   "loop": false,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "head",
+    "jaw",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.0047,
+   "min_z_mesh": "m_pawBR",
+   "min_z_frame": 11,
+   "seam_error": 0.0
+  },
+  "blink": {
+   "frames": 5,
+   "loop": false,
+   "keyed_bones": [
+    "eyeL",
+    "eyeR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.0,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 0,
+   "seam_error": 0.0
+  }
+ },
+ "rest_ik": {
+  "FL": [
+   0.8306344865883658,
+   -1.7673163427023901
+  ],
+  "FR": [
+   0.8306344865883658,
+   -1.7673163427023901
+  ],
+  "BL": [
+   -0.830639598125458,
+   1.7673163772952987
+  ],
+  "BR": [
+   -0.8306344336564043,
+   1.7673163081090488
+  ]
+ }
+}
