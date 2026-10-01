@@ -7,8 +7,8 @@ import { completeBehavior, createAIState, forceDecision, nextDecision, type AISt
 import { simulate } from '../core/simulate';
 import type { Clock } from '../core/time';
 import type { HistoryEvent, PetRecord } from '../core/types';
-import type { AnimationName } from './animations';
-import { ROOM } from './room';
+import type { AnimationName } from './clipSpec';
+import { ROOM } from './layout';
 import { planFor, type Phase, type SockAction } from './plan';
 
 /** The part of the scene the brain moves. Kept small so the brain is tested without a canvas. */

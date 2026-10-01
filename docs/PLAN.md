@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Size budgets relaxed (D7). Next: 1K.5 (docs: `CLAUDE.md` is done, `ART_STYLE.md` and `ART_ASSET_LIST.md` rewrite remain), then 1K.6, before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Size budgets relaxed (D7). Part 1K done except the three painted coat textures (1K.9, the developer's Blender-side step 8): the real app now shows the 3D ferret (sleeping, eating, mini-game, petting all verified in Chrome, smoke test passes). Next: Part 1H, tester tools. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -13,8 +13,8 @@ Decided in the setup session (2026-09-30), from guide §3 defaults unless noted:
 | # | Decision |
 |---|---|
 | 1 | Preact for UI (not React). |
-| 2 | **Canvas 2D** (decided 2026-09-30 after the Part 1C spike). PixiJS was tried and removed: too slow to start on a throttled phone profile. |
-| 3 | Art: layered-sprite rig animated in code. |
+| 2 | ~~Canvas 2D~~ replaced by **three.js** (D6, 2026-10-01). PixiJS stays removed. |
+| 3 | Art: ~~layered-sprite rig animated in code~~ replaced by a blocky 3D ferret animated in Blender (D6). |
 | 4 | Audience: general, 13+, minimal data collection. |
 | 5 | Adoption free until Phase 6 (in-app purchase then). Closed beta is free. Free "care for a friend's pet" path always exists. |
 | 6 | Fast-transfer entitlement is bought by the caretaker. |
@@ -23,7 +23,7 @@ Decided in the setup session (2026-09-30), from guide §3 defaults unless noted:
 | 9 | Item economy: shinies, Care Day milestone unlocks, cosmetic packs. |
 | 10 | One mini-game (toy chase, about 20 s) plus a daily found item. |
 | 11 | Up to 2 pets per device, one shown at a time. |
-| 12 | Art source: developer draws final art later (Krita or Inkscape). Phase 1 uses a code-drawn flat-color placeholder rig. Style: soft flat vector, small palette. |
+| 12 | Art source: the developer rigs and animates the model in Blender (`animation/`) and paints coat textures in Krita or Piskel. Style: cute blocky 3D, small warm palette (`ART_STYLE.md`). |
 | 13 | Web build is a closed preview (unlisted link), not the shipped product. |
 | 14 | Package manager: npm. Node 24 (`.nvmrc`). |
 | 15 | Repo: public GitHub. CI: GitHub Actions. Preview hosting: GitHub Pages. |
@@ -191,14 +191,14 @@ Budgets (decision D7, 2026-10-01): initial JS 1 MB gzip including the three.js c
 - [x] 1K.2 (S) Model chosen 2026-10-01: "Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles, no rig, no animations (checked through the Sketchfab API). Recorded in `docs/ASSET_LICENSES.md`. Still to do: CC0 room furniture (Kenney, Quaternius) at 1K.8.
 - [x] 1K.3 (M) Done 2026-10-01: `dev/ferret3d.html`, `src/dev/ferret3d.ts`, `src/dev/ferret3dScene.ts`, `vite.spike.config.ts`, `scripts/measure-startup.mjs`. Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
 - [x] 1K.4 (developer) Done 2026-10-01: the developer said size is no longer a main concern, so the budgets are relaxed (D7). `three` moved to `dependencies`, `scripts/budgets.json` set to 1000 KB.
-- [ ] 1K.5 (S) Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
-- [ ] 1K.6 (L) `src/render/scene3d.ts` behind the existing `Scene` and `BrainScene` contracts, with unit-tested logical-to-world mapping and floor raycast.
-- [ ] 1K.7 (M) `src/render/animator3d.ts` wrapping `AnimationMixer`: maps every `AnimationName` to a clip, crossfades, one-shot reactions. A test checks every name has a clip in the model manifest.
-- [ ] 1K.8 (M) Room and props in 3D: baked lighting, blob shadow, no real-time shadows.
-- [ ] 1K.9 (S) Four coat textures, only the pet's own loaded.
-- [ ] 1K.10 (M) Loading screen, plain WebGL-unavailable screen (no 2D fallback), pointer input through the raycast.
-- [ ] 1K.11 (M) Update `npm run smoke`, `scripts/shots.mjs`, and a dev clip gallery. All existing tests pass.
-- [ ] 1K.12 (S) Delete the 2D rig and its tests after smoke passes. Measure, record in `docs/PERFORMANCE.md`. Report at the end of the part.
+- [x] 1K.5 (S) Done 2026-10-01 (animation pipeline doc is `animation/BLENDER_GUIDE.md`).  Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
+- [x] 1K.6 (L) Done 2026-10-01: `src/render/scene3d.ts` (lazy chunk) behind `PetScene` (`petScene.ts`), `stageMap.ts` maps the logical room to the floor and back (tested), touches are raycast onto the vertical plane through the pet. The controller gives it `props()`; `Stage.tsx` loads it, shows loading and error text.
+- [x] 1K.7 (M) Done 2026-10-01 (inside `scene3d.ts`): `AnimationMixer`, 0.2 s cross-fades, additive one-shots, blink timing from `blink.ts`, playback speed from the pet's real speed (`clipSpec.ts` `playbackRate`). `clipSpec.test.ts` checks the real `.glb` against `animation/clips.json`.
+- [x] 1K.8 (M) Done 2026-10-01. Room and props in 3D: baked lighting, blob shadow, no real-time shadows.
+- [ ] 1K.9 (S) Four coat textures, only the pet's own loaded. **Partly done:** a colour tint per coat stands in (`coats3d.ts`); the three painted textures are the developer's step 8 in `animation/README.md`.
+- [x] 1K.10 (M) Done 2026-10-01. Loading screen, plain WebGL-unavailable screen (no 2D fallback), pointer input through the raycast.
+- [x] 1K.11 (M) Done 2026-10-01: smoke and shots updated, `dev/ferret3d.html` is the clip viewer, 280 tests pass (the 2D rig tests were removed with the rig).
+- [x] 1K.12 (S) Done 2026-10-01: 2D rig deleted. Real-app numbers in `docs/PERFORMANCE.md` §3.3. Measure, record in `docs/PERFORMANCE.md`. Report at the end of the part.
 
 Developer track (parallel): Blender work following `animation/BLENDER_GUIDE.md` (written in 1K.2, replaces the planned `ART_PIPELINE_3D.md`). Clips named `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`. Until they exist the game plays the rest pose, so code work is not blocked. The Phase 1 gate waits on the clips.
 

@@ -3,9 +3,9 @@ import { HOUR, T0, makePet } from '../core/testkit';
 import { createManualClock } from '../core/time';
 import { CHASE } from '../core/toyChase';
 import type { PetRecord } from '../core/types';
-import type { AnimationName } from '../render/animations';
+import type { AnimationName } from '../render/clipSpec';
 import type { BrainScene } from '../render/brain';
-import { ROOM } from '../render/room';
+import { ROOM } from '../render/layout';
 import { createGame, type PlayResult } from './controller';
 
 function setup(pet: PetRecord) {

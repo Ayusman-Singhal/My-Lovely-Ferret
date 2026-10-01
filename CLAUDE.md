@@ -31,7 +31,8 @@ The developer is a solo developer with no budget. Cut scope before adding it.
 | `npm run lint` | ESLint, including the `src/core` purity rules |
 | `npm test` | Vitest (node environment) |
 | `npm run size` | Bundle budget check. Fails when a budget in `scripts/budgets.json` is exceeded |
-| `node scripts/shots.mjs` | Screenshots of the dev rig gallery and the running app into `shots/` (uses installed Chrome). Look at them after changing the rig or layout |
+| `node scripts/shots.mjs` | Screenshots of the running app (3D ferret) into `shots/` (uses installed Chrome). Look at them after changing the room, the model, or the layout |
+| `node scripts/measure-startup.mjs 5 app` | Builds the app and measures size and start-up time on a slow 4G + 4x CPU profile (`spike` instead of `app` measures the dev clip viewer `dev/ferret3d.html`) |
 | `npm run smoke` | End-to-end test in real Chrome against the built app (run `npm run build` first): first run, naming, care, mini-game, reload, backup, welcome-back. Takes about 40 seconds |
 | `npm run check` | typecheck, lint, test, build, size. Run before every commit that changes code |
 
@@ -44,7 +45,8 @@ src/sync/      Mailbox interface, MemoryMailbox, Outbox, BudgetManager
   firebase/    FirebaseMailbox (dynamic import only)
 src/platform/  SaveStore, PurchaseService, Notifications, Share, Camera (web/ and capacitor/)
 src/game/      controller: joins commands, brain, mini-game, and touch (no DOM, no drawing)
-src/render/    Canvas 2D scene, room, pet rig, particles, render-on-demand loop, asset loader
+src/render/    three.js scene (scene3d.ts, lazy chunk), layout and stage mapping, clip list (clipSpec.ts), brain and plan, render-on-demand loop, model loader
+animation/     Blender work: the ferret .blend, rig and clip scripts, clips.json, the exported ferret.glb
 src/ui/        Preact components (HUD, menus, shop, passport, settings)
 src/i18n/      t() helper, en.json, hi.json
 public/        atlases, audio, icons, manifest, service worker

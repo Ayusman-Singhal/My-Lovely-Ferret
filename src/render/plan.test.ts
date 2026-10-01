@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Behavior, Decision } from '../core/petAI';
-import { ANIMATION_NAMES } from './animations';
+import { ANIMATION_NAMES } from './clipSpec';
 import { SPEED, WALK_MAX_X, WALK_MIN_X, planFor, spotToX, stashSpot, type Phase } from './plan';
-import { ROOM } from './room';
+import { ROOM } from './layout';
 
 const BEHAVIORS: Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'sleep'];
 const decision = (behavior: Behavior, durationMs = 5000, spots: [number, number, number] = [100, 500, 900]): Decision => ({

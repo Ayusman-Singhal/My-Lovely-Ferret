@@ -42,6 +42,7 @@ Original strict targets, kept for history (guide §4.1): initial JS about 300 KB
 | 1F interactions and mini-game | 2026-09-30 | 18.07 KB | Commands, mini-game, controller, pointer input, test bar. |
 | 1G UI and save | 2026-09-30 | 27.53 KB | HUD, action bar, onboarding, menu, i18n, autosave, IndexedDB save wired. Room resized to 360 by 540. |
 | 1K.3 3D spike | 2026-10-01 | 1.1 KB entry plus a 154.2 KB lazy three.js chunk (app unchanged at 27.5 KB) | Blender ferret in three.js, 27.9 KB gzip model, scene ready 1.88 s on slow 4G + 4x CPU. See §3.2 |
+| 1K.12 3D scene in the app | 2026-10-01 | 182.5 KB including the lazy three.js scene chunk | Scene ready 3.0 s on slow 4G + 4x CPU, loading text 1.06 s. See §3.3 |
 | Phase 1 gate | | | Full table of section 1. |
 
 ### 3.1 Renderer spike, 2026-09-30 (Part 1C)
@@ -89,6 +90,23 @@ How to read it:
 **Re-measured with rig v2 (2026-10-01, later the same day).** The developer rebuilt the rig (22 bones, two-box legs, split torso, 264 triangles) and the 13 clips. Same method: model 299 KB raw, **73.9 KB gzip** (was 27.9), 231 KB over the wire, scene ready **median 2.14 s** (2.11 to 2.20 s) on the slow profile, phases: entry 0.38 s, model bytes in 1.31 s, three.js code 1.82 s, first draw 2.14 s. 0 frames while paused. 292 triangles and 24 draw calls with the room. The animation data (22 bones x 3 channels x 13 clips, all keyed) is most of the size. `gltf-transform optimize --compress meshopt` (scratch run) brings the file to 215 KB raw and **31.8 KB gzip**, which would bring the model back to about 0.9 s on this profile. Worth doing at 1K.6, not needed to meet the budgets.
 
 Findings against the budgets (`docs/PLAN.md` Part 1K): the 3D ferret passes the relaxed budgets (section 1) with a very wide margin: about 182 KB gzip of 1 MB for JS, under 0.1 MB of 10 MB for the model, 1.9 to 2.1 s of 5 s for scene ready. Tighter values were suggested on 2026-10-01 and the developer chose the relaxed ones instead, because size is not a main concern any more.
+
+### 3.3 The real app with the 3D ferret, 2026-10-01 (Part 1K.12)
+
+`node scripts/measure-startup.mjs 5 app` builds the app and loads `/?pet=measure` on the same slow profile as §3.1 and §3.2 (1.6 Mbps, 150 ms, 4x CPU, cache off, gzip like GitHub Pages, software WebGL).
+
+| Measure | Result | Budget (section 1) |
+|---|---|---|
+| Initial JS including the lazy 3D scene chunk, gzip | **182.5 KB** (app 24.2 KB + three.js scene 158.9 KB) | 1 MB |
+| Model file | 299 KB raw, **73.9 KB gzip** | first-run assets 10 MB |
+| Over the wire for a first visit | 260.7 KB | n/a |
+| Loading text visible, slow 4G + 4x CPU | **1.06 s** | under 1.5 s |
+| Scene ready (3D canvas up, loading text gone), slow 4G + 4x CPU | **median 3.0 s** (2.93 to 3.06 s) | at most 5 s |
+| Scene ready, no throttle | median 0.4 s | n/a |
+
+How the start-up is arranged: `src/main.tsx` starts the model download and the lazy `scene3d` chunk at once, so the two overlap each other and the app's own boot. Before that change the scene was ready at 3.7 s. `Stage.tsx` shows the loading text until the scene is ready, or a plain message when WebGL is missing or the download fails.
+
+Smoke test (`npm run smoke`) passes in real Chrome. Frame rate is not measured here (software rendering). A real low-end Android check is still task 1J.4.
 
 ## 4. Decisions made to stay within budget
 

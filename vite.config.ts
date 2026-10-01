@@ -9,6 +9,8 @@ export default defineConfig({
     // The manifest lets scripts/check-budgets.mjs find the initial (non-lazy) JS.
     manifest: true,
     target: 'es2022',
+    // The lazy three.js scene chunk is about 650 KB raw; size is budgeted by scripts/check-budgets.mjs.
+    chunkSizeWarningLimit: 1500,
   },
   test: {
     environment: 'node',

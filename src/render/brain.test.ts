@@ -4,10 +4,10 @@ import type { AIWorld } from '../core/petAI';
 import { DAY, HOUR, T0, makePet } from '../core/testkit';
 import { createManualClock } from '../core/time';
 import type { HistoryEvent, PetRecord } from '../core/types';
-import { ANIMATION_NAMES, type AnimationName } from './animations';
+import { ANIMATION_NAMES, type AnimationName } from './clipSpec';
 import { createBrain, type BrainScene } from './brain';
 import { WALK_MAX_X, WALK_MIN_X } from './plan';
-import { ROOM } from './room';
+import { ROOM } from './layout';
 
 const WORLD: AIWorld = { foodInBowl: true, waterInBowl: true, hasToy: true, hasStealable: true, propNearby: false, pointerInRoom: false };
 

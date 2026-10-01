@@ -10,9 +10,8 @@ import { CHASE, bandFromCatches, createChase, stepChase, type ChaseState } from 
 import { createTouchTracker } from '../core/touch';
 import type { HistoryEvent, PetRecord, ToyId } from '../core/types';
 import { createBrain, type Brain, type BrainScene } from '../render/brain';
-import { VIEW } from '../render/palette';
-import { drawSock, drawTimerBar, drawToy } from '../render/props';
-import { ROOM } from '../render/room';
+import { ROOM } from '../render/layout';
+import type { ScenePropsState } from '../render/petScene';
 
 export interface PlayResult {
   band: 0 | 1 | 2 | 3;
@@ -56,7 +55,8 @@ export interface Game {
   debugChase(): { toyTarget: number; chase: ChaseState | null };
   /** Scene hooks. */
   tick(frameMs: number, scene: BrainScene): void;
-  draw(ctx: CanvasRenderingContext2D): void;
+  /** What the scene should draw besides the room and the pet: the sock, the toy, and the timer. */
+  props(): ScenePropsState;
   /**
    * Pointer input in logical room coordinates. Times are real milliseconds (event.timeStamp), not
    * game time, so a long press lasts 2 real seconds even when the preview runs the game faster.
@@ -181,13 +181,12 @@ export function createGame(options: GameOptions): Game {
       if (chase.over) finishPlay(scene, frameMs);
     },
 
-    draw(ctx) {
-      if (!chase) {
-        if (!brain.sock.carried) drawSock(ctx, brain.sock.x, ROOM.groundY);
-        return;
-      }
-      drawToy(ctx, chaseToy, toyTarget, ROOM.groundY);
-      drawTimerBar(ctx, Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs), VIEW.width);
+    props() {
+      return {
+        sock: { x: brain.sock.x, carried: brain.sock.carried },
+        toy: chase ? { id: chaseToy, x: toyTarget } : null,
+        timerFraction: chase ? Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs) : null,
+      };
     },
 
     pointerDown(x, y, realMs) {

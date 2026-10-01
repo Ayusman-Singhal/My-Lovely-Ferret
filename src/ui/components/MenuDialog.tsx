@@ -90,6 +90,7 @@ export function MenuDialog({ petName, store, beforeExport, onClose }: MenuDialog
       <p class="status" role="status">
         {message}
       </p>
+      <p class="muted">{t('menu.credits')}</p>
       <p class="muted">{t('menu.version')}</p>
       <button type="button" onClick={onClose}>
         {t('menu.close')}

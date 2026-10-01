@@ -1,3 +1,4 @@
 {
-  "initialJsGzipKB": 1000
+  "initialJsGzipKB": 1000,
+  "countedLazyEntries": ["src/render/scene3d.ts"]
 }

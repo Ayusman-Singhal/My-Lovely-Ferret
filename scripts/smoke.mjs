@@ -36,7 +36,8 @@ try {
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Adopt a pet' }).waitFor();
   ok(await page.getByRole('button', { name: "Care for a friend's pet" }).isDisabled(), "friend's pet is disabled for now");
-  ok((await page.locator('canvas').count()) === 2, 'the room and the pet canvas are on screen');
+  await page.locator('canvas').first().waitFor({ timeout: 30000 });
+  ok((await page.locator('canvas').count()) === 1, 'the 3D room and ferret canvas is on screen');
   await page.screenshot({ path: 'shots/smoke-1-adopt.png' });
 
   stepName('naming: empty and too-long names are refused with a clear message');

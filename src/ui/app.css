@@ -76,6 +76,7 @@ input {
 }
 
 .stage-wrap {
+  position: relative;
   flex: 1;
   min-height: 0;
   container-type: size;
@@ -90,6 +91,17 @@ input {
   justify-content: center;
   width: 100%;
   height: 100%;
+}
+
+.stage-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+  pointer-events: none;
 }
 
 .bottom {

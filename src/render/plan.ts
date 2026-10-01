@@ -3,8 +3,8 @@
 // it only hands over "spots" (0..999), and this file maps them to positions.
 
 import type { Decision } from '../core/petAI';
-import type { AnimationName } from './animations';
-import { ROOM } from './room';
+import type { AnimationName } from './clipSpec';
+import { ROOM } from './layout';
 
 /** Range the pet's feet may be in so the whole pet, tail included, stays inside the 360 px room. */
 export const WALK_MIN_X = 125;

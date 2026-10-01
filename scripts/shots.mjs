@@ -1,4 +1,4 @@
-// Dev tool: screenshots of the rig gallery and of the running app at phone size, written to
+// Dev tool: screenshots of the running app (3D ferret) at phone size, written to
 // shots/ (git-ignored). Uses the Chrome installed on this machine through playwright-core,
 // so nothing is downloaded. Run: node scripts/shots.mjs
 // Headless Chrome uses software rendering: fine for looks, not for frame-rate numbers.
@@ -20,14 +20,10 @@ try {
     });
   };
 
-  const gallery = await browser.newPage({ viewport: { width: 1000, height: 900 } });
-  watch(gallery);
-  await gallery.goto('http://localhost:5177/dev/gallery.html', { waitUntil: 'networkidle' });
-  await gallery.screenshot({ path: 'shots/gallery.png', fullPage: true });
-
   const app = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   watch(app);
-  await app.goto('http://localhost:5177/', { waitUntil: 'networkidle' });
+  await app.goto('http://localhost:5177/?pet=shots', { waitUntil: 'networkidle' });
+  await app.locator('canvas').first().waitFor({ timeout: 30000 });
   for (const [waitMs, name] of [[1500, 'start'], [12000, 'later']]) {
     await app.waitForTimeout(waitMs);
     await app.screenshot({ path: `shots/app-${name}.png` });

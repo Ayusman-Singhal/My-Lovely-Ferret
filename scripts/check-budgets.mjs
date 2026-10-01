@@ -1,6 +1,8 @@
 // Bundle budget check (guide §4.2). Zero dependencies on purpose.
-// Initial JS = the entry chunk plus everything it imports statically. Dynamic imports
-// (Firebase, lazy screens) are not counted here, they get their own budgets later.
+// Initial JS = the entry chunk plus everything it imports statically, plus the lazy chunks listed
+// in budgets.json under "countedLazyEntries". The 3D scene is lazy (so the loading text shows before
+// three.js is parsed) but needed for the first pet frame, so it must be counted or the budget would
+// hide it. Other dynamic imports (Firebase, lazy screens) get their own budgets later.
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
@@ -14,6 +16,7 @@ if (!entry) {
   process.exit(1);
 }
 
+const counted = budgets.countedLazyEntries ?? [];
 const seen = new Set();
 const files = [];
 const visit = (key) => {
@@ -25,6 +28,9 @@ const visit = (key) => {
 };
 const entryKey = Object.keys(manifest).find((key) => manifest[key] === entry);
 visit(entryKey);
+for (const [key, chunk] of Object.entries(manifest)) {
+  if (chunk.isDynamicEntry && counted.some((name) => (chunk.src ?? key).endsWith(name))) visit(key);
+}
 
 let totalGzip = 0;
 for (const file of files) {

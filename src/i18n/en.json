@@ -2,6 +2,9 @@
   "app.title": "Ferret",
   "app.loading": "Loading…",
   "app.tagline": "Raise one pet with someone you care about.",
+  "stage.loading": "Waking up your ferret…",
+  "stage.unsupported": "This browser cannot show the 3D ferret. Please update your browser or try another one.",
+  "stage.failed": "The ferret could not load. Check your connection and reload the page.",
 
   "adopt.button": "Adopt a pet",
   "adopt.friend": "Care for a friend's pet",
@@ -119,6 +122,7 @@
   "menu.importNo": "Cancel",
   "menu.importDone": "Backup restored.",
   "menu.saveFailed": "Could not save. Export a backup to be safe.",
+  "menu.credits": "Credits: ferret model \"Black Footed Ferret\" by LandyStudio (sketchfab.com), CC BY 4.0, changed by us: rigged, animated, and repainted. creativecommons.org/licenses/by/4.0",
   "menu.version": "Preview build",
   "import.error.not_json": "That file is not a backup.",
   "import.error.wrong_format": "That file is not a Ferret backup.",
