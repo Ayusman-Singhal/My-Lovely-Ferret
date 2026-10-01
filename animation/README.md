@@ -21,6 +21,7 @@ Everything needed to turn the blocky ferret model into the animated pet in the g
 | `source/` | Your `.blend` files and the downloaded original model | Working files |
 | `export/` | Raw `.glb` exports before Claude optimizes them | After export |
 | `scripts/` | Blender Python: `build_rig.py` (v1 rig), `upgrade_rig_v2.py` (spine and knees), `animate.py` (13 clips), `render_previews.py`, `export_glb.py`, `run_all.py` (all three), `fix_texture.py`, `restore_backup.py`. QA renders in `scripts/qa/` | To change a clip: edit `animate.py`, then run `run_all.py` |
+| `scripts/make_chubby.py` | Reshapes the body (wider, taller chest, thick short neck, bushier tail, legs under the wider body), then reruns `animate.py` and `export_glb.py`. Run it from the saved start file so it never stacks: `blender.exe -b animation/source/Ferret_before_chubby.blend --python animation/scripts/make_chubby.py` | When the proportions look off (2026-10-01: a long thin neck made the ferret look malnourished) |
 | `previews/` | Animated GIF of every clip, and `all_clips.gif` with all 13 side by side | To review motion without Blender |
 
 The final game files go to `public/models/` (Claude puts them there). Do not put anything in `public/` yourself.

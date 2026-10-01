@@ -30,7 +30,7 @@
    ],
    "min_z": -0.005,
    "min_z_mesh": "m_pawBR",
-   "min_z_frame": 30,
+   "min_z_frame": 26,
    "seam_error": 0.0
   },
   "walk": {
@@ -132,8 +132,8 @@
     "fast"
    ],
    "min_z": -0.005,
-   "min_z_mesh": "m_pawFR",
-   "min_z_frame": 4,
+   "min_z_mesh": "m_pawFL",
+   "min_z_frame": 29,
    "seam_error": 0.0
   },
   "curious": {
@@ -197,8 +197,8 @@
    "key_mode": [
     "fast"
    ],
-   "min_z": -0.005,
-   "min_z_mesh": "m_pawBR",
+   "min_z": -0.0103,
+   "min_z_mesh": "m_neck",
    "min_z_frame": 0,
    "seam_error": 0.0
   },
@@ -298,7 +298,7 @@
    ],
    "min_z": -0.005,
    "min_z_mesh": "m_pawFR",
-   "min_z_frame": 8,
+   "min_z_frame": 17,
    "seam_error": 0.0,
    "stride_m": 0.07,
    "ground_speed_mps": 0.105

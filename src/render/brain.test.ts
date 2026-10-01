@@ -102,6 +102,63 @@ describe('brain', () => {
     expect(checked).toBeGreaterThan(50);
   });
 
+  it('always faces the way it moves, also on the way to a bowl, so it never walks sideways', () => {
+    const t = setup(makePet({ id: 'no-crab', state: { hunger: 1500, energy: 9000 } }));
+    t.run(10, 16);
+    t.scene.x = 250;
+    t.scene.z = -50; // far from the food bowl in both width and depth
+    t.brain.request('eat');
+    let moving = 0;
+    let prev = { x: t.scene.x, z: t.scene.z };
+    t.run(2500, 16, () => {
+      const dx = t.scene.x - prev.x;
+      const dz = t.scene.z - prev.z;
+      prev = { x: t.scene.x, z: t.scene.z };
+      if (Math.hypot(dx, dz) > 0.2 && t.scene.heading !== null) {
+        moving++;
+        const diff = Math.atan2(Math.sin(t.scene.heading - Math.atan2(dx, dz)), Math.cos(t.scene.heading - Math.atan2(dx, dz)));
+        expect(Math.abs(diff)).toBeLessThan(0.05);
+      }
+    });
+    expect(moving).toBeGreaterThan(100);
+  });
+
+  it('starts and stops a walk gently, and does not stop between two runs in a row', () => {
+    const t = setup(makePet({ id: 'ease', state: { energy: 9000 } }));
+    t.run(10, 16);
+    t.scene.x = 100;
+    t.scene.z = 0;
+    t.brain.request('wander');
+    const steps: number[] = [];
+    let prev = { x: t.scene.x, z: t.scene.z };
+    t.run(400, 16, () => {
+      steps.push(Math.hypot(t.scene.x - prev.x, t.scene.z - prev.z));
+      prev = { x: t.scene.x, z: t.scene.z };
+    });
+    const peak = Math.max(...steps);
+    const firstMoving = steps.findIndex((d) => d > 0);
+    expect(peak).toBeGreaterThan(0.4);
+    expect(steps[firstMoving] ?? 0).toBeLessThan(peak * 0.5); // eased in, not a jump to full pace
+    const lastMoving = steps.map((d, i) => (d > 0 ? i : -1)).filter((i) => i >= 0).at(-1) ?? 0;
+    expect(steps[lastMoving] ?? 0).toBeLessThan(peak * 0.5); // eased out
+
+    // Zoomies: three runs in a row keep their pace through the waypoints.
+    const z = setup(makePet({ id: 'zoom', state: { energy: 9000, happiness: 9000 }, personality: { mischief: 90, curiosity: 50, affection: 50 } }));
+    z.run(10, 16);
+    z.brain.request('playful');
+    const runSteps: number[] = [];
+    let before = { x: z.scene.x, z: z.scene.z };
+    z.run(300, 16, () => {
+      if (z.brain.current()?.behavior === 'playful') runSteps.push(Math.hypot(z.scene.x - before.x, z.scene.z - before.z));
+      before = { x: z.scene.x, z: z.scene.z };
+    });
+    // Only the very start and end are eased; most of the run is at full pace, with no stop at the waypoints.
+    const sorted = [...runSteps].sort((a, b) => a - b);
+    const slow = runSteps.filter((d) => d < 0.5 * (sorted.at(-1) ?? 0)).length;
+    expect(runSteps.length).toBeGreaterThan(60);
+    expect(slow).toBeLessThan(runSteps.length * 0.3);
+  });
+
   it('goes to the hammock and sleeps when the simulation puts the pet to sleep, and gets up when it wakes', () => {
     const t = setup(makePet({ id: 'sleeper', state: { energy: 9000 } }));
     t.run(200, 16);

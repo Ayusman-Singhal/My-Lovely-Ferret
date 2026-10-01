@@ -15,6 +15,13 @@ import { planFor, type Phase, type SockAction } from './plan';
 /** Time away that counts as the player being gone (docs/GAME_DESIGN.md §8). */
 export const AWAY_MS = 30 * 60_000;
 
+/** Walking starts and stops gently over this long, so the pet does not jerk into and out of its pace. */
+const EASE_IN_MS = 350;
+const EASE_OUT_MS = 500;
+/** Never slower than this share of the pace, so a walk always arrives. */
+const MIN_PACE = 0.2;
+const smooth = (k: number): number => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k));
+
 export interface BrainScene {
   x: number;
   y: number;
@@ -204,13 +211,17 @@ export function createBrain(options: BrainOptions): Brain {
         return;
       }
 
-      // Walking: move straight toward the target and arrive exactly on it. The pet turns to face the
-      // way it goes, unless the phase fixes a direction (walking to a bowl, nose first).
+      // Walking: move straight toward the target and arrive exactly on it. The pet always turns to
+      // face the way it goes (a pet that walks sideways to a bowl looks like a puppet); a phase that
+      // wants a direction at the end (nose to the bowl) turns it on arrival.
       const dx = phase.x - scene.x;
       const dz = phase.z - scene.z;
       const distance = Math.hypot(dx, dz);
-      const step = phase.speed * (dt / 1000);
-      if (distance > 0.001 && !phase.face) {
+      // Start and stop gently, except between two runs in a row: zoomies should flow.
+      const easeIn = plan[index - 1]?.kind === 'go' ? 1 : smooth((frameMs - phaseStart) / EASE_IN_MS);
+      const easeOut = plan[index + 1]?.kind === 'go' ? 1 : smooth(distance / (phase.speed * (EASE_OUT_MS / 1000)));
+      const step = phase.speed * Math.max(MIN_PACE, Math.min(easeIn, easeOut)) * (dt / 1000);
+      if (distance > 0.001) {
         scene.heading = Math.atan2(dx, dz);
         if (Math.abs(dx) > 0.01) scene.facing = dx > 0 ? 1 : -1;
       }
