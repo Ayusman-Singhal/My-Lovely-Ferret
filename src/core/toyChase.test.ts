@@ -178,3 +178,14 @@ describe('touch tracker', () => {
     expect(t.isLongPress(9999)).toBe(false);
   });
 });
+
+describe('the edges of the floor', () => {
+  it('turns round at the edge so the paws can still reach a toy near the wall', () => {
+    // The ferret is on the right edge facing left, and the toy sits a little to its left, near the edge.
+    let s = createChase(CHASE.maxX, 250);
+    s = { ...s, facing: -1 };
+    for (let t = 16; t <= 3000; t += 16) s = stepChase(s, 16, 250);
+    expect(s.facing).toBe(1); // coming at the toy from the middle of the room
+    expect(s.catches).toBe(1);
+  });
+});

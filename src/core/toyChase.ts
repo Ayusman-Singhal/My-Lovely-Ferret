@@ -9,8 +9,8 @@ export const CHASE = {
   durationMs: 20_000,
   /** How fast the ferret runs after the toy, px per second. Slower than a hand can drag. */
   ferretSpeed: 120,
-  /** The paws reach this far ahead of the ferret's feet position. */
-  pawReach: 40,
+  /** The paws reach this far ahead of the ferret's feet position (about 0.3 m at 4.8 mm per px). */
+  pawReach: 62,
   /** A pounce lands when the paws are this close to the toy. */
   catchRadius: 28,
   /** The toy must be nearly still to be caught. px per second, smoothed. */
@@ -25,8 +25,8 @@ export const CHASE = {
   /** Pause after a catch while the ferret pounces. */
   catchPauseMs: 700,
   /** The ferret keeps its whole body inside the room between these positions. */
-  minX: 125,
-  maxX: 235,
+  minX: 96,
+  maxX: 264,
   /** The ferret turns around only when the toy is this far past its middle, so it does not flicker. */
   turnDeadZone: 15,
 } as const;
@@ -87,10 +87,16 @@ export function stepChase(state: ChaseState, dtMs: number, toyX: number): ChaseS
   if (toyX - state.ferretX > CHASE.turnDeadZone) facing = 1;
   else if (state.ferretX - toyX > CHASE.turnDeadZone) facing = -1;
 
+  // At the edge of the floor the ferret cannot stand on the far side of the toy. Then it turns round
+  // and comes at the toy from the middle of the room, so its paws can still reach it.
+  const wanted = (side: 1 | -1): number => toyX - side * CHASE.pawReach;
+  const reachable = (x: number): boolean => x >= CHASE.minX && x <= CHASE.maxX;
+  if (!reachable(wanted(facing)) && reachable(wanted(facing === 1 ? -1 : 1))) facing = facing === 1 ? -1 : 1;
+
   let ferretX = state.ferretX;
   let pauseMs = Math.max(0, state.pauseMs - dtMs);
   if (pauseMs === 0) {
-    const desired = clamp(toyX - facing * CHASE.pawReach, CHASE.minX, CHASE.maxX);
+    const desired = clamp(wanted(facing), CHASE.minX, CHASE.maxX);
     const step = (CHASE.ferretSpeed * dtMs) / 1000;
     ferretX = Math.abs(desired - ferretX) <= step ? desired : ferretX + Math.sign(desired - ferretX) * step;
   }

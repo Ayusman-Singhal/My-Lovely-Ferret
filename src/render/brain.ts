@@ -18,7 +18,11 @@ export const AWAY_MS = 30 * 60_000;
 export interface BrainScene {
   x: number;
   y: number;
+  /** Depth on the floor: negative toward the back wall (layout.ts). */
+  z: number;
   facing: 1 | -1;
+  /** Direction of travel in radians (0 = toward the camera, pi/2 = right), or null to face left or right by `facing`. */
+  heading: number | null;
   animator: { setBase(name: AnimationName, nowMs: number): void; react(name: AnimationName, nowMs: number): void };
 }
 
@@ -35,7 +39,7 @@ export interface BrainOptions {
 export interface Brain {
   tick(frameMs: number, scene: BrainScene): void;
   /** The sock lies on the floor here, or is being carried. Drawn by the scene. */
-  readonly sock: { x: number; carried: boolean };
+  readonly sock: { x: number; z: number; carried: boolean };
   /** Make the pet do this next, for example go and eat after a feed command. Ignored while asleep. */
   request(behavior: Behavior): void;
   /** Play a one-shot reaction on the next frame. */
@@ -49,7 +53,7 @@ export interface Brain {
 }
 
 export function createBrain(options: BrainOptions): Brain {
-  const sock = { x: 130, carried: false };
+  const sock = { x: 130, z: 0, carried: false };
   let ai: AIState = createAIState();
   let decision: Decision | null = null;
   let plan: Phase[] = [];
@@ -66,7 +70,7 @@ export function createBrain(options: BrainOptions): Brain {
 
   const startDecision = (next: Decision, frameMs: number, scene: BrainScene): void => {
     decision = next;
-    plan = planFor(next, { x: scene.x, sockX: sock.x });
+    plan = planFor(next, { x: scene.x, z: scene.z, sockX: sock.x, sockZ: sock.z });
     index = 0;
     phaseStarted = false;
     phaseStart = frameMs;
@@ -85,6 +89,7 @@ export function createBrain(options: BrainOptions): Brain {
     if (action === 'dropSock') {
       sock.carried = false;
       sock.x = scene.x;
+      sock.z = scene.z;
     }
   };
 
@@ -125,6 +130,7 @@ export function createBrain(options: BrainOptions): Brain {
         decide(frameMs, scene, wall);
       } else if (!asleep && decision?.behavior === 'sleep') {
         scene.y = ROOM.groundY;
+        scene.z = ROOM.hammockApproachZ;
         decide(frameMs, scene, wall);
       }
       if (decision === null || resumed) {
@@ -175,11 +181,18 @@ export function createBrain(options: BrainOptions): Brain {
         if (phase.kind === 'do') {
           runAction(phase.startAction, scene);
           if (phase.y !== undefined) scene.y = phase.y;
-          if (phase.face) scene.facing = phase.face;
+          if (phase.z !== undefined) scene.z = phase.z;
+          if (phase.face) {
+            scene.facing = phase.face;
+            scene.heading = null;
+          }
           if (phase.react) scene.animator.react(phase.react, frameMs);
         } else {
           runAction(phase.startAction, scene);
-          scene.facing = phase.face ?? (phase.x >= scene.x ? 1 : -1);
+          if (phase.face) {
+            scene.facing = phase.face;
+            scene.heading = null;
+          }
         }
       }
 
@@ -191,14 +204,25 @@ export function createBrain(options: BrainOptions): Brain {
         return;
       }
 
-      // Walking: move toward the target and arrive exactly on it.
-      const dir = phase.x >= scene.x ? 1 : -1;
-      scene.x += dir * phase.speed * (dt / 1000);
-      if ((dir === 1 && scene.x >= phase.x) || (dir === -1 && scene.x <= phase.x)) {
+      // Walking: move straight toward the target and arrive exactly on it. The pet turns to face the
+      // way it goes, unless the phase fixes a direction (walking to a bowl, nose first).
+      const dx = phase.x - scene.x;
+      const dz = phase.z - scene.z;
+      const distance = Math.hypot(dx, dz);
+      const step = phase.speed * (dt / 1000);
+      if (distance > 0.001 && !phase.face) {
+        scene.heading = Math.atan2(dx, dz);
+        if (Math.abs(dx) > 0.01) scene.facing = dx > 0 ? 1 : -1;
+      }
+      if (distance <= step) {
         scene.x = phase.x;
+        scene.z = phase.z;
         runAction(phase.endAction, scene);
         index++;
         phaseStarted = false;
+      } else {
+        scene.x += (dx / distance) * step;
+        scene.z += (dz / distance) * step;
       }
     },
   };

@@ -76,6 +76,26 @@ Unique angles no competitor has: a ferret with real ferret behavior (stealing an
 
 The developer judged that a flat 2D look will not satisfy users and that quality now outranks the smallest bundle. First choice was stylized-real 3D. After seeing a cute blocky ferret ("Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles) the developer chose **cute blocky 3D** instead: Blockbench style, small pixel texture, animated by the developer in Blender, rendered with three.js. This reverses the Canvas 2D decision D5 and the "3D art dropped" rule. A blocky model keeps the download tiny and runs on low-end phones, so only three.js (169 KB gzip) costs real bytes. It also makes limited-time pets cheap later (a new pet is a small model and a texture), though extra pets stay outside the MVP. Use original blocky models only, never Mojang's assets. The spike and budgets are Part 1K in `docs/PLAN.md`, and the Blender instructions are in `animation/`.
 
+## 6. How other apps show the pet (researched 2026-10-01)
+
+Question from the developer: is it 3D, 2D or 2.5D that users want, and how do apps avoid showing the pet restricted? Evidence is thin on "what users prefer" (no study found comparing 2D and 3D pet apps), so this is what the apps do and what reviews praise.
+
+| Style | Examples | What it gives | What it costs |
+|---|---|---|---|
+| Close-up 3D character stage | My Talking Tom 2 (Outfit7), Nintendogs | The strongest emotional hook: big face, voice, reactions. Rooms are a backdrop; the pet mostly stays in front of the camera | Little room to roam or decorate |
+| 3D or isometric home you decorate | Animal Crossing Pocket Camp (fixed isometric "miniature" camera), Pokipet and Pengu-style rooms, Sims Mobile | Decorating is the main long-term hook. Pets walk around the home and use furniture | Pet small unless the camera helps |
+| Flat 2D scene | Neko Atsume (fixed yard), Pou, Finch | Simple, cozy, cheap to make. Neko Atsume and Finch prove 2D can be a huge hit | Little feeling of depth |
+| Open 3D world | Adopt Me! | Social and collecting | Not a fit for care of one pet |
+
+Findings:
+
+1. **2D versus 3D does not decide success.** Finch (2D, $30-40M a year) and Neko Atsume (2D) sit next to 3D hits. What reviews praise is cuteness, detail, outfits and decorating, seeing a partner's care, and a pet that feels alive.
+2. **Research on virtual pets** (Beyond cute, VR pet games): players who can see the pet roam freely enjoy the surprise of finding it somewhere; engagement lasts longer when the player has some control; players lose interest in pets they can only watch.
+3. **Restricted movement is what makes a pet feel like a sprite.** A pet that only slides along one line reads as a toy. A pet that crosses the whole room, turns, visits things, and goes to bed reads as an animal.
+4. **Close-ups carry the emotion.** Apps that stay zoomed out lose the face. So: whole room while it roams, close-up while it eats, sleeps, is petted or reacts.
+
+Decision (developer, 2026-10-01): keep the 2.5D room, let the pet roam the whole floor, and add automatic zoom during care (no player panning). Implemented in Part 1K follow-up: `src/render/layout.ts`, `plan.ts`, `brain.ts`, `scene3d.ts`.
+
 ## Sources
 
 - Pengu: https://apps.apple.com/us/app/pengu-raise-virtual-pets/id6462927800 , https://play.google.com/store/apps/details?id=com.slay.pengu , https://justuseapp.com/en/app/6462927800/pengu-virtual-pets/reviews

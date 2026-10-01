@@ -69,9 +69,9 @@ export interface Game {
 }
 
 /** Where a touch counts as touching the pet, around its feet position. */
-const PET_HIT = { halfWidth: 120, top: 110, bottom: 12 } as const;
+const PET_HIT = { halfWidth: 80, top: 62, bottom: 12 } as const;
 
-const clampToy = (x: number): number => Math.min(300, Math.max(60, x));
+const clampToy = (x: number): number => Math.min(284, Math.max(76, x));
 
 function hitsPet(scene: BrainScene, x: number, y: number): boolean {
   return Math.abs(x - scene.x) <= PET_HIT.halfWidth && y >= scene.y - PET_HIT.top && y <= scene.y + PET_HIT.bottom;
@@ -130,6 +130,7 @@ export function createGame(options: GameOptions): Game {
     const result = dispatch({ type: 'FinishPlay', band });
     chase = null;
     scene.y = ROOM.groundY;
+    scene.heading = null;
     scene.animator.setBase('idle', frameMs);
     brain.setPaused(false);
     options.onPlayEnd?.({ band, catches: played.catches, result });
@@ -154,6 +155,8 @@ export function createGame(options: GameOptions): Game {
         toyTarget = clampToy(lastScene.x + lastScene.facing * 60);
         chase = createChase(lastScene.x, toyTarget);
         lastScene.y = ROOM.groundY;
+        lastScene.z = ROOM.chaseZ;
+        lastScene.heading = null;
         brain.setPaused(true);
         options.onChange?.();
       }
@@ -181,7 +184,9 @@ export function createGame(options: GameOptions): Game {
       const before = scene.x;
       chase = stepChase(chase, dt, toyTarget);
       scene.x = chase.ferretX;
+      scene.z = ROOM.chaseZ;
       scene.facing = chase.facing;
+      scene.heading = null;
       const moved = Math.abs(chase.ferretX - before) > 0.05;
       scene.animator.setBase(chase.pauseMs > 0 ? 'idle' : moved ? 'run' : 'curious', frameMs);
       if (chase.justCaught) scene.animator.react('happy', frameMs);
@@ -190,9 +195,10 @@ export function createGame(options: GameOptions): Game {
 
     props() {
       return {
-        sock: { x: brain.sock.x, carried: brain.sock.carried },
+        sock: { x: brain.sock.x, z: brain.sock.z, carried: brain.sock.carried },
         toy: chase ? { id: chaseToy, x: toyTarget } : null,
         timerFraction: chase ? Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs) : null,
+        pressing: pressingPet,
       };
     },
 

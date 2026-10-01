@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CHASE } from '../core/toyChase';
 import { ANIMATION_NAMES, BONES, CLIPS, CLIP_FPS, frameIntervalMs, playbackRate } from './clipSpec';
+import { SPEED } from './plan';
+import { M_PER_PX, PET_SCALE } from './stageMap';
 
 /** Reads the JSON chunk of a .glb file: the model the game really loads. */
 function readGlb(path: string): { nodes: Array<{ name?: string }>; animations: Array<{ name: string; samplers: Array<{ input: number }> }>; accessors: Array<{ max?: number[]; min?: number[]; count: number }>; images?: unknown[]; materials?: unknown[]; meshes: Array<{ primitives: Array<{ indices?: number }> }> } {
@@ -60,11 +63,15 @@ describe('playbackRate', () => {
   });
 
   it('agrees with the game speeds: game walk, run, and sneak (px/s) stay near their clips', () => {
-    const MPS = 0.0032; // metres per logical px (stageMap.ts)
-    expect(playbackRate('walk', 55 * MPS)).toBeGreaterThan(0.85);
-    expect(playbackRate('walk', 55 * MPS)).toBeLessThan(1.1);
-    expect(playbackRate('run', 170 * MPS)).toBeGreaterThan(0.8);
-    expect(playbackRate('sneak', 45 * MPS)).toBeLessThan(1.5);
+    const pace = (pxPerSecond: number): number => (pxPerSecond * M_PER_PX) / PET_SCALE;
+    expect(playbackRate('walk', pace(SPEED.walk))).toBeGreaterThan(0.85);
+    expect(playbackRate('walk', pace(SPEED.walk))).toBeLessThan(1.25);
+    expect(playbackRate('run', pace(SPEED.run))).toBeGreaterThan(0.85);
+    expect(playbackRate('run', pace(SPEED.run))).toBeLessThan(1.25);
+    expect(playbackRate('sneak', pace(SPEED.sneak))).toBeGreaterThan(0.85);
+    expect(playbackRate('sneak', pace(SPEED.sneak))).toBeLessThan(1.3);
+    // The mini-game chase speed is a run too.
+    expect(playbackRate('run', pace(CHASE.ferretSpeed))).toBeLessThan(1.4);
   });
 });
 

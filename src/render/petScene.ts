@@ -16,10 +16,13 @@ export interface PetAnimator {
 
 export interface PetScene {
   readonly animator: PetAnimator;
-  /** Position of the ferret's feet, in logical px. */
+  /** Position of the ferret's feet, in logical px (layout.ts): x across, z in depth, y the lift above the floor. */
   x: number;
   y: number;
+  z: number;
   facing: 1 | -1;
+  /** Direction of travel in radians, or null to face left or right by `facing`. */
+  heading: number | null;
   setCoat(coat: Coat): void;
   /** Ask for a redraw, for example after a state change while everything was settled. */
   requestFrame(): void;
@@ -29,11 +32,13 @@ export interface PetScene {
 /** Small movable things the controller owns and the scene draws. Plain data. */
 export interface ScenePropsState {
   /** The sock lies on the floor at x, or the pet carries it. */
-  sock: { x: number; carried: boolean };
+  sock: { x: number; z: number; carried: boolean };
   /** The toy in the mini-game, on the floor at x. */
   toy: { id: ToyId; x: number } | null;
   /** 1 at the start of the mini-game down to 0 at the end, null outside it. */
   timerFraction: number | null;
+  /** The player is pressing the pet, so the camera moves in close. */
+  pressing: boolean;
 }
 
 /** Pointer events in logical room coordinates (360 by 540), with real timestamps. */

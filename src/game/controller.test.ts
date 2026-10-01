@@ -15,7 +15,9 @@ function setup(pet: PetRecord) {
   const scene: BrainScene = {
     x: 180,
     y: ROOM.groundY,
+    z: 0,
     facing: 1,
+    heading: null,
     animator: { setBase: (n) => bases.push(n), react: (n) => reactions.push(n) },
   };
   const plays: PlayResult[] = [];

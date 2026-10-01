@@ -6,7 +6,7 @@ import { createManualClock } from '../core/time';
 import type { HistoryEvent, PetRecord } from '../core/types';
 import { ANIMATION_NAMES, type AnimationName } from './clipSpec';
 import { createBrain, type BrainScene } from './brain';
-import { WALK_MAX_X, WALK_MIN_X } from './plan';
+import { WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z } from './plan';
 import { ROOM } from './layout';
 
 const WORLD: AIWorld = { foodInBowl: true, waterInBowl: true, hasToy: true, hasStealable: true, propNearby: false, pointerInRoom: false };
@@ -19,7 +19,9 @@ function setup(pet: PetRecord, world: AIWorld = { ...WORLD }) {
   const scene: BrainScene = {
     x: 180,
     y: ROOM.groundY,
+    z: 0,
     facing: 1,
+    heading: null,
     animator: {
       setBase: (name) => base.push(name),
       react: () => undefined,
@@ -59,15 +61,24 @@ describe('brain', () => {
     const seen = new Set<string>();
     let minX = Infinity;
     let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
     t.run(37_500, 16, () => {
       minX = Math.min(minX, t.scene.x);
       maxX = Math.max(maxX, t.scene.x);
+      minZ = Math.min(minZ, t.scene.z);
+      maxZ = Math.max(maxZ, t.scene.z);
       expect(Number.isFinite(t.scene.x)).toBe(true);
       const d = t.brain.current();
       if (d) seen.add(d.behavior);
     });
     expect(minX).toBeGreaterThanOrEqual(WALK_MIN_X - 1);
     expect(maxX).toBeLessThanOrEqual(WALK_MAX_X + 1);
+    expect(minZ).toBeGreaterThanOrEqual(WALK_MIN_Z - 1);
+    expect(maxZ).toBeLessThanOrEqual(WALK_MAX_Z + 1);
+    // It really roams the floor: it uses a good part of both the width and the depth.
+    expect(maxX - minX).toBeGreaterThan(80);
+    expect(maxZ - minZ).toBeGreaterThan(60);
     expect(seen.size).toBeGreaterThan(3);
     for (const name of t.base) expect(ANIMATION_NAMES).toContain(name);
   });
@@ -79,7 +90,7 @@ describe('brain', () => {
     t.run(6000, 16, () => {
       const dx = t.scene.x - prevX;
       prevX = t.scene.x;
-      // Only when it moves noticeably: 55 px/s is about 0.9 px per frame.
+      // Only when it moves noticeably: 36 px/s is about 0.6 px per frame.
       if (Math.abs(dx) > 0.5) {
         const d = t.brain.current();
         if (d && d.behavior !== 'eat' && d.behavior !== 'drink' && d.behavior !== 'curious') {
@@ -95,10 +106,11 @@ describe('brain', () => {
     const t = setup(makePet({ id: 'sleeper', state: { energy: 9000 } }));
     t.run(200, 16);
     t.setPet({ ...t.pet(), state: { ...t.pet().state, sleepState: 'asleep', sleepStartedAt: T0, energy: 2000 } });
-    t.run(1500, 16); // walking to the hammock takes under 2 s at 55 px/s
+    t.run(1500, 16); // walking to the hammock takes about 3 s at 36 px/s
     expect(t.brain.current()?.behavior).toBe('sleep');
     expect(t.scene.y).toBe(ROOM.hammockRestY);
     expect(t.scene.x).toBe(ROOM.hammockX);
+    expect(t.scene.z).toBe(ROOM.hammockZ);
     expect(t.base.at(-1)).toBe('sleep');
     // Still asleep a while later: no restless decisions.
     t.run(500, 16);
@@ -108,6 +120,7 @@ describe('brain', () => {
     t.run(10, 16);
     expect(t.brain.current()?.behavior).not.toBe('sleep');
     expect(t.scene.y).toBe(ROOM.groundY);
+    expect(t.scene.z).toBeGreaterThan(ROOM.hammockZ); // stepped out in front of the hammock
   });
 
   it('a high-mischief pet steals the sock again and again, at most every 12 hours, and logs it', () => {

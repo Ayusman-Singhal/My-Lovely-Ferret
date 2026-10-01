@@ -1,17 +1,18 @@
-// Maps the logical room (360 by 540 px, y grows downward, see layout.ts) onto the 3D floor and
-// back. Pure numbers, tested without three.js. The room is 1.152 m wide; the walking pet stays
-// on the line z = 0, and a pet lifted into the hammock (y smaller than the ground line) also
-// moves a little back, so the climb reads as going up and into the hammock.
+// Maps the logical room (360 by 540 px, see layout.ts) onto the 3D floor and back. Pure numbers,
+// tested without three.js. 1 logical px is 4.8 mm, so the room's 360 px width is 1.73 m. x runs left
+// to right, z from the back wall (negative) toward the camera, and a pet lifted into the hammock
+// (y smaller than the ground line) rises 3 mm per px.
 
 import { ROOM } from './layout';
 import { VIEW } from './palette';
 
-/** Metres per logical pixel. The ferret is about 0.62 m, so about 194 px, nose to tail. */
-export const M_PER_PX = 0.0032;
+/** Metres per logical pixel. The ferret model is 0.62 m, shown at PET_SCALE of that. */
+export const M_PER_PX = 0.0048;
+/** Size of the model in the room. 1 = the model as exported (0.62 m, about 130 px). */
+export const PET_SCALE = 1;
 const CENTER_X = VIEW.width / 2;
-/** Metres up and back per logical pixel of lift above the ground line. */
+/** Metres of height per logical pixel of lift above the ground line. */
 const RISE_PER_PX = 0.003;
-const BACK_PER_PX = 0.006;
 
 export interface World {
   x: number;
@@ -19,10 +20,9 @@ export interface World {
   z: number;
 }
 
-/** The feet position (x, y) in logical px, as a point in the 3D room in metres. */
-export function logicalToWorld(x: number, y: number): World {
-  const lift = ROOM.groundY - y;
-  return { x: (x - CENTER_X) * M_PER_PX, y: lift * RISE_PER_PX, z: -lift * BACK_PER_PX };
+/** The feet position (x, z on the floor, y the lift) in logical px, as a point in the 3D room in metres. */
+export function logicalToWorld(x: number, y: number, z = 0): World {
+  return { x: (x - CENTER_X) * M_PER_PX, y: (ROOM.groundY - y) * RISE_PER_PX, z: z * M_PER_PX };
 }
 
 /**

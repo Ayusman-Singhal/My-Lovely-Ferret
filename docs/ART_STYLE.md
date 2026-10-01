@@ -13,10 +13,12 @@ Fixed before any final art (guide §25.1). Decided 2026-10-01 (decision D6 in `P
 ## 2. The view
 
 - The room is shown in **portrait**, 2:3 (360 by 540 logical px). The 3D camera is fixed and **2.5D**: a narrow field of view from far away, turned about 28 degrees to the right and tilted about 32 degrees down, so the room reads as a toy diorama (a cut-away corner with a thick floor slab, a back wall, and a left wall) with real depth. It is pulled back until the room fits across the screen. No panning, no rotating (guide §0).
-- Everything that thinks about position (PetAI, the plan, the mini-game, touch) uses the **logical 360 by 540 px room**. `src/render/stageMap.ts` maps it to the 3D floor: 1 logical px is 3.2 mm, so the room is 1.152 m wide and the ferret (0.62 m) about 194 px long.
+- Everything that thinks about position (PetAI, the plan, the mini-game, touch) uses **logical pixels**: x across (0 to 360), z in depth (negative toward the back wall), and y the lift above the floor (`src/render/layout.ts`). `src/render/stageMap.ts` maps them to the 3D floor: 1 logical px is 4.8 mm, so the room is 1.76 m wide and 1.56 m deep and the ferret (0.62 m) about 130 px long, a third of the room's width.
 - Device pixel ratio capped at **2** (guide §4.4). Antialiasing on.
 - Safe areas: the pet keeps clear of the top HUD band (about 64 px) and the bottom action bar (about 88 px). The canvas sits between them.
-- A touch is turned into a point on the vertical plane through the pet (`stageMap.ts`), so touching the body counts as touching the pet.
+- A touch is turned into a point on the vertical plane through the pet (`stageMap.ts`), so touching the body counts as touching the pet, wherever it stands.
+- **The pet roams the whole floor**, not a line: it walks and runs to points across the width and the depth, turns to face the way it goes, goes to the bowls nose first, and steps up into the hammock at the back wall. Furniture stands along the walls, outside the roaming rectangle (`layout.ts`), so a straight walk never crosses anything solid.
+- **Auto zoom.** The whole room is in view while the pet roams. While it eats, drinks, sleeps, is pressed, or reacts (happy, annoyed, surprise) the camera eases in toward it, and eases back out afterwards. Wandering and sniffing do not zoom, so the camera never swings about. The player never pans or turns the camera (guide §0, approved by the developer on 2026-10-01).
 
 ## 3. Palette (16 colors)
 
@@ -70,8 +72,8 @@ One room, built in code from boxes and low-poly shapes in the palette (`src/rend
 
 - A floor slab with board lines, a back wall and a left wall with darker base bands. The back wall has a window (frame, blue pane, cross bars). The left wall has a picture and a low shelf with a few boxes.
 - A rug under the pet's walking line, a crate stack at the back left, and a cushion at the front right.
-- A hammock behind the walking line, made of two posts and a sling at the height the sleeping pet rests on (the pet walks to it and moves up and back when it sleeps).
-- Food bowl (red) and water bowl (blue) at the two ends of the walking line, a gold ball toy, a sock on the floor that a mischievous pet can steal. All of them keep clear of each other, so nothing hides the pet.
+- A hammock against the back wall, made of two posts and a sling at the height the sleeping pet rests on (the pet walks to the front of it and steps up).
+- Food bowl (red) on the left and water bowl (blue) on the right, a gold ball toy, a sock on the floor that a mischievous pet can steal. All of them keep clear of each other, so nothing hides the pet.
 - Lighting: one ambient light and one soft sun, plain Lambert materials, **no real-time shadows** (a dark blob under the ferret instead, cheap on phones).
 - No camera panning, no second room (guide §0).
 
