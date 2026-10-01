@@ -11,7 +11,7 @@ export const M_PER_PX = 0.0032;
 const CENTER_X = VIEW.width / 2;
 /** Metres up and back per logical pixel of lift above the ground line. */
 const RISE_PER_PX = 0.003;
-const BACK_PER_PX = 0.002;
+const BACK_PER_PX = 0.006;
 
 export interface World {
   x: number;

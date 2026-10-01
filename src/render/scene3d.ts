@@ -62,7 +62,10 @@ export interface Scene3DOptions {
 }
 
 const FADE_S = 0.2;
-const CAMERA = { vfov: 30, pitchDeg: 30, targetY: 0.12, targetZ: 0.1, fitWidthM: 1.06 } as const;
+// A 2.5D diorama view: a narrow field of view from far away, turned 28 degrees to the right and tilted
+// 32 degrees down, so the room reads as a cut-away corner with depth (back wall, left wall, floor).
+// fitRadiusM is the part of the room, around the look-at point, that must fit across the screen.
+const CAMERA = { vfov: 22, pitchDeg: 32, yawDeg: 28, targetY: 0.37, targetX: 0.0, targetZ: 0.0, fitRadiusM: 0.69 } as const;
 const SOCK_SIZE = { w: 0.1, h: 0.035, d: 0.045 } as const;
 
 const hex = (n: number): Color => new Color(n);
@@ -107,23 +110,30 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
 
   const stage = new ThreeScene();
   stage.background = hex(PALETTE.cream);
-  stage.add(new AmbientLight(0xfff1dc, 1.35));
+  stage.add(new AmbientLight(0xfff1dc, 1.5));
   const sun = new DirectionalLight(0xffffff, 1.7);
-  sun.position.set(-1.2, 2.4, 2);
+  sun.position.set(-0.6, 2.4, 1.6);
   stage.add(sun);
 
   const camera = new PerspectiveCamera(CAMERA.vfov, VIEW.width / VIEW.height, 0.1, 20);
-  const lookAt = new Vector3(0, CAMERA.targetY, CAMERA.targetZ);
+  const lookAt = new Vector3(CAMERA.targetX, CAMERA.targetY, CAMERA.targetZ);
   const resize = (): void => {
     const w = wrapper.clientWidth || VIEW.width;
     const h = wrapper.clientHeight || VIEW.height;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    // Pull the camera back until the room width fits across the screen, whatever the shape.
-    const distance = CAMERA.fitWidthM / 2 / (Math.tan((CAMERA.vfov * Math.PI) / 360) * camera.aspect);
+    // Pull the camera back until the room fits across the screen, whatever the shape. Narrow screens
+    // are limited by their width, wide ones by their height.
+    const half = Math.tan((CAMERA.vfov * Math.PI) / 360) * Math.min(1, camera.aspect);
+    const distance = CAMERA.fitRadiusM / half;
     const pitch = (CAMERA.pitchDeg * Math.PI) / 180;
-    camera.position.set(0, lookAt.y + distance * Math.sin(pitch), lookAt.z + distance * Math.cos(pitch));
+    const yaw = (CAMERA.yawDeg * Math.PI) / 180;
+    camera.position.set(
+      lookAt.x + distance * Math.cos(pitch) * Math.sin(yaw),
+      lookAt.y + distance * Math.sin(pitch),
+      lookAt.z + distance * Math.cos(pitch) * Math.cos(yaw),
+    );
     camera.lookAt(lookAt);
     loop?.request();
   };
@@ -137,27 +147,55 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     return mesh;
   };
   const px = (logicalX: number): number => (logicalX - VIEW.width / 2) * M_PER_PX;
-  const WALL_Z = -0.62;
 
-  // The floor runs well past the camera's view, so the whole screen below the wall is room.
-  box(2.6, 0.02, 3.4, PALETTE.floor, 0, -0.01, WALL_Z + 1.7);
-  for (let z = WALL_Z + 0.12; z < 2.4; z += 0.12) box(2.6, 0.002, 0.008, PALETTE.floorShade, 0, 0.001, z);
-  box(2.6, 1.3, 0.04, PALETTE.wall, 0, 0.65, WALL_Z - 0.02);
-  box(2.6, 0.14, 0.02, PALETTE.wallShade, 0, 0.07, WALL_Z + 0.01);
+  // A cut-away corner room, like a toy diorama on the cream background: a thick floor slab, a back
+  // wall along the pet's walking line, and a left wall. The pet walks along z = 0.
+  const ROOM_W = 1.14; // x from -0.57 to 0.57
+  const ROOM_D = 1.0; // z from -0.55 to 0.45
+  const BACK_Z = -0.55;
+  const LEFT_X = -ROOM_W / 2;
+  const WALL_H = 0.95;
+  const floorMidZ = BACK_Z + ROOM_D / 2;
 
-  // Window: frame, pane, and two bars.
-  const win = { x: px(84), y: 0.66 };
-  box(0.36, 0.46, 0.02, PALETTE.floorShade, win.x, win.y, WALL_Z + 0.01);
-  box(0.29, 0.39, 0.02, PALETTE.waterBlue, win.x, win.y, WALL_Z + 0.02);
-  box(0.014, 0.39, 0.02, PALETTE.floorShade, win.x, win.y, WALL_Z + 0.03);
-  box(0.29, 0.014, 0.02, PALETTE.floorShade, win.x, win.y - 0.01, WALL_Z + 0.03);
+  box(ROOM_W, 0.08, ROOM_D, PALETTE.floorShade, 0, -0.04, floorMidZ); // the slab, its sides show
+  box(ROOM_W - 0.02, 0.004, ROOM_D - 0.02, PALETTE.floor, 0, 0.002, floorMidZ);
+  for (let z = BACK_Z + 0.11; z < BACK_Z + ROOM_D - 0.05; z += 0.11) box(ROOM_W - 0.02, 0.002, 0.007, PALETTE.floorShade, 0, 0.005, z);
+  box(ROOM_W, WALL_H, 0.05, PALETTE.wall, 0, WALL_H / 2, BACK_Z - 0.025); // back wall
+  box(0.05, WALL_H, ROOM_D, PALETTE.wall, LEFT_X - 0.025, WALL_H / 2, floorMidZ); // left wall
+  box(ROOM_W, 0.12, 0.02, PALETTE.wallShade, 0, 0.06, BACK_Z + 0.01); // base bands
+  box(0.02, 0.12, ROOM_D, PALETTE.wallShade, LEFT_X + 0.01, 0.06, floorMidZ);
 
-  // Hammock: two posts and a sling at the height the sleeping pet rests on.
+  // Window on the back wall: frame, pane, and two bars.
+  const win = { x: -0.3, y: 0.58 };
+  box(0.34, 0.44, 0.02, PALETTE.floorShade, win.x, win.y, BACK_Z + 0.01);
+  box(0.27, 0.37, 0.02, PALETTE.waterBlue, win.x, win.y, BACK_Z + 0.02);
+  box(0.014, 0.37, 0.02, PALETTE.floorShade, win.x, win.y, BACK_Z + 0.03);
+  box(0.27, 0.014, 0.02, PALETTE.floorShade, win.x, win.y, BACK_Z + 0.03);
+
+  // On the left wall: a picture and a low shelf with a few things on it.
+  box(0.02, 0.26, 0.34, PALETTE.floorShade, LEFT_X + 0.01, 0.62, 0.12);
+  box(0.02, 0.2, 0.28, PALETTE.gold, LEFT_X + 0.02, 0.62, 0.12);
+  box(0.02, 0.1, 0.1, PALETTE.bowlRed, LEFT_X + 0.03, 0.6, 0.12);
+  box(0.16, 0.025, 0.44, PALETTE.floorShade, LEFT_X + 0.08, 0.34, -0.2);
+  box(0.07, 0.07, 0.07, PALETTE.bowlRed, LEFT_X + 0.08, 0.385, -0.3);
+  box(0.06, 0.1, 0.06, PALETTE.waterBlue, LEFT_X + 0.08, 0.4, -0.12);
+
+  // A rug under the pet's walking line, with a border.
+  box(0.76, 0.008, 0.46, PALETTE.gold, 0.0, 0.008, 0.02);
+  box(0.7, 0.01, 0.4, PALETTE.belly, 0.0, 0.009, 0.02);
+
+  // Things to climb on and sit by: a crate stack at the back left, a cushion at the front right.
+  box(0.2, 0.14, 0.2, PALETTE.floorShade, LEFT_X + 0.16, 0.07, BACK_Z + 0.16);
+  box(0.16, 0.12, 0.16, PALETTE.wallShade, LEFT_X + 0.17, 0.2, BACK_Z + 0.16);
+  box(0.22, 0.07, 0.22, PALETTE.bowlRed, 0.4, 0.035, 0.32);
+  box(0.18, 0.02, 0.18, PALETTE.belly, 0.4, 0.075, 0.32);
+
+  // Hammock: two posts and a sling at the height the sleeping pet rests on, behind the walking line.
   const hammock = logicalToWorld(ROOM.hammockX, ROOM.hammockRestY);
-  for (const side of [-1, 1]) box(0.04, hammock.y + 0.08, 0.04, PALETTE.floorShade, hammock.x + side * 0.4, (hammock.y + 0.08) / 2, hammock.z);
-  box(0.8, 0.02, 0.36, PALETTE.belly, hammock.x, hammock.y - 0.01, hammock.z);
+  for (const side of [-1, 1]) box(0.04, hammock.y + 0.08, 0.04, PALETTE.floorShade, hammock.x + side * 0.27, (hammock.y + 0.08) / 2, hammock.z);
+  box(0.5, 0.02, 0.28, PALETTE.belly, hammock.x, hammock.y - 0.01, hammock.z);
   // Only a back rail: a front one would hide the sleeping pet from the camera.
-  box(0.76, 0.035, 0.05, PALETTE.belly, hammock.x, hammock.y + 0.01, hammock.z - 0.17);
+  box(0.48, 0.03, 0.04, PALETTE.belly, hammock.x, hammock.y + 0.01, hammock.z - 0.13);
 
   // Bowls: a coloured bowl with a lighter inside.
   const bowl = (logicalX: number, color: number, inside: number): void => {
@@ -393,6 +431,7 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     const rect = wrapper.getBoundingClientRect();
     ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -(((e.clientY - rect.top) / rect.height) * 2 - 1));
     raycaster.setFromCamera(ndc, camera);
+    plane.constant = -ferret.position.z; // the vertical plane through the pet, wherever it stands
     return raycaster.ray.intersectPlane(plane, hit) ? planeToLogical(hit.x, hit.y) : null;
   };
   const listeners: Array<[string, (e: PointerEvent) => void]> = [];

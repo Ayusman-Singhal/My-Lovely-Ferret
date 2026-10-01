@@ -7,7 +7,7 @@ import { VIEW } from './palette';
 export const ROOM = {
   foodBowlX: 58,
   waterBowlX: 302,
-  toyX: 262,
+  toyX: 250,
   hammockX: 200,
   /** Ground line the pet stands on. */
   groundY: VIEW.floorY + 100,
