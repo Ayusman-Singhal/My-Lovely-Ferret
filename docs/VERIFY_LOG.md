@@ -81,3 +81,22 @@ Source: `npm view` on the npm registry; measurements from the spike (see `docs/P
 Still to verify before 1K.3 finishes: meshopt decoder size inside the 169 KB figure (it is included), gltfpack availability on this machine, and a real low-end Android check (1J.4).
 
 Decision input for 1K.4: the proposed 350 KB initial JS budget leaves about 180 KB for Preact, game code, and UI (now about 28 KB), so it fits with margin. Lazy-loading the three.js chunk after the first Preact paint would keep first paint small, but the pet is the product, so the loading screen must show quickly.
+
+## 2026-10-01: Roblox publishing, DataStore, and service facts (side track R)
+
+Full table with status per fact (confirmed, reported, unverified) is in `ferret-game-roblox/02_ROBLOX_FACTS.md`. Summary:
+
+| Fact | Result | Source |
+|---|---|---|
+| Cost to build and test | Studio and testing are free. No Robux needed | https://generalistprogrammer.com/tutorials/how-to-make-a-roblox-game-for-free |
+| Audience settings | Private, Limited (playtesters, friends or community), Public | https://create.roblox.com/docs/production/publishing/publish-experiences-and-places |
+| Public publishing needs | Account in good standing 2+ days old, age verification, maturity questionnaire, 2-step verification | same |
+| Public game without fee reaches | Age-checked 16+ users and Trusted Friends only | https://devforum.roblox.com/t/alternate-publishing-requirements-for-roblox-kids-and-select/4630944 |
+| Reaching under-16 players | 1,000 Robux one-time (refundable), or Plus or Premium for 2 months, plus about 500 highly engaged players. **Sources differ** on refund terms (90 days versus 25 engaged players for 60 days). Not planned | same, https://bloxbot.ai/guide/roblox-new-publishing-requirements-2026 |
+| DataStore limits | Reads `300 + users x 40` per minute, writes `300 + users x 20`, 4 MB per key | https://create.roblox.com/docs/cloud-services/data-stores/error-codes-and-limits |
+| `AnalyticsService:LogCustomEvent` | Exists, signature `(player, eventName, value, customFields)` | https://create.roblox.com/docs/reference/engine/classes/AnalyticsService |
+| `MemoryStoreHashMap` | `SetAsync(key, value, expiration)`, `GetAsync`, `UpdateAsync`, `RemoveAsync`. Unit of `expiration` not on the page | https://create.roblox.com/docs/reference/engine/classes/MemoryStoreHashMap |
+| `TextService:FilterStringAsync` | Exists. Re-filter rule for saved text not on the page | https://create.roblox.com/docs/reference/engine/classes/TextService |
+| DevEx | 30,000 Robux minimum, 13+, about $0.0035 per Robux (one source says $0.0054 for US 18+ verified). **India eligibility not verified** (official page returned HTTP 403) | https://generalistprogrammer.com/tutorials/roblox-devex-guide-how-to-cash-out-robux |
+
+Decision: publish for 16+ and Trusted Friends, pay no Robux. Re-check on the day of publishing.

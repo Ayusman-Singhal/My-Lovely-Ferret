@@ -32,6 +32,7 @@ Decided in the setup session (2026-09-30), from guide §3 defaults unless noted:
 Open items that do not block Phase 1:
 
 - Limited-time or extra pets (for example a blocky baby pink sheep, original art): out of the MVP (CLAUDE.md, guide §0). The rig and clip names in `animation/RIG_SPEC.md` §7 are kept species-agnostic so a new pet needs no code change. Decide at Phase 2 planning.
+- **Side track R: Roblox validation (docs only, started 2026-10-01).** `ferret-game-roblox/` holds the plan, design, tech plan, build guide, and launch guide for a small Roblox version of the game, to test the idea with real testers (shared care, cute and alive, platform fit, early money signal). Published free for age-checked 16+ players and Trusted Friends, no Robux. Does not change the phases, the stack, or `src/` (workflow rule 7). The developer builds it in Roblox Studio while the Blender animations are made. Results feed back into this plan after the 2-week test (`ferret-game-roblox/01_VALIDATION_PLAN.md`).
 - Hindi translator and reviewer (needed at Phase 2, guide §25.9).
 - Android minimum OS and WebView version (Phase 5, guide §25.6).
 - (Resolved) Pixi versus Canvas 2D: Canvas 2D, see Part 1C.
