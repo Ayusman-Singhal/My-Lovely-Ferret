@@ -104,11 +104,11 @@ Goal: the pet's numbers change correctly with time, proven by a printed test. No
 
 Done when: `SimTest` prints sensible numbers and "deterministic: true".
 
-## M2: The blocky ferret (about 4 hours)
+## M2: The blocky ferret (about 4 to 7 hours)
 
-Goal: a ferret made of Parts, standing in the empty world. Follow `06_FERRET_RIG_AND_ANIMATION.md` sections 1 to 3.
+Goal: a ferret standing in the empty world, with its joints. Follow `06_FERRET_RIG_AND_ANIMATION.md` sections 1 to 3. **Path A** (recommended): export the Blender model as separate meshes and import it, about 5 to 7 hours the first time. **Path B**: build it from Parts, about 3 to 4 hours. Before importing, read the cost line in the importer (section 2A.7 of that file). If it asks for Robux, use Path B.
 
-Done when: you can see a ferret model named `Ferret` in the Workspace with a body, head, ears, tail, four legs, and the joints in place.
+Done when: you can see a ferret model named `Ferret` in the Workspace with a body, head, ears, tail, four legs, and the joints in place, and the nod test from section 3 moves the head, ears, eyes and jaw together.
 
 ## M3: Making it move (about 5 hours)
 

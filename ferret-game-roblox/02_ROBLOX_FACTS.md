@@ -83,7 +83,13 @@ What it means: ferret demand exists, and the shelf is crowded. Adopt Me! is abou
 | A CC-BY model needs credit to the author. On Roblox, credit must go in the game itself, for example an in-game credits screen, because Roblox asset pages have no place for it | Reported | Roblox developer forum threads, for example https://devforum.roblox.com/t/roblox-cc-right-atribution-i-need-help/2064646 |
 | Roblox's rules make it hard to meet some Creative Commons conditions when **uploading** such assets to the Creator Store | Reported | same threads |
 
-The simplest path is to build the ferret from your own Parts (no attribution needed) and keep any imported mesh as an optional upgrade.
+The developer chose to use the same blocky ferret as the real game (LandyStudio, CC BY 4.0), imported as separate mesh pieces (Path A in `06_FERRET_RIG_AND_ANIMATION.md`), with the credit shown in the game's Credits screen. Building the ferret from your own Parts (Path B) needs no credit and is the fallback.
+
+| Fact | Status | Source |
+|---|---|---|
+| Roblox's importer imports FBX with several meshes as one Model ("Import Only as Model" on by default). Each piece keeps its pivot ("Use Imported Pivot", on by default). Suggested Blender FBX settings: -Z Forward, Y Up, FBX Units Scale, Limit to Selected, no leaf bones, embed textures | Confirmed (importer settings), Reported (Blender settings) | https://create.roblox.com/docs/studio/importer , https://gmmarket.me/community/post/complete-guide-importing-blender-meshes-into-roblox-studio-fbx-obj-scale-fix-pbr |
+| Textures on mesh pieces use smooth filtering, so 64 by 64 pixel art looks blurry. A `SurfaceAppearance.ResampleMode` property is listed in the Roblox reference. A forum feature request from 2025-10-27 said Pixelated mode was planned, not released. **Check in Studio whether it works** | Confirmed (property listed), Unverified (whether Pixelated works on MeshParts) | https://create.roblox.com/docs/reference/engine/classes/SurfaceAppearance , https://devforum.roblox.com/t/pixelated-resamplemode-for-surfaceappearances-pixel-art-meshes/4028314 |
+| Upload fees of 80 Robux (2026-07-14) are reported for **avatar items for the Marketplace**. Whether meshes and textures used only inside your own experience cost Robux or need ID verification is **not stated** in the sources found | Unverified | https://devforum.roblox.com/t/building-a-safer-marketplace-updates-to-2d-avatar-items-uploading-and-publishing-requirements/4474667 |
 
 ## 8. Tooling
 
@@ -102,5 +108,7 @@ We do not use roblox-ts (`04_TECH_PLAN.md` explains why). Rojo is optional.
 - [ ] The Studio API access setting and the DataStore behavior in Studio.
 - [ ] Developer Product creation and the receipt callback, if you run the real purchase test.
 - [ ] Whether text filtering rules for saved names changed.
+- [ ] Whether importing and uploading the ferret meshes and textures costs Robux or needs ID verification (read the importer's cost line before confirming).
+- [ ] Whether `SurfaceAppearance.ResampleMode = Pixelated` works on imported mesh pieces.
 
 After checking, add a dated section to `docs/VERIFY_LOG.md`.

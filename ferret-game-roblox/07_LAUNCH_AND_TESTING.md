@@ -40,11 +40,11 @@ Steps in Roblox change names. This is the order and the idea.
 
 ## 4. Credits
 
-If you use **any** third-party art (for example the LandyStudio ferret model, CC BY 4.0), add its credit to the Credits screen: author, title, license, a link, and whether you changed it. Example:
+If you use **any** third-party art, add its credit to the Credits screen. Path A of `06_FERRET_RIG_AND_ANIMATION.md` uses the LandyStudio ferret model (CC BY 4.0), so the credit is required: author, title, license, a link, and whether you changed it. Example:
 
 > "Black Footed Ferret" by LandyStudio, CC BY 4.0 (creativecommons.org/licenses/by/4.0), modified.
 
-If the ferret is built from your own Parts, no credit is needed. Record any third-party asset in `docs/ASSET_LICENSES.md` before you use it (project rule).
+If the ferret is built from your own Parts (Path B), no credit is needed. Record any third-party asset in `docs/ASSET_LICENSES.md` before you use it (project rule).
 
 ## 5. Finding testers
 

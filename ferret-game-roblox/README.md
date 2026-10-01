@@ -43,7 +43,7 @@ Consequence: every tester must be 16 or older with an age-checked Roblox account
 
 1. **The pet is data, not a place.** The pet lives in one Roblox DataStore record. The owner and the caretaker can both change it, safely, one at a time. So there is no "two phones disagree" problem, which is the top complaint about Pengu and Pokipet.
 2. **Same rules as the main game.** Same needs, same 10-minute simulation steps, same interactions (`docs/GAME_DESIGN.md`). Results on Roblox then say something real about the main game.
-3. **The ferret is boxes.** A blocky ferret made of Parts joined by Motor6D joints, moved by code. No Blender import needed. Your Blender work in `animation/` goes on in parallel for the real game.
+3. **The ferret is the Blender model.** The same blocky ferret as the real game (your work in `animation/`), imported as separate pieces, joined by Motor6D joints in Studio, and moved by code. The Blender animation clips are not imported (that part of Roblox's importer is fragile), the formulas reproduce the same feel. If the import or an upload cost blocks you, a ferret built from plain Parts is the fallback.
 4. **Pair with a code.** The owner gets a 6-character code and shares it with one person. No chat.
 5. **Small.** One room, one ferret, four needs, five actions, one tiny mini-game, one shop item for the money test.
 

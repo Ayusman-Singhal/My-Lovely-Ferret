@@ -149,7 +149,7 @@ Rules: never block care, never use scarcity or countdowns, never show random ite
 | Mini-game: toy chase by dragging | Tap-to-place toy chase |
 | History, passport, share card | Cut. "About my pet" only |
 | English and Hindi | English only, strings in one table |
-| Canvas or three.js ferret | Parts and joints ferret, moved by code |
+| three.js ferret from the Blender model, clips from `animation/` | The same Blender model imported as mesh pieces (Path A), joined by Motor6D joints and moved by code. A Parts-built ferret is the fallback |
 
 ## 8. Cut list (do not build for this test)
 

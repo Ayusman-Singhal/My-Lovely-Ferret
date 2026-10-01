@@ -1,12 +1,82 @@
-# The ferret: parts, joints, and code animation
+# The ferret: model, joints, and code animation
 
-How to build the blocky ferret inside Roblox Studio and make it move. This is separate from the Blender work in `animation/` (that is for the real game). It reuses the **bone names** of `animation/RIG_SPEC.md` and the **timings and angles** of `animation/CLIPS.md` and `src/render/animations.ts`, so the two versions feel the same. All Luau here is **untested** skeleton code.
+How to get the blocky ferret into Roblox Studio and make it move. **Path A (recommended): use the same Blender model as the real game** (the LandyStudio ferret you are cleaning up and naming in `animation/`), imported as separate mesh pieces. **Path B (fallback): build the ferret from plain Parts** inside Studio. Both end with the same joint tree, so everything after section 3 is identical. It reuses the **bone names** of `animation/RIG_SPEC.md` and the **timings and angles** of `animation/CLIPS.md` and `src/render/animations.ts`, so the two versions feel the same. All Luau here is **untested** skeleton code.
 
-## 1. Why Parts and joints instead of a Blender import
+## 1. Which path
 
-A blocky ferret is boxes. Roblox builds boxes natively, so you can make the whole ferret in Studio in an evening with no import tools. Importing a rigged mesh with animations from Blender works, but it is fragile (FBX versions, custom rigs, plugin steps, matching axes) and a bad first project for a beginner. Optional upgrade in section 9.
+| | Path A: the Blender model | Path B: Parts built in Studio |
+|---|---|---|
+| Look | The same ferret as the real game, one art source, coats and fixes done once | A similar box ferret, built twice |
+| Work | Blender export, Studio import, texture fix, joints (about 5 to 7 hours) | Parts and joints (about 3 to 4 hours) |
+| Cost | Possibly nothing, but uploads of meshes and textures are **unverified** for free accounts (section 2A.7) | Free for certain |
+| Credit | Yes, CC BY 4.0, in the in-game Credits screen | None |
+| Risks | Blurry pixel texture (2A.6), upload moderation, axis and scale mix-ups | Looks less polished |
 
-## 2. Parts
+Why not import the **armature and the animations** as well? It is possible, but it is the fragile part of Roblox's import (FBX versions, custom rigs, plugin steps, matching axes) and a bad first project. The boxes do not bend, so we import only the **mesh pieces**, join them with Motor6D joints in Studio, and move the joints with code, exactly like Path B. Your Blender animation clips stay for the real game. The ferret on Roblox moves from formulas (section 4), which gives the same feel because they come from the same numbers (`animation/CLIPS.md`).
+
+Start with Path A. If the import, the texture, or an upload fee blocks you for more than a couple of hours, switch to Path B. Nothing else in the plan changes.
+
+## 2A. Path A: use the Blender model
+
+### 2A.1 In Blender: prepare the pieces
+
+You already do most of this in `animation/BLENDER_GUIDE.md` §3 (one mesh object per body part, named `m_body`, `m_head`, `m_earL`, ..., transforms applied, feet on the ground, centered, nose toward -Y). Check these too:
+
+1. **One mesh object per moving part**, named like the Roblox pieces: `body`, `head`, `jaw`, `nose`, `earL`, `earR`, `eyeL`, `eyeR`, `tail1`, `tail2`, `legFL`, `legFR`, `legBL`, `legBR` (drop the `m_` prefix on an export copy, or rename in Studio later). Each part needs its own box, so make sure the jaw, nose and eyes exist as separate boxes (the original model has only 11 boxes, `animation/BLENDER_GUIDE.md` §3.1).
+2. **Apply all transforms** (`Ctrl+A > All Transforms`). The parts stay where they are in the standing pose. Do not move them to the origin.
+3. **One material and one texture.** Keep the UV layout.
+4. **No armature, no animation** in this export. Only meshes.
+
+### 2A.2 Export from Blender
+
+1. Select only the mesh objects (not the armature).
+2. `File > Export > FBX (.fbx)`.
+3. Settings (from Roblox community guides and the importer docs, so check them against the current importer page if something looks off): **Limit to Selected Objects** on. **Forward: -Z Forward, Up: Y Up**. **Apply Scalings: FBX Units Scale**. **Add Leaf Bones** off, **Bake Animation** off. **Path Mode: Copy** and the **Embed Textures** button on (so the texture travels with the file).
+4. Save to `animation/export/ferret_roblox.fbx`.
+
+Scale: do not worry about it in Blender. The ferret is about 0.5 m. In Studio a stud is about 0.28 m, so it arrives about 1.8 studs long, or 100 times too big, depending on the unit settings. Fix it after the import with `model:ScaleTo(factor)` in the Command Bar. Aim for about 4 studs from nose to tail base.
+
+### 2A.3 Import into Studio
+
+1. Studio: **File > Import 3D** (or the Avatar tab, **Import 3D**). Pick the `.fbx`.
+2. In the importer window: **Import Only as Model** on (this keeps all pieces in one Model). **Use Imported Pivot** on (each MeshPart keeps its own pivot). **Set Pivot to Scene Origin** on. **Add to Workspace** on. **Anchored** off.
+3. Check the preview: all pieces are there and in the right places. **Read any cost line** (section 2A.7) before you confirm. Import.
+4. The Model appears with a MeshPart per piece. Rename them to match section 2's part names. Rename the Model `Ferret`.
+5. If the ferret is lying on its side or backward: the axis settings in 2A.2 are wrong. Rotate the whole Model in Studio with the Rotate tool until it stands, nose toward +Z, then continue. Note what was needed and fix the export next time.
+
+### 2A.4 Make the joints
+
+The pieces are in the right places but not yet connected. Use the same joint tree as section 3, with one difference: you do not place pivots by guessing sizes, you mark them.
+
+1. For each joint, add a small marker Part (Transparency 0.5, 0.2 studs, Anchored, CanCollide off) named `pivot_head`, `pivot_jaw`, `pivot_earL`, ..., and drag it to the joint: the neck for the head, the hinge for the jaw, the base of each ear, the shoulder or hip for each leg, where the tail starts for `tail1`, the joint between the tail boxes for `tail2`. `body` and `root` need no marker (`root` goes on the ground at the middle of the feet, the `body` pivot at the middle of the torso).
+2. Ask Claude to write the helper that reads the markers and creates the Motor6Ds (the table in section 3) and the invisible `root` and `carry` Parts. Run it once in the Command Bar. It sets `C0` and `C1` so the pose does not change when the joints are made.
+3. Delete the markers. Set `Ferret.PrimaryPart = root`, `root.Anchored = true`, every other piece `Anchored = false`, `CanCollide = false`, `CanTouch = false`, `Massless = true`.
+4. Test with the nod from section 3 (head, ears, eyes and jaw must follow; legs must not).
+
+### 2A.5 Blink, breathing, and squash
+
+`Transform` cannot scale, but you can change a piece's `Size` directly. For blinking, set `eyeL.Size` and `eyeR.Size` on the client to the original size with the vertical size multiplied by `openness` (1 open, 0.5 half, 0.05 closed). It is the same idea as the Blender plan (`animation/CLIPS.md`, rule 8) and needs no extra eyelid boxes. Keep each eye's original `Size` in a table. For breathing, move the `body` up and down a little (section 5) instead of scaling it.
+
+### 2A.6 The blurry pixel texture
+
+Roblox draws textures on mesh pieces with smooth (bilinear) filtering. A 64 by 64 pixel texture then looks blurry, not crisp like in Blender and the browser. There are two fixes, try them in this order:
+
+1. **Pixelated filtering:** the Roblox reference lists a `ResampleMode` property on `SurfaceAppearance`. A developer-forum feature request from October 2025 said it was only planned, and the reference now lists the property, so it may have shipped. In Studio add a `SurfaceAppearance` to a MeshPart, set `ColorMap` to your texture, and look at `ResampleMode`. If **Pixelated** is available and the texture turns crisp, use it on every piece.
+2. **Upscale the texture yourself:** if it is not available, enlarge the PNG with nearest-neighbor to **512 by 512** (each old pixel becomes an 8 by 8 block; in Krita: Image > Scale Image to New Size, Filter: Nearest Neighbor; Piskel can also export at a larger scale). Smooth filtering then only blurs the thin borders between blocks. It uses about 1 MB of texture memory, which is fine. Keep a margin of matching color around islands to avoid color bleeding.
+
+Repeat for each of the four coat textures.
+
+### 2A.7 Upload cost and rules (unverified, check before you rely on it)
+
+The importer uploads the meshes and the texture to your Roblox account (Roblox moderation checks them). Roblox raised upload fees in 2026 (80 Robux per item reported), but every report found is about **avatar items for the Marketplace**. The announcement did not say whether meshes and textures used only inside your own experience cost Robux or need ID verification (`02_ROBLOX_FACTS.md`). So:
+
+- Before you click Import, read what the importer says it will cost. If it shows any Robux price, **stop**, do not pay, and use Path B (the project rule is to pay nothing).
+- Rules for the model itself: LandyStudio's license is CC BY 4.0, which allows changes and commercial use with credit. Using it as an asset in your own game, with the credit in the game, is the intended use. Do not publish it as a Creator Store asset for others (Roblox rules make meeting the credit condition there hard).
+- If moderation rejects an upload, fall back to Path B.
+
+After the import and the joints, go on with section 3's checks and everything after it. The joint tree and the part names are the same.
+
+## 2. Parts (Path B, build from scratch)
 
 All Parts are in one Model named `Ferret`. Sizes are in studs (1 stud is about 0.28 m). The ferret is about 4 studs from nose to tail base. Sizes below are a starting point. Judge with your eyes.
 
@@ -19,7 +89,6 @@ All Parts are in one Model named `Ferret`. Sizes are in studs (1 stud is about 0
 | `nose` | 0.25 x 0.2 x 0.15 | Pink |
 | `earL`, `earR` | 0.3 x 0.4 x 0.15 | On top of the head, one each side |
 | `eyeL`, `eyeR` | 0.2 x 0.2 x 0.1 | Dark squares on the front of the head |
-| `lidL`, `lidR` | 0.22 x 0.22 x 0.12 | Same color as the head, sitting just in front of each eye and **above** it, so the eye is visible. Lowering a lid closes the eye (blink, sleep, happy squint). Extra to the Blender rig, because `Transform` cannot scale a Part |
 | `tail1`, `tail2` | 0.4 x 0.4 x 0.9 each | Two segments, the second is slimmer |
 | `legFL`, `legFR`, `legBL`, `legBR` | 0.35 x 0.7 x 0.35 | Four legs |
 | `carry` | 0.1 x 0.1 x 0.1 | Invisible marker in front of the jaw, where the sock goes |
@@ -40,7 +109,6 @@ root
      │   ├─ nose
      │   ├─ earL, earR
      │   ├─ eyeL, eyeR
-     │   ├─ lidL, lidR   (extra, for blinking)
      │   └─ carry
      ├─ tail1 ─ tail2
      └─ legFL, legFR, legBL, legBR
@@ -73,7 +141,7 @@ The animations in the main game are **formulas of time** (`src/render/animations
 local FerretRig = {}
 FerretRig.__index = FerretRig
 
-local JOINTS = { "body","head","jaw","nose","earL","earR","lidL","lidR","tail1","tail2","legFL","legFR","legBL","legBR" }
+local JOINTS = { "body","head","jaw","nose","earL","earR","tail1","tail2","legFL","legFR","legBL","legBR" }
 
 function FerretRig.new(model)
   local self = setmetatable({}, FerretRig)
@@ -121,19 +189,19 @@ Directions: **pitch** is a rotation around the joint's X axis (nose up or down, 
 | `walk` | 0.52 s | legFL and legBR swing `0.55 x wave(t, 0.52)`; legFR and legBL swing `0.55 x wave(t, 0.52, π)`; body lifts `0.05 x |sin(π t / 0.26)|`; body yaw `0.03 x sin(2 x phase)`; head pitch `0.05 x wave(t, 0.26)`; tail yaw `0.1 x wave(t, 0.52, 1)`; ears back 0.15 |
 | `run` | 0.32 s | legs swing `0.85`; body hop `0.12 x |sin(π t / 0.16)|` studs; tail up `0.7`, tail2 `0.3`; ears back `0.4`; jaw open slightly |
 | `sniff` | 1.4 s | head pitch down `0.25 + 0.08 x wave(t, 1.4)`; head sway side to side `0.08 x wave(t, 0.7)`; nose twitches fast: moves forward and back `0.03 x wave(t, 0.11)` studs; ears forward `-0.2` |
-| `curious` | 2.6 s | body pitch up `-0.16`; head pitch `-0.25 + 0.1 x wave(t, 2.6)`, head roll `0.1 x wave(t, 2.6, 1)`; ears forward `-0.3`; eyes slightly wider (lids raised a little); tail up 0.4 |
-| `sleep` | 4.2 s | curled pose: body lowered 0.5 studs with slow breathing (up and down `0.04 x wave(t, 4.2)` studs); head pitch down `0.55`, offset to the side; ears flat `0.5`; tail1 wrapped around (yaw `-2.75` split between tail1 and tail2); legs folded (pitch to tuck); lids down (eyes closed). Update at about 10 frames per second |
+| `curious` | 2.6 s | body pitch up `-0.16`; head pitch `-0.25 + 0.1 x wave(t, 2.6)`, head roll `0.1 x wave(t, 2.6, 1)`; ears forward `-0.3`; eyes slightly wider (openness 1.15); tail up 0.4 |
+| `sleep` | 4.2 s | curled pose: body lowered 0.5 studs with slow breathing (up and down `0.04 x wave(t, 4.2)` studs); head pitch down `0.55`, offset to the side; ears flat `0.5`; tail1 wrapped around (yaw `-2.75` split between tail1 and tail2); legs folded (pitch to tuck); eyes closed (openness 0.05). Update at about 10 frames per second |
 | `eat` | 1.3 s | head pitch down `0.75`, forward 0.2 studs; jaw opens and closes with period 0.26 s; body pitch `0.1`; tail sway |
 | `drink` | 1.2 s | head pitch down `0.95`; jaw lapping with period 0.2 s; body pitch `0.14` |
 | `sneak` | 0.64 s | **Not used in the Roblox slice** (stealing is cut), kept for later. Low walk: legs swing `0.45`, body 3% lower, head raised `0.2` while carrying the sock at `carry`, ears back `0.25` |
-| `happy` | one-shot 1.3 s | three hops: body lift `0.35 x |sin(3π t / 1.3)| x envelope`; tail wag `0.5 x wave(t, 0.14)`; lids half down (happy squint); jaw open |
-| `annoyed` | one-shot 1.0 s | head shake yaw `0.18 x wave(t, 0.16)`; ears flat back `0.7`; tail flick; lids half down (narrowed) |
-| `surprise` | one-shot 0.8 s | jump `0.4` studs up in 0.3 s; body stretched; ears forward `-0.25`; tail up `0.9`; lids raised (wide eyes); jaw slightly open |
-| `blink` | one-shot 0.17 s | lids go down and up over five steps: open, half, closed, half, open. The brain plays it at random times, every 2 to 5 seconds, never while asleep |
+| `happy` | one-shot 1.3 s | three hops: body lift `0.35 x |sin(3π t / 1.3)| x envelope`; tail wag `0.5 x wave(t, 0.14)`; eyes half closed (openness 0.3, happy squint); jaw open |
+| `annoyed` | one-shot 1.0 s | head shake yaw `0.18 x wave(t, 0.16)`; ears flat back `0.7`; tail flick; eyes narrowed (openness 0.5) |
+| `surprise` | one-shot 0.8 s | jump `0.4` studs up in 0.3 s; body stretched; ears forward `-0.25`; tail up `0.9`; eyes wide (openness 1.2); jaw slightly open |
+| `blink` | one-shot 0.17 s | eye openness goes 1.0, 0.5, 0.05, 0.5, 1.0 over five steps (the eye piece's vertical `Size`). The brain plays it at random times, every 2 to 5 seconds, never while asleep |
 
 `envelope(t)`: ramps from 0 to 1 over the first 0.1 s, holds, and fades to 0 at the end.
 
-Because `Transform` cannot scale, the main game's "squash and stretch" is replaced by small position changes and hops. Eyes use the lid Parts: lowering a lid (a position change around the eye) closes the eye. If the ferret looks too stiff without squash, you can also change a Part's `Size` directly on the client for a few Parts (cheap), but try the lid and offset approach first.
+Because `Transform` cannot scale, the main game's "squash and stretch" is replaced by small position changes and hops. Eyes close by changing the eye piece's `Size` on the client (section 2A.5). If the ferret looks too stiff without squash, change the `Size` of the body slightly too, it is cheap for a few pieces.
 
 ## 6. Moving around the room
 
@@ -173,11 +241,12 @@ When the player feeds the ferret, walk to `FoodBowl`, play `eat` for 4 seconds, 
 
 - **Coats:** the four coats are color sets applied to the Parts by name, once, when the ferret is cloned. Colors from `docs/ART_STYLE.md` §5. For `sable`, body `#8A6244`, dark parts `#4A3626`. For `cinnamon`, body `#B9743C`, dark `#8A6244`. For `albino`, body `#F4EBDD`, ears and nose `#E59AA0`, eyes `#E59AA0`. For `panda`, body `#F4EBDD`, legs, mask, tail `#3E3A3F`.
 - **The bow:** a small two-triangle Part group `Bow` welded to the head with a Motor6D or a `WeldConstraint`. Show it when `petEquipped` contains `"bow"`.
+- **Third-party credit:** on Path A show the LandyStudio credit in the Credits screen (`07_LAUNCH_AND_TESTING.md` section 4).
 - **The sock:** a Part welded to `carry` when the behavior is sneak (cut in this slice, kept for later).
 
-## 9. Optional later: import a Blender ferret
+## 9. Optional later (Path C): import the rig and the Blender animations
 
-Only after the test shows people care. Roblox imports Blender work through its **3D Importer** and an **Animator** (custom rigs use an `AnimationController`). Official sources: the Roblox Creator Docs on importing and on custom rig animation. Known pitfalls from the developer forum: use FBX 7.4, keep the rig's bone names and axes identical between Blender and Studio, and import animations through the official Blender add-on rather than raw FBX. The animations you make in `animation/` would need the same names (`idle`, `walk`, ...) and a Roblox animation id per clip. If you use the LandyStudio model, add the credit in the in-game credits screen (CC BY 4.0, see `07_LAUNCH_AND_TESTING.md`). Building the ferret from your own Parts needs no credit.
+Only after the test shows people care. Roblox imports skinned meshes and animations from Blender through its importer and an `Animator`; custom rigs use an `AnimationController` instead of a `Humanoid`. Official sources are the Roblox Creator Docs on importing and on custom rig animation. Known pitfalls from the developer forum: use FBX 7.4, keep the rig's bone names and axes identical between Blender and Studio, and import animations through the official Blender add-on rather than raw FBX. Your clips from `animation/` (`idle`, `walk`, ...) would each become a Roblox animation with its own id, played with `Animator:LoadAnimation`. This replaces the formulas of section 5 and does not change the rest of the game.
 
 ## 10. Checklist for "alive" (the H2 test depends on this)
 
