@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Next: Part 1H, tester tools (dev panel, About my pet, feedback, error copy, iOS Safari notice). Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D (stylized-real, Blender clips, three.js). Next: Part 1K, 3D pivot (task 1K.1, verify facts, then the spike), before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -139,7 +139,7 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1C.2 (S) Measured gzip size and scene-ready time under slow 4G plus 4x CPU. Recorded in `docs/PERFORMANCE.md` §3.1.
 - [x] 1C.3 (S) **Decision: Canvas 2D** (developer approved 2026-09-30). PixiJS 116 to 144 KB gzip, scene ready about 1.8 to 2.0 s throttled, against 1.4 KB and 0.6 s. PixiJS removed. Recorded as deviation D5 (allowed fallback, guide §3 Open Decision 2).
 - [x] 1C.4 (M) Render-on-demand loop with pause when hidden, frame cap for low-power mode, DPR cap 2 (`src/render/loop.ts`, 10 tests).
-- [ ] 1C.5 (S) Later, at Part 1J: a reusable startup-time measurement script under `scripts/` (the spike used a throwaway one), and a real-browser check that a settled loop uses no frames.
+- [ ] 1C.5 (S) Moved into 1K.3 (3D pivot). Original text: later, at Part 1J: a reusable startup-time measurement script under `scripts/` (the spike used a throwaway one), and a real-browser check that a settled loop uses no frames.
 
 ## Part 1D: Placeholder rig and animations
 
@@ -175,6 +175,28 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1B.6 (S) Save wired: debounced autosave, save when the page is hidden, persistent storage request, backup export and import in the menu, recovery screens for a damaged or too-new save, play without saving when IndexedDB is unavailable.
 - [x] 1G.6 (M) End-to-end smoke test in real Chrome (`npm run smoke`, also in CI): 10 steps including a reload that keeps the pet, a backup with no install id, and a summary after 8 hours away.
 - [x] 1G.7 (S) Room resized from 360 by 640 to 360 by 540 so the pet fills the screen width between the bars.
+
+## Part 1K: 3D pivot (inserted 2026-10-01, runs before 1H)
+
+Why: the developer decided quality now outranks the smallest bundle, and a flat 2D ferret will not satisfy users (`docs/MARKET_RESEARCH.md` §5). Look: stylized-real. Clips: made by the developer in Blender. This replaces decision D5 (Canvas 2D) once the spike numbers are approved. The logical 360 by 540 room stays; the 3D scene maps it to a floor plane, so `src/core`, `src/game`, `src/ui`, `brain.ts`, `plan.ts`, and `loop.ts` stay as they are.
+
+Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB, first-run art 2.5 MB, scene ready 4 s on slow 4G plus 4x CPU (loading screen visible under 1 s), texture memory 64 MB, ferret at most about 8K triangles, 40 bones, 1024 textures.
+
+- [x] 1K.0 (S) `docs/MARKET_RESEARCH.md` written, proposals A1 to A11 and C1 to C4 recorded there as pending.
+- [ ] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
+- [ ] 1K.2 (S) Shortlist ferret models with license checked. Developer picks one. CC0 room furniture (Kenney, Quaternius).
+- [ ] 1K.3 (M) Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
+- [ ] 1K.4 (developer) Approve or change the budgets from the numbers. Then add `three` to `package.json` and update `scripts/budgets.json`.
+- [ ] 1K.5 (S) Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
+- [ ] 1K.6 (L) `src/render/scene3d.ts` behind the existing `Scene` and `BrainScene` contracts, with unit-tested logical-to-world mapping and floor raycast.
+- [ ] 1K.7 (M) `src/render/animator3d.ts` wrapping `AnimationMixer`: maps every `AnimationName` to a clip, crossfades, one-shot reactions. A test checks every name has a clip in the model manifest.
+- [ ] 1K.8 (M) Room and props in 3D: baked lighting, blob shadow, no real-time shadows.
+- [ ] 1K.9 (S) Four coat textures, only the pet's own loaded.
+- [ ] 1K.10 (M) Loading screen, plain WebGL-unavailable screen (no 2D fallback), pointer input through the raycast.
+- [ ] 1K.11 (M) Update `npm run smoke`, `scripts/shots.mjs`, and a dev clip gallery. All existing tests pass.
+- [ ] 1K.12 (S) Delete the 2D rig and its tests after smoke passes. Measure, record in `docs/PERFORMANCE.md`. Report at the end of the part.
+
+Developer track (parallel): Blender work to the 1K.5 pipeline doc. Clips named `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`. Until they exist the game plays the rest pose, so code work is not blocked. The Phase 1 gate waits on the clips.
 
 ## Part 1H: Tester tools
 
