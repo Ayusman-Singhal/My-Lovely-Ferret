@@ -231,7 +231,7 @@ See the priority table in `README.md`. First `idle` and `walk`, then send a file
 ## 8. Check the export
 
 1. Open https://gltf-viewer.donmccurdy.com/ in the browser and drag `ferret.glb` onto it.
-2. In the right panel open **Animation** and check the dropdown lists all 13 clip names, spelled exactly. Pick each one and look at it. The pet should face the viewer's forward direction, stand on the ground, and each box follow its bone.
+2. In the right panel open **Animation** and check the dropdown lists all 17 clip names, spelled exactly. Pick each one and look at it. The pet should face the viewer's forward direction, stand on the ground, and each box follow its bone.
 3. Check the texture is crisp and the colors are correct.
 4. Check the file size. Expected: under 100 KB. Claude will minimize it further.
 

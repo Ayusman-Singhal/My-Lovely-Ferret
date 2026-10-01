@@ -20,7 +20,7 @@ Everything needed to turn the blocky ferret model into the animated pet in the g
 | `clips.json` | Machine-readable clip list the game and its tests read | Never edit by hand without telling Claude |
 | `source/` | Your `.blend` files and the downloaded original model | Working files |
 | `export/` | Raw `.glb` exports before Claude optimizes them | After export |
-| `scripts/` | Blender Python: `build_rig.py` (v1 rig), `upgrade_rig_v2.py` (spine and knees), `animate.py` (13 clips), `render_previews.py`, `export_glb.py`, `run_all.py` (all three), `fix_texture.py`, `restore_backup.py`. QA renders in `scripts/qa/` | To change a clip: edit `animate.py`, then run `run_all.py` |
+| `scripts/` | Blender Python: `build_rig.py` (v1 rig), `upgrade_rig_v2.py` (spine and knees), `animate.py` (17 clips), `render_previews.py`, `export_glb.py`, `run_all.py` (all three), `fix_texture.py`, `restore_backup.py`. QA renders in `scripts/qa/` | To change a clip: edit `animate.py`, then run `run_all.py` |
 | `scripts/make_chubby.py` | Reshapes the body (wider, taller chest, thick short neck, bushier tail, legs under the wider body), then reruns `animate.py` and `export_glb.py`. Run it from the saved start file so it never stacks: `blender.exe -b animation/source/Ferret_before_chubby.blend --python animation/scripts/make_chubby.py` | When the proportions look off (2026-10-01: a long thin neck made the ferret look malnourished) |
 | `previews/` | Animated GIF of every clip, and `all_clips.gif` with all 13 side by side | To review motion without Blender |
 
@@ -32,7 +32,7 @@ One file, `animation/export/ferret.glb`, containing:
 
 1. The ferret mesh (at most about 5,000 triangles, one material, one texture up to 256 by 256 pixels, see `RIG_SPEC.md` section 6).
 2. One armature with exactly the bones in `RIG_SPEC.md`.
-3. 13 animation clips named exactly as in `CLIPS.md`: `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`.
+3. 17 animation clips named exactly as in `CLIPS.md`: `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`, and (Part 1L.3) `stretch`, `dig`, `warDance`, `tailChase`.
 
 Plus the four coat textures (`coat_sable.png`, `coat_cinnamon.png`, `coat_albino.png`, `coat_panda.png`), same size and same UV layout as the base texture. Palettes are in `docs/ART_STYLE.md` §3 and §5.
 

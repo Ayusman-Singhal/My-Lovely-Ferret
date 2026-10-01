@@ -28,6 +28,11 @@ Matches the "build first" animation list in guide §9.1.
 | `playful` | walk fast, hop (zoomies) | Short energetic burst. |
 | `steal` | walk, pick up, carry, stash | The mischief behavior. Carries an item (toy or sock) toward the hammock. Logs `PET_STOLE_ITEM`. |
 | `sleep` | sleep (curled, breathing) | Chosen by the sleep rules in `GAME_DESIGN.md`, not by weights. |
+| `stretch` | stretch (play-bow with a yawn, 3 s) | Part 1L.3. Standing where it is. |
+| `dig` | walk to a spot, dig, settle | Part 1L.3. Scratches at the floor for 2 to 4 s. |
+| `tunnel` | walk to a mouth of the tunnel, run through, pleased look | Part 1L.3. Defined by movement, no duration. Uses the front strip of the floor outside the roaming area (`ROOM.tunnel*`, `ROOM.reach*`). |
+| `dance` | walk to a spot, war dance (2 to 3.5 s), settle | Part 1L.3. Needs happiness. |
+| `tailchase` | turns on the spot after its tail (2.4 to 4 s), then a startled look | Part 1L.3. The brain spins the body; the clip curls it. |
 
 Reactions triggered by interactions, not chosen by AI: `happy`, `annoyed` (woken up, refused), `surprise`.
 
@@ -49,6 +54,11 @@ score(b) = base(b) + traitTerm(b) + needTerm(b) + timeTerm(b) + roomTerm(b)
 | `drink` | 0 | none | `(10000 - hydration) / 100` when hydration is below 6000 | none | requires water in the bowl |
 | `playful` | 5 | `mischief` | `energy / 400` when happiness is at least 6000. Needs `energy >= 2500` | +10 in the nap and night wake bursts | none |
 | `steal` | 0 | `mischief / 2` when `mischief >= 50` | none | none | requires a stealable item and no steal in the last 12 hours |
+| `stretch` | 8 | none | +6 when `energy` under 4000 | +4 in the day class | off while urgent |
+| `dig` | 4 | `mischief / 6` plus `curiosity / 10` | none | none | off while urgent |
+| `tunnel` | 4 | `mischief / 5` plus `curiosity / 8` | requires `energy >= 2500` | none | off while urgent |
+| `dance` | 3 | `mischief / 6` | requires `energy >= 4000` and `happiness >= 6000`, +6 when `happiness >= 8000` | none | off while urgent |
+| `tailchase` | 3 | `mischief / 10` | requires `energy >= 3000`, +4 when `happiness >= 6000` | none | off while urgent |
 
 Rules on top of the table:
 

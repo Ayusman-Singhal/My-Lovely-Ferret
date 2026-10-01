@@ -9,10 +9,25 @@ import { hourClass, localMinuteOfDay } from './time';
 import { TUNING } from './tuning';
 import type { HistoryEvent, PetRecord } from './types';
 
-export type Behavior = 'idle' | 'wander' | 'sniff' | 'curious' | 'eat' | 'drink' | 'playful' | 'steal' | 'sleep';
+export type Behavior =
+  | 'idle'
+  | 'wander'
+  | 'sniff'
+  | 'curious'
+  | 'eat'
+  | 'drink'
+  | 'playful'
+  | 'steal'
+  | 'sleep'
+  // Things it does for itself, to make the room feel lived in (Part 1L.3).
+  | 'stretch'
+  | 'dig'
+  | 'tunnel'
+  | 'dance'
+  | 'tailchase';
 
 /** Behaviors PetAI can choose by score. Sleep is decided by the sleep rules, not scored. */
-export const SCORED_BEHAVIORS = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal'] as const;
+export const SCORED_BEHAVIORS = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'stretch', 'dig', 'tunnel', 'dance', 'tailchase'] as const;
 export type ScoredBehavior = (typeof SCORED_BEHAVIORS)[number];
 
 /** What the pet can see and use in the room right now. */
@@ -115,7 +130,24 @@ export function scoreBehaviors(
     steal = idiv(mischief, 2);
   }
 
-  return { idle, wander, sniff, curious, eat, drink, playful, steal };
+  // Small things it does for itself. They are rare next to the big ones so the room stays calm, and
+  // the energetic ones need some energy and a pet that is not urgently hungry or thirsty.
+  let stretch = 0;
+  if (!urgent) stretch = 8 + (cls === 'day' ? 4 : 0) + (energy < 4000 ? 6 : 0);
+
+  let dig = 0;
+  if (!urgent) dig = 4 + idiv(mischief, 6) + idiv(curiosity, 10);
+
+  let tunnel = 0;
+  if (!urgent && energy >= 2500) tunnel = 4 + idiv(mischief, 5) + idiv(curiosity, 8);
+
+  let dance = 0;
+  if (!urgent && energy >= 4000 && happiness >= 6000) dance = 3 + idiv(mischief, 6) + (happiness >= 8000 ? 6 : 0);
+
+  let tailchase = 0;
+  if (!urgent && energy >= 3000) tailchase = 3 + idiv(mischief, 10) + (happiness >= 6000 ? 4 : 0);
+
+  return { idle, wander, sniff, curious, eat, drink, playful, steal, stretch, dig, tunnel, dance, tailchase };
 }
 
 const DURATION_MS: Record<Behavior, readonly [number, number]> = {
@@ -128,6 +160,11 @@ const DURATION_MS: Record<Behavior, readonly [number, number]> = {
   playful: [4000, 8000],
   steal: [0, 0],
   sleep: [0, 0],
+  stretch: [3000, 3300], // one turn of the 3 second clip
+  dig: [2000, 4000],
+  tunnel: [0, 0],
+  dance: [2000, 3500],
+  tailchase: [2400, 4000],
 };
 
 function makeDecision(behavior: Behavior, rng: ReturnType<typeof createRng>): Decision {

@@ -286,3 +286,49 @@ describe('forceDecision and completeBehavior', () => {
     expect(DAY).toBeGreaterThan(0); // keep the shared constant referenced
   });
 });
+
+describe('the things it does for itself (Part 1L.3)', () => {
+  it('a rested, happy pet can stretch, dig, run the tunnel, dance, and chase its tail', () => {
+    const p = makePet({ personality: { mischief: 60, curiosity: 60 }, state: { ...calm, happiness: 8500, energy: 9000 } });
+    const s = scoreBehaviors(p, EMPTY_ROOM, T0);
+    for (const b of ['stretch', 'dig', 'tunnel', 'dance', 'tailchase'] as const) expect(s[b], b).toBeGreaterThan(0);
+  });
+
+  it('the energetic ones need energy, and the dance needs a happy pet', () => {
+    const tired = scoreBehaviors(makePet({ state: { ...calm, energy: 2000, happiness: 9000 } }), EMPTY_ROOM, T0);
+    expect(tired.tunnel).toBe(0);
+    expect(tired.dance).toBe(0);
+    expect(tired.tailchase).toBe(0);
+    expect(tired.stretch).toBeGreaterThan(0); // a tired pet still stretches
+    const glum = scoreBehaviors(makePet({ state: { ...calm, energy: 9000, happiness: 3000 } }), EMPTY_ROOM, T0);
+    expect(glum.dance).toBe(0);
+    expect(glum.tunnel).toBeGreaterThan(0);
+  });
+
+  it('an urgently hungry pet with food in the bowl does none of them', () => {
+    const s = scoreBehaviors(makePet({ state: { ...calm, hunger: 1500, energy: 9000, happiness: 9000 } }), FULL_ROOM, T0);
+    for (const b of ['stretch', 'dig', 'tunnel', 'dance', 'tailchase'] as const) expect(s[b], b).toBe(0);
+  });
+
+  it('over a day of decisions each of them happens, but they stay a small part of the day', () => {
+    const p = makePet({ id: 'lively', personality: { mischief: 50, curiosity: 50 }, state: { ...calm, happiness: 7000, energy: 9000 } });
+    let ai = createAIState();
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 1000; i++) {
+      const r = nextDecision(ai, p, EMPTY_ROOM, T0);
+      ai = r.ai;
+      counts[r.decision.behavior] = (counts[r.decision.behavior] ?? 0) + 1;
+    }
+    const own = ['stretch', 'dig', 'tunnel', 'dance', 'tailchase'] as const;
+    for (const b of own) expect(counts[b] ?? 0, b).toBeGreaterThan(10);
+    expect(own.reduce((sum, b) => sum + (counts[b] ?? 0), 0)).toBeLessThan(400);
+  });
+
+  it('stretch and tail chase have a length, and the tunnel is defined by its movement', () => {
+    const p = makePet();
+    const stretch = forceDecision(createAIState(), p, 'stretch').decision;
+    expect(stretch.durationMs).toBeGreaterThanOrEqual(3000);
+    expect(forceDecision(createAIState(), p, 'tailchase').decision.durationMs).toBeGreaterThan(0);
+    expect(forceDecision(createAIState(), p, 'tunnel').decision.durationMs).toBe(0);
+  });
+});

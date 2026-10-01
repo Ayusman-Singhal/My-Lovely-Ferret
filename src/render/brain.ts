@@ -248,6 +248,11 @@ export function createBrain(options: BrainOptions): Brain {
           scene.heading = heading;
           if (Math.abs(Math.sin(heading)) > 0.05) scene.facing = Math.sin(heading) > 0 ? 1 : -1;
         }
+        if (phase.spin) {
+          heading = wrap(heading + phase.spin * (dt / 1000));
+          scene.heading = heading;
+          if (Math.abs(Math.sin(heading)) > 0.05) scene.facing = Math.sin(heading) > 0 ? 1 : -1;
+        }
         if (frameMs - phaseStart >= phase.ms) {
           index++;
           phaseStarted = false;
@@ -283,8 +288,8 @@ export function createBrain(options: BrainOptions): Brain {
         phaseStarted = false;
       } else {
         // A wide turn near the edge of the floor must not carry the pet out of the roaming area.
-        scene.x = Math.min(ROOM.maxX, Math.max(ROOM.minX, scene.x + Math.sin(heading) * step));
-        scene.z = Math.min(ROOM.maxZ, Math.max(ROOM.minZ, scene.z + Math.cos(heading) * step));
+        scene.x = Math.min(ROOM.reachMaxX, Math.max(ROOM.reachMinX, scene.x + Math.sin(heading) * step));
+        scene.z = Math.min(ROOM.reachMaxZ, Math.max(ROOM.reachMinZ, scene.z + Math.cos(heading) * step));
       }
     },
   };

@@ -412,6 +412,138 @@
    "min_z_mesh": "m_pawFR",
    "min_z_frame": 0,
    "seam_error": 0.0
+  },
+  "stretch": {
+   "frames": 90,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 5,
+   "seam_error": 0.0
+  },
+  "dig": {
+   "frames": 24,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawFR",
+   "min_z_frame": 23,
+   "seam_error": 0.0
+  },
+  "warDance": {
+   "frames": 24,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.0048,
+   "min_z_mesh": "m_pawBL",
+   "min_z_frame": 6,
+   "seam_error": 0.0
+  },
+  "tailChase": {
+   "frames": 30,
+   "loop": true,
+   "keyed_bones": [
+    "body",
+    "torso",
+    "chest",
+    "head",
+    "jaw",
+    "nose",
+    "earL",
+    "earR",
+    "eyeL",
+    "eyeR",
+    "tail1",
+    "tail2",
+    "legFL",
+    "legFR",
+    "legBL",
+    "legBR",
+    "pawFL",
+    "pawFR",
+    "pawBL",
+    "pawBR"
+   ],
+   "key_mode": [
+    "fast"
+   ],
+   "min_z": -0.005,
+   "min_z_mesh": "m_pawBL",
+   "min_z_frame": 9,
+   "seam_error": 0.0
   }
  },
  "rest_ik": {

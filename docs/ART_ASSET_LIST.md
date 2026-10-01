@@ -8,7 +8,7 @@ Status values: `todo`, `placeholder` (stand-in until the real thing), `code` (bu
 
 | Asset | Status | Size |
 |---|---|---|
-| `animation/export/ferret.glb`: mesh (264 triangles, 20 box pieces), armature (22 bones), 13 clips, one 64 by 64 texture | final (first pass of the clips, polish welcome) | 306 KB raw, 74 KB gzip |
+| `animation/export/ferret.glb`: mesh (264 triangles, 20 box pieces), armature (22 bones), 17 clips, one 64 by 64 texture | final (first pass of the clips, polish welcome) | 394 KB raw, 94 KB gzip |
 | coat textures `coat_cinnamon.png`, `coat_albino.png`, `coat_panda.png` (same layout as the sable texture inside the model) | todo (a colour tint stands in, `src/render/coats3d.ts`) | about 1 KB each |
 
 Clips (names and lengths are checked against `animation/clips.json` by `src/render/clipSpec.test.ts`): `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`.

@@ -18,6 +18,7 @@ import {
   Color,
   CylinderGeometry,
   DirectionalLight,
+  DoubleSide,
   Group,
   IcosahedronGeometry,
   LoopOnce,
@@ -215,6 +216,23 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   box(0.17, 0.12, 0.17, PALETTE.wallShade, LEFT_X + 0.18, 0.2, BACK_Z + 0.17);
   box(0.24, 0.07, 0.24, PALETTE.bowlRed, 0.64, 0.035, 0.56);
   box(0.2, 0.02, 0.2, PALETTE.belly, 0.64, 0.075, 0.56);
+
+  // A play tunnel along the front edge: a half-pipe the pet runs through (Part 1L.3). Open ended, and
+  // drawn from both sides so the inside shows. A little longer than the ferret, so it is mostly hidden.
+  const tunnelLength = (ROOM.tunnelBX - ROOM.tunnelAX) * M_PER_PX;
+  const tunnel = new Mesh(
+    new CylinderGeometry(0.15, 0.15, tunnelLength, 14, 1, true, 0, Math.PI),
+    new MeshLambertMaterial({ color: PALETTE.waterBlue, side: DoubleSide }),
+  );
+  tunnel.rotation.z = Math.PI / 2; // the half-pipe lies along x with its opening down
+  tunnel.position.set(((ROOM.tunnelAX + ROOM.tunnelBX) / 2 - VIEW.width / 2) * M_PER_PX, 0, ROOM.tunnelZ * M_PER_PX);
+  stage.add(tunnel);
+  for (const x of [ROOM.tunnelAX, ROOM.tunnelBX]) {
+    const rim = new Mesh(new TorusGeometry(0.15, 0.012, 4, 14, Math.PI), flat(PALETTE.floorShade));
+    rim.rotation.y = Math.PI / 2; // a ring standing across the tunnel mouth
+    rim.position.set((x - VIEW.width / 2) * M_PER_PX, 0, ROOM.tunnelZ * M_PER_PX);
+    stage.add(rim);
+  }
 
   // Hammock against the back wall: two posts and a sling at the height the sleeping pet rests on.
   const hammock = logicalToWorld(ROOM.hammockX, ROOM.hammockRestY, ROOM.hammockZ);

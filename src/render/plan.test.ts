@@ -4,7 +4,7 @@ import { ANIMATION_NAMES } from './clipSpec';
 import { SPEED, WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z, planFor, spotToX, spotToZ, stashSpot, type Phase } from './plan';
 import { ROOM } from './layout';
 
-const BEHAVIORS: Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'sleep'];
+const BEHAVIORS: Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'sleep', 'stretch', 'dig', 'tunnel', 'dance', 'tailchase'];
 const decision = (behavior: Behavior, durationMs = 5000, spots: [number, number, number] = [100, 500, 900]): Decision => ({
   behavior,
   durationMs,
@@ -44,10 +44,12 @@ describe('planFor', () => {
           for (const phase of plan) {
             expect(ANIMATION_NAMES).toContain(phase.anim);
             if (phase.kind === 'go') {
-              expect(phase.x, behavior).toBeGreaterThanOrEqual(WALK_MIN_X - 1);
-              expect(phase.x, behavior).toBeLessThanOrEqual(WALK_MAX_X + 1);
-              expect(phase.z, behavior).toBeGreaterThanOrEqual(WALK_MIN_Z - 1);
-              expect(phase.z, behavior).toBeLessThanOrEqual(WALK_MAX_Z + 1);
+              // The tunnel is along the front edge, outside the roaming area but inside the reach.
+              const wide = behavior === 'tunnel';
+              expect(phase.x, behavior).toBeGreaterThanOrEqual((wide ? ROOM.reachMinX : WALK_MIN_X) - 1);
+              expect(phase.x, behavior).toBeLessThanOrEqual((wide ? ROOM.reachMaxX : WALK_MAX_X) + 1);
+              expect(phase.z, behavior).toBeGreaterThanOrEqual((wide ? ROOM.reachMinZ : WALK_MIN_Z) - 1);
+              expect(phase.z, behavior).toBeLessThanOrEqual((wide ? ROOM.reachMaxZ : WALK_MAX_Z) + 1);
               expect(phase.speed).toBeGreaterThan(0);
             } else {
               expect(phase.ms).toBeGreaterThanOrEqual(0);
@@ -104,5 +106,44 @@ describe('planFor', () => {
     const plan = planFor(decision('sleep', 0), { ...CTX, x: 150 });
     expect(plan[0]).toMatchObject({ kind: 'go', x: ROOM.hammockX, z: ROOM.hammockApproachZ });
     expect(plan[1]).toMatchObject({ kind: 'do', anim: 'sleep', ms: Infinity, y: ROOM.hammockRestY, z: ROOM.hammockZ });
+  });
+});
+
+describe('the things it does for itself (Part 1L.3)', () => {
+  it('a tunnel run goes in at the nearer mouth, along the tunnel, and out of the other', () => {
+    for (const [x, inFirst] of [[100, 'A'], [260, 'B']] as const) {
+      const plan = planFor(decision('tunnel'), { ...CTX, x });
+      const goes = plan.filter((p): p is Extract<Phase, { kind: 'go' }> => p.kind === 'go');
+      expect(goes).toHaveLength(2);
+      const [enter, through] = goes as [typeof goes[0], typeof goes[0]];
+      const near = inFirst === 'A' ? ROOM.tunnelAX : ROOM.tunnelBX;
+      const far = inFirst === 'A' ? ROOM.tunnelBX : ROOM.tunnelAX;
+      expect(enter.z).toBe(ROOM.tunnelZ);
+      expect(through.z).toBe(ROOM.tunnelZ);
+      // It starts outside the near mouth and ends outside the far one, so it crosses the whole tunnel.
+      expect(Math.sign(enter.x - near)).toBe(Math.sign(near - far));
+      expect(Math.sign(through.x - far)).toBe(Math.sign(far - near));
+      expect(through.speed).toBe(SPEED.run);
+    }
+  });
+
+  it('chasing its tail turns the body on the spot, to the right, with the tail-chase clip', () => {
+    const plan = planFor(decision('tailchase', 3000), CTX);
+    const spin = plan[0] as Extract<Phase, { kind: 'do' }>;
+    expect(spin.anim).toBe('tailChase');
+    expect(spin.spin).toBeLessThan(0);
+    expect(spin.ms).toBe(3000);
+  });
+
+  it('a stretch, a dig, and a war dance use their own clips for the length of the decision', () => {
+    const clipOf = (b: Behavior, clip: string) => {
+      const plan = planFor(decision(b, 2500), CTX);
+      const doing = plan.find((p) => p.kind === 'do' && p.anim === clip) as Extract<Phase, { kind: 'do' }> | undefined;
+      expect(doing, b).toBeDefined();
+      expect(doing?.ms).toBe(2500);
+    };
+    clipOf('stretch', 'stretch');
+    clipOf('dig', 'dig');
+    clipOf('dance', 'warDance');
   });
 });

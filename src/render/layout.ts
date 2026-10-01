@@ -27,6 +27,10 @@ export const ROOM = {
   /** Where a fetched ball is brought and dropped, in front of the player. */
   fetchDropX: 190,
   fetchDropZ: 70,
+  /** The tunnel along the front edge: the pet runs in at one mouth and out of the other (Part 1L.3). */
+  tunnelAX: 72,
+  tunnelBX: 212,
+  tunnelZ: 131,
   /** The line the toy-chase mini-game is played on. */
   chaseZ: 10,
   /** Ground line the pet stands on. */
@@ -38,4 +42,9 @@ export const ROOM = {
   maxX: 274,
   minZ: -73,
   maxZ: 94,
+  /** The most the brain lets a scripted walk go past that, for the tunnel and a wide turn. */
+  reachMinX: 20,
+  reachMaxX: 340,
+  reachMinZ: -90,
+  reachMaxZ: 150,
 } as const;

@@ -23,7 +23,7 @@ interface DevPanelProps {
   onClose(): void;
 }
 
-const BEHAVIORS: readonly Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal'];
+const BEHAVIORS: readonly Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'stretch', 'dig', 'tunnel', 'dance', 'tailchase'];
 const SAVE_PREVIEW_CHARS = 3500;
 
 /**

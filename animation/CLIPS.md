@@ -1,6 +1,6 @@
 # Clip specs
 
-13 clips, 30 fps. Names are exact. All motion is **in place** (the pet does not travel in the clip; the game moves it and scales playback speed to match).
+17 clips, 30 fps (the last four were added in Part 1L.3, see the end). Names are exact. All motion is **in place** (the pet does not travel in the clip; the game moves it and scales playback speed to match).
 
 Numbers come from the working 2D animations in `src/render/animations.ts`, converted to degrees (1 rad = 57.3 degrees). They are the feel the game was tuned for. Match the feel. Because the model is blocky and chibi, you may exaggerate pose angles by up to 30 percent. Keep the **timing**.
 
@@ -194,3 +194,14 @@ If a clip feels too slow or fast, tell Claude. The game can change the playback 
 | `deadSleep` | Flopped on the side, limp | After approval |
 | `shake` | Shake after waking up | After approval |
 | `scratch`, `groom` | Phase 2 (guide §9.1) | Phase 2 |
+
+## Added in Part 1L.3 (2026-10-01): things it does for itself
+
+All four are loops, written in `scripts/animate.py` like the rest, and played as the base clip of a PetAI behavior (`docs/PET_BEHAVIOR.md` §2).
+
+- **stretch** (90 frames, behavior `stretch`): a play-bow. Tips forward about the front paws (9 degrees), chest low, rear up, tail raised, held for about 2 seconds with a yawn in the middle (jaw open 34 degrees, ears back, eyes squeezed), then back up.
+- **dig** (24 frames, behavior `dig`): scratching the floor. Front paws take turns pulling back along the floor and swinging forward lifted 4 cm; head low, rear end shaking a little, tail low.
+- **warDance** (24 frames, behavior `dance`): the weasel war dance. Two hops per cycle, sideways zigzag of the whole body, arched back, mouth open, tail puffed and lashing. All four paws leave the floor in each hop.
+- **tailChase** (30 frames, behavior `tailchase`): curled to the pet's right with the head turned to meet the tail, stepping on the spot. The clip only bends the body. The game turns the whole pet round at 5 radians per second while it plays.
+
+The game's tunnel run needs no clip of its own: it uses `walk` to the mouth and `run` through.

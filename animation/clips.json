@@ -15,7 +15,11 @@
     "happy": { "loop": false, "frames": 39, "required": true, "reaction": true },
     "annoyed": { "loop": false, "frames": 30, "required": true, "reaction": true },
     "surprise": { "loop": false, "frames": 24, "required": true, "reaction": true },
-    "blink": { "loop": false, "frames": 5, "required": true, "reaction": true, "bones": [ "eyeL", "eyeR" ] }
+    "blink": { "loop": false, "frames": 5, "required": true, "reaction": true, "bones": [ "eyeL", "eyeR" ] },
+    "stretch": { "loop": true, "frames": 90, "required": true, "behavior": "stretch" },
+    "dig": { "loop": true, "frames": 24, "required": true, "behavior": "dig" },
+    "warDance": { "loop": true, "frames": 24, "required": true, "behavior": "dance" },
+    "tailChase": { "loop": true, "frames": 30, "required": true, "behavior": "tailchase" }
   },
   "bones": [
     "root",

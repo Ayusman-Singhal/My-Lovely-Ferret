@@ -1,6 +1,6 @@
-# animate.py (v2): builds the 13 clips on the v2 rig (bendable spine + knees).
+# animate.py (v2): builds the 17 clips on the v2 rig (bendable spine + knees).
 #   exec(open(r'D:\The-Game\animation\scripts\animate.py').read())
-# Safe to run again: deletes and rebuilds only these 13 actions.
+# Safe to run again: deletes and rebuilds only these 17 actions.
 #
 # What makes v2 lifelike:
 #   - feet are placed with 2-bone IK (hip + knee), so standing feet stay planted while the body
@@ -271,6 +271,76 @@ def drink(f):
     p.rot("tail2", x=-4, z=6 * wave(f, N, 6))
     return p
 
+
+# ------------------------------------------------------------------ clips added in Part 1L.3 (loops)
+def stretch(f):
+    """Play-bow stretch with a yawn: chest low and rear up, held, then back up. 3 seconds."""
+    N = 90; p = Pose()
+    k = hold(f, 0, 20, 62, 82)
+    q = body_local(Vector((0, REST_FOOT["FL"].y, 0)))                 # tip forward about the front paws
+    th = -9 * k; t = pivot_offset(th, q)
+    p.rot("body", x=th); p.loc("body", x=t[0], y=t[1], z=t[2] - 0.004 * k)
+    p.spine(pitch=-7 * k)
+    yawn = bump(f, 28, 30)
+    p.rot("head", x=-4 * k + 14 * yawn, y=1.0 * wave(f, 6) * yawn)
+    p.rot("jaw", x=-34 * yawn)
+    p.ears(rx=-22 * yawn)
+    p.eyes(1 - 0.85 * bump(f, 26, 34))
+    p.nose(1 + 0.1 * yawn)
+    p.rot("tail1", x=-14 + 34 * k, z=5 * wave(f, 30) * k)
+    p.rot("tail2", x=-4 + 6 * k, z=6 * wave(f, 30, 4) * k)
+    return p
+
+def dig(f):
+    """Scratching at the floor with alternate front paws, rear end shaking. 0.8 seconds."""
+    N = 24; p = Pose(); a = f / N
+    for side, ph in (("FL", 0.0), ("FR", 0.5)):
+        th = 2 * pi * (a + ph)
+        p.foot(side, (0.05 * cos(th), 0.0, 0.04 * max(0.0, -sin(th))))   # pull back on the floor, lift to swing forward
+    p.loc("body", z=-0.01, x=0.003 * wave(f, 12))
+    p.rot("body", x=-6, z=3 * wave(f, 12))
+    p.spine(pitch=-5, yaw=3 * wave(f, 12, 3))
+    p.rot("head", x=-16 + 3 * cos(4 * pi * a))
+    p.ears(rx=-10)
+    p.nose(1 + 0.08 * sin(4 * pi * a) ** 2)
+    p.rot("tail1", x=-8, z=14 * wave(f, 12))
+    p.rot("tail2", x=-3, z=16 * wave(f, 12, 2))
+    return p
+
+def warDance(f):
+    """The weasel war dance: sideways hops with an arched back, mouth open, tail puffed. 0.8 seconds."""
+    N = 24; p = Pose(); a = f / N
+    hop = abs(sin(4 * pi * a))                                         # two hops per cycle
+    side = sin(2 * pi * a)
+    p.loc("body", x=0.03 * side, z=0.034 * hop)
+    for s in SIDES: p.foot(s, (0.0, 0.0, 0.03 * hop))
+    p.spine(pitch=-7 * hop, yaw=22 * side)
+    p.rot("body", z=-8 * side)
+    p.b("torso")["s"] = [1.06, 1.0, 1.05]
+    p.rot("head", x=8, z=-14 * side)
+    p.rot("jaw", x=-20 * hop)
+    p.ears(rx=12)
+    p.eyes(1.1)
+    p.rot("tail1", x=34, z=22 * sin(4 * pi * a))
+    p.rot("tail2", x=10, z=26 * sin(4 * pi * a + 1.0))
+    return p
+
+def tailChase(f):
+    """Curled round after its own tail, stepping on the spot. The game turns the body (the clip only bends it). 1 second."""
+    N = 30; p = Pose(); a = f / N
+    p.loc("body", z=-0.004 + 0.003 * abs(sin(4 * pi * a)))
+    for s, ph in (("BL", 0.0), ("FL", 0.25), ("BR", 0.5), ("FR", 0.75)):
+        u = (2 * a + ph) % 1.0
+        p.foot(s, (0.0, 0.0, 0.025 * max(0.0, sin(2 * pi * u))))
+    p.spine(yaw=-30, pitch=-3)
+    p.rot("head", z=-34, x=-4)
+    p.ears(rx=-6)
+    p.rot("jaw", x=-10 * bump(f, 8, 8))
+    p.eyes(1.1)
+    p.rot("tail1", x=-6, z=62 + 6 * wave(f, 15))
+    p.rot("tail2", z=46 + 8 * wave(f, 15, 3))
+    return p
+
 # ------------------------------------------------------------------ one-shots (added on top of the loop in game)
 def happy(f):
     p = Pose(); env = hold(f, 0, 3, 35, 39)
@@ -327,7 +397,8 @@ def blink(f):
 clips_json = json.load(open(os.path.join(ROOT, "clips.json")))
 FUNCS = {"idle": idle, "walk": walk, "run": run, "sniff": sniff, "curious": curious, "sleep": sleep,
          "eat": eat, "drink": drink, "sneak": sneak, "happy": happy, "annoyed": annoyed,
-         "surprise": surprise, "blink": blink}
+         "surprise": surprise, "blink": blink,
+         "stretch": stretch, "dig": dig, "warDance": warDance, "tailChase": tailChase}
 
 # ------------------------------------------------------------------ pose evaluation with IK
 REST = {"l": [0.0, 0.0, 0.0], "r": [0.0, 0.0, 0.0], "s": [1.0, 1.0, 1.0]}

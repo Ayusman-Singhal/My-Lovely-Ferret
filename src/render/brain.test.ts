@@ -6,7 +6,6 @@ import { createManualClock } from '../core/time';
 import type { HistoryEvent, PetRecord } from '../core/types';
 import { ANIMATION_NAMES, type AnimationName } from './clipSpec';
 import { createBrain, type BrainScene } from './brain';
-import { WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z } from './plan';
 import { ROOM } from './layout';
 
 const WORLD: AIWorld = { foodInBowl: true, waterInBowl: true, hasToy: true, hasStealable: true, propNearby: false, pointerInRoom: false };
@@ -72,10 +71,11 @@ describe('brain', () => {
       const d = t.brain.current();
       if (d) seen.add(d.behavior);
     });
-    expect(minX).toBeGreaterThanOrEqual(WALK_MIN_X - 1);
-    expect(maxX).toBeLessThanOrEqual(WALK_MAX_X + 1);
-    expect(minZ).toBeGreaterThanOrEqual(WALK_MIN_Z - 1);
-    expect(maxZ).toBeLessThanOrEqual(WALK_MAX_Z + 1);
+    // The floor it may reach: the roaming area, plus the strip along the front for the tunnel.
+    expect(minX).toBeGreaterThanOrEqual(ROOM.reachMinX - 1);
+    expect(maxX).toBeLessThanOrEqual(ROOM.reachMaxX + 1);
+    expect(minZ).toBeGreaterThanOrEqual(ROOM.reachMinZ - 1);
+    expect(maxZ).toBeLessThanOrEqual(ROOM.reachMaxZ + 1);
     // It really roams the floor: it uses a good part of both the width and the depth.
     expect(maxX - minX).toBeGreaterThan(80);
     expect(maxZ - minZ).toBeGreaterThan(60);

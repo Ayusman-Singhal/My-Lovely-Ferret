@@ -1,0 +1,217 @@
+{
+ "file": "D:\\The-Game\\animation\\export\\ferret_parts.glb",
+ "bytes": 33332,
+ "pieces": {
+  "torso": {
+   "from": [
+    "m_body"
+   ],
+   "pivot": [
+    0.0,
+    0.0,
+    0.0633
+   ],
+   "tris": 14
+  },
+  "tail1": {
+   "from": [
+    "m_tail1"
+   ],
+   "pivot": [
+    0.0,
+    0.1157,
+    0.11
+   ],
+   "tris": 14
+  },
+  "tail2": {
+   "from": [
+    "m_tail2"
+   ],
+   "pivot": [
+    0.0,
+    0.1826,
+    0.1412
+   ],
+   "tris": 14
+  },
+  "legBL": {
+   "from": [
+    "m_legBL"
+   ],
+   "pivot": [
+    0.0475,
+    0.0945,
+    0.0844
+   ],
+   "tris": 14
+  },
+  "pawBL": {
+   "from": [
+    "m_pawBL"
+   ],
+   "pivot": [
+    0.0475,
+    0.0945,
+    0.0397
+   ],
+   "tris": 14
+  },
+  "legBR": {
+   "from": [
+    "m_legBR"
+   ],
+   "pivot": [
+    -0.0475,
+    0.0945,
+    0.0844
+   ],
+   "tris": 14
+  },
+  "pawBR": {
+   "from": [
+    "m_pawBR"
+   ],
+   "pivot": [
+    -0.0475,
+    0.0945,
+    0.0397
+   ],
+   "tris": 14
+  },
+  "chest": {
+   "from": [
+    "m_chest"
+   ],
+   "pivot": [
+    0.0,
+    0.0,
+    0.1055
+   ],
+   "tris": 14
+  },
+  "head": {
+   "from": [
+    "m_head",
+    "m_neck"
+   ],
+   "pivot": [
+    -0.0,
+    -0.135,
+    0.1215
+   ],
+   "tris": 24
+  },
+  "jaw": {
+   "from": [
+    "m_jaw"
+   ],
+   "pivot": [
+    -0.0,
+    -0.2688,
+    0.0914
+   ],
+   "tris": 12
+  },
+  "nose": {
+   "from": [
+    "m_nose"
+   ],
+   "pivot": [
+    -0.0,
+    -0.3418,
+    0.1044
+   ],
+   "tris": 12
+  },
+  "earL": {
+   "from": [
+    "m_earL"
+   ],
+   "pivot": [
+    0.0633,
+    -0.2848,
+    0.1846
+   ],
+   "tris": 12
+  },
+  "earR": {
+   "from": [
+    "m_earR"
+   ],
+   "pivot": [
+    -0.0633,
+    -0.2848,
+    0.1846
+   ],
+   "tris": 12
+  },
+  "eyeL": {
+   "from": [
+    "m_eyeL"
+   ],
+   "pivot": [
+    0.053,
+    -0.3332,
+    0.1361
+   ],
+   "tris": 12
+  },
+  "eyeR": {
+   "from": [
+    "m_eyeR"
+   ],
+   "pivot": [
+    -0.053,
+    -0.3332,
+    0.1361
+   ],
+   "tris": 12
+  },
+  "legFL": {
+   "from": [
+    "m_legFL"
+   ],
+   "pivot": [
+    0.0475,
+    -0.0945,
+    0.0844
+   ],
+   "tris": 14
+  },
+  "pawFL": {
+   "from": [
+    "m_pawFL"
+   ],
+   "pivot": [
+    0.0475,
+    -0.0945,
+    0.0397
+   ],
+   "tris": 14
+  },
+  "legFR": {
+   "from": [
+    "m_legFR"
+   ],
+   "pivot": [
+    -0.0475,
+    -0.0945,
+    0.0844
+   ],
+   "tris": 14
+  },
+  "pawFR": {
+   "from": [
+    "m_pawFR"
+   ],
+   "pivot": [
+    -0.0475,
+    -0.0945,
+    0.0397
+   ],
+   "tris": 14
+  }
+ },
+ "dropped_options": []
+}

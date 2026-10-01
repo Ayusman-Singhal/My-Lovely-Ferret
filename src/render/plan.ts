@@ -12,6 +12,11 @@ export const WALK_MAX_X = ROOM.maxX;
 export const WALK_MIN_Z = ROOM.minZ;
 export const WALK_MAX_Z = ROOM.maxZ;
 
+/** How far outside a tunnel mouth the pet starts and ends, so its whole body is in view before and after. */
+const TUNNEL_MARGIN = 34;
+/** Radians per second of the body going round after its tail; negative is to the pet's right, where the clip curls. */
+const TAIL_CHASE_SPIN = -5;
+
 /** Nose reach ahead of the feet at the shown size (the model's nose is 0.34 m ahead), in px. */
 const NOSE_REACH = 71;
 
@@ -24,7 +29,19 @@ export type SockAction = ItemAction;
 
 export type Phase =
   | { kind: 'go'; anim: AnimationName; x: number; z: number; speed: number; face?: 1 | -1; startAction?: SockAction; endAction?: SockAction }
-  | { kind: 'do'; anim: AnimationName; ms: number; y?: number; z?: number; face?: 1 | -1; heading?: number; react?: AnimationName; startAction?: SockAction };
+  | {
+      kind: 'do';
+      anim: AnimationName;
+      ms: number;
+      y?: number;
+      z?: number;
+      face?: 1 | -1;
+      heading?: number;
+      /** Turn on the spot at this many radians per second (negative is to the pet's right). */
+      spin?: number;
+      react?: AnimationName;
+      startAction?: SockAction;
+    };
 
 export interface PlanContext {
   /** Where the pet is now. */
@@ -116,6 +133,42 @@ export function planFor(decision: Decision, ctx: PlanContext): Phase[] {
         { kind: 'do', anim: 'idle', ms: 700 },
       ];
     }
+
+    case 'stretch':
+      return [{ kind: 'do', anim: 'stretch', ms: decision.durationMs }];
+
+    case 'dig':
+      return [
+        { kind: 'go', anim: 'walk', x: spotToX(s0), z: spotToZ(s1), speed: SPEED.walk },
+        { kind: 'do', anim: 'dig', ms: decision.durationMs },
+        { kind: 'do', anim: 'idle', ms: 600 },
+      ];
+
+    case 'tunnel': {
+      // In at the nearer mouth, out of the other one at a run, then a pleased look.
+      const fromA = ctx.x < (ROOM.tunnelAX + ROOM.tunnelBX) / 2;
+      const inX = fromA ? ROOM.tunnelAX : ROOM.tunnelBX;
+      const outX = fromA ? ROOM.tunnelBX : ROOM.tunnelAX;
+      const away = fromA ? -1 : 1; // outside a mouth is away from the middle of the tunnel
+      return [
+        { kind: 'go', anim: 'walk', x: inX + away * TUNNEL_MARGIN, z: ROOM.tunnelZ, speed: SPEED.walk },
+        { kind: 'go', anim: 'run', x: outX - away * TUNNEL_MARGIN, z: ROOM.tunnelZ, speed: SPEED.run },
+        { kind: 'do', anim: 'idle', ms: 700, react: 'happy' },
+      ];
+    }
+
+    case 'dance':
+      return [
+        { kind: 'go', anim: 'walk', x: spotToX(s0), z: spotToZ(s1), speed: SPEED.walk },
+        { kind: 'do', anim: 'warDance', ms: decision.durationMs },
+        { kind: 'do', anim: 'idle', ms: 500 },
+      ];
+
+    case 'tailchase':
+      return [
+        { kind: 'do', anim: 'tailChase', ms: decision.durationMs, spin: TAIL_CHASE_SPIN },
+        { kind: 'do', anim: 'idle', ms: 500, react: 'surprise' },
+      ];
 
     case 'sleep':
       // Sleep in the hammock until the simulation wakes the pet: an endless step. First walk to the
