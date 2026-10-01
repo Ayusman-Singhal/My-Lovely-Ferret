@@ -6,7 +6,7 @@ Companion files: what to build is in `03_GAME_DESIGN.md`, how it works is in `04
 
 Estimates are for a beginner. Total about 30 to 45 hours.
 
-**Build status (2026-10-01):** Claude builds the game in Studio through the Roblox Studio MCP. Source copies of the scripts are in `game/` (Studio is the source of truth, see `game/README.md`). Done: M0 (folders and empty scripts), M1 (`Tuning`, `PetSim`, `SimTest` all pass). Next: M2 needs the developer to publish the place as Private (M0 steps 1 to 3) and import the Blender ferret (`06_FERRET_RIG_AND_ANIMATION.md` section 2A).
+**Build status (2026-10-01):** Claude builds the game in Studio through the Roblox Studio MCP. Source copies of the scripts are in `game/` (Studio is the source of truth, see `game/README.md`). Done: M0 (folders and empty scripts), M1 (`Tuning`, `PetSim`, `SimTest` all pass), M2 (imported Blender ferret flattened, scaled, 21 joints, nod test passes, stored in `ReplicatedStorage.Assets.Ferret`). Next: M3 (animation formulas). Open: the texture looks blurry in Studio (`06_...md` section 2A.6).
 
 ## Part 0: Roblox Studio basics (read once, about 1 hour)
 

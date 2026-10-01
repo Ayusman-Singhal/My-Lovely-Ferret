@@ -42,7 +42,9 @@ Scale: do not worry about it in Blender. The ferret is about 0.5 m. In Studio a 
 2. In the importer window: **Import Only as Model** on (this keeps all pieces in one Model). **Use Imported Pivot** on (each MeshPart keeps its own pivot). **Set Pivot to Scene Origin** on. **Add to Workspace** on. **Anchored** off.
 3. Check the preview: all pieces are there and in the right places. **Read any cost line** (section 2A.7) before you confirm. Import.
 4. The Model appears with a MeshPart per piece. Rename them to match section 2's part names. Rename the Model `Ferret`.
-5. If the ferret is lying on its side or backward: the axis settings in 2A.2 are wrong. Rotate the whole Model in Studio with the Rotate tool until it stands, nose toward +Z, then continue. Note what was needed and fix the export next time.
+5. If the ferret is lying on its side or backward: the axis settings in 2A.2 are wrong. Rotate the whole Model in Studio with the Rotate tool until it stands, nose toward -Z, then continue. Note what was needed and fix the export next time.
+
+**What the real import looked like (2026-10-01):** no cost line and no Robux charged on a new account with 0 Robux. All 19 pieces uploaded as meshes with one shared texture. The model arrived 0.6 studs long (1 Blender unit is 1 stud), already standing, nose toward -Z, each piece positioned correctly with an identity rotation. Each piece came as a wrapper Model holding a MeshPart named `part_<name>`. `game/tools/BuildFerretJoints.luau` flattens it, scales it by 7 (about 4.5 studs long), makes the invisible `root`, `body` and `carry` parts, and creates the 21 Motor6D joints from the pivots in `animation/scripts/upgrade_report.json`. The result is `ReplicatedStorage.Assets.Ferret`. The texture looked smooth (blurry) in Studio, see 2A.6.
 
 ### 2A.4 Make the joints
 
@@ -65,6 +67,8 @@ Roblox draws textures on mesh pieces with smooth (bilinear) filtering. A 64 by 6
 2. **Upscale the texture yourself:** if it is not available, enlarge the PNG with nearest-neighbor to **512 by 512** (each old pixel becomes an 8 by 8 block; in Krita: Image > Scale Image to New Size, Filter: Nearest Neighbor; Piskel can also export at a larger scale). Smooth filtering then only blurs the thin borders between blocks. It uses about 1 MB of texture memory, which is fine. Keep a margin of matching color around islands to avoid color bleeding.
 
 Repeat for each of the four coat textures.
+
+**Result (2026-10-01):** a `SurfaceAppearance` with `ResampleMode = Pixelated` was accepted by Studio on every piece but the Studio viewport looked the same as before (still smooth). Fix 1 did not work yet in the viewport, so use fix 2.
 
 ### 2A.7 Upload cost and rules (unverified, check before you rely on it)
 
@@ -93,7 +97,7 @@ All Parts are in one Model named `Ferret`. Sizes are in studs (1 stud is about 0
 | `legFL`, `legFR`, `legBL`, `legBR` | 0.35 x 0.7 x 0.35 | Four legs |
 | `carry` | 0.1 x 0.1 x 0.1 | Invisible marker in front of the jaw, where the sock goes |
 
-Facing: the ferret faces **+Z** in its own space (the front of the head is at the larger Z). In the game it is turned to face left or right.
+Facing: the ferret faces **-Z** in its own space, so its `LookVector` points at its nose (measured on the Blender import, 2026-10-01: Blender -Y becomes Roblox -Z, Blender +X, the animal's left, becomes Roblox -X). In the game it is turned to face left or right. A **positive** rotation about X tips the nose **up** (nose at -Z), so "pitch down" in the clip table below is `CFrame.Angles(-angle, 0, 0)`.
 
 Settings for every Part except `root`: **Anchored = false**, **CanCollide = false**, **CanTouch = false**, **Massless = true**, **Material = SmoothPlastic** (or Plastic), no shadows needed. Use a flat look with a few colors from `docs/ART_STYLE.md` (the sable coat: body `#8A6244`, dark parts `#4A3626`, belly `#E8D2B0`, nose `#E59AA0`, eyes `#3B2F26`). A black-footed ferret look: pale body, dark mask over the eyes, dark feet, dark tail tip. A dark box on the face (`mask`) sits above the head and eyes.
 
