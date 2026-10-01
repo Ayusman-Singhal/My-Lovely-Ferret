@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>3D ferret spike (dev only)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body { margin: 0; height: 100%; background: #f6ecdc; color: #3b2f26; font: 13px system-ui, sans-serif; overflow: hidden; }
+      #stage { position: fixed; inset: 0; }
+      #stage canvas { display: block; width: 100%; height: 100%; }
+      #loading { position: fixed; inset: 0; display: grid; place-items: center; font-size: 15px; }
+      #panel { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px; background: rgba(246, 236, 220, 0.92); display: flex; flex-wrap: wrap; gap: 6px; }
+      #panel button { min-height: 36px; padding: 0 10px; border: 1px solid #a9805c; border-radius: 8px; background: #ebd3b5; color: inherit; font: inherit; }
+      #panel button[aria-pressed='true'] { background: #c9a07a; font-weight: 700; }
+      #info { position: fixed; left: 8px; top: 8px; white-space: pre; font-size: 11px; opacity: 0.8; }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="loading">Loading the ferret...</div>
+    <pre id="info"></pre>
+    <div id="panel"></div>
+    <script type="module" src="/src/dev/ferret3d.ts"></script>
+  </body>
+</html>

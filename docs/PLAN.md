@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Next: Part 1K, 3D pivot (task 1K.3, the spike, while the developer prepares the model), before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Next: 1K.4, the developer approves the budgets, then 1K.5 onward, before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -141,7 +141,7 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 - [x] 1C.2 (S) Measured gzip size and scene-ready time under slow 4G plus 4x CPU. Recorded in `docs/PERFORMANCE.md` §3.1.
 - [x] 1C.3 (S) **Decision: Canvas 2D** (developer approved 2026-09-30). PixiJS 116 to 144 KB gzip, scene ready about 1.8 to 2.0 s throttled, against 1.4 KB and 0.6 s. PixiJS removed. Recorded as deviation D5 (allowed fallback, guide §3 Open Decision 2).
 - [x] 1C.4 (M) Render-on-demand loop with pause when hidden, frame cap for low-power mode, DPR cap 2 (`src/render/loop.ts`, 10 tests).
-- [ ] 1C.5 (S) Moved into 1K.3 (3D pivot). Original text: later, at Part 1J: a reusable startup-time measurement script under `scripts/` (the spike used a throwaway one), and a real-browser check that a settled loop uses no frames.
+- [x] 1C.5 (S) Done in 1K.3 (3D pivot): `scripts/measure-startup.mjs` measures size, ready time under throttle, and frames drawn while paused (0). Original text: later, at Part 1J: a reusable startup-time measurement script under `scripts/` (the spike used a throwaway one), and a real-browser check that a settled loop uses no frames.
 
 ## Part 1D: Placeholder rig and animations
 
@@ -187,7 +187,7 @@ Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB (three.js is 169 KB
 - [x] 1K.0 (S) `docs/MARKET_RESEARCH.md` written, proposals A1 to A11 and C1 to C4 recorded there as pending.
 - [x] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
 - [x] 1K.2 (S) Model chosen 2026-10-01: "Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles, no rig, no animations (checked through the Sketchfab API). Recorded in `docs/ASSET_LICENSES.md`. Still to do: CC0 room furniture (Kenney, Quaternius) at 1K.8.
-- [ ] 1K.3 (M) Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
+- [x] 1K.3 (M) Done 2026-10-01: `dev/ferret3d.html`, `src/dev/ferret3d.ts`, `src/dev/ferret3dScene.ts`, `vite.spike.config.ts`, `scripts/measure-startup.mjs`. Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
 - [ ] 1K.4 (developer) Approve or change the budgets from the numbers. Then add `three` to `package.json` and update `scripts/budgets.json`.
 - [ ] 1K.5 (S) Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
 - [ ] 1K.6 (L) `src/render/scene3d.ts` behind the existing `Scene` and `BrainScene` contracts, with unit-tested logical-to-world mapping and floor raycast.

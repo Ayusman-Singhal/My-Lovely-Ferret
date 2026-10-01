@@ -38,6 +38,7 @@ Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enfo
 | 1E PetAI and brain | 2026-09-30 | 14.60 KB | Adds PetAI, plan, brain, scaled clock. |
 | 1F interactions and mini-game | 2026-09-30 | 18.07 KB | Commands, mini-game, controller, pointer input, test bar. |
 | 1G UI and save | 2026-09-30 | 27.53 KB | HUD, action bar, onboarding, menu, i18n, autosave, IndexedDB save wired. Room resized to 360 by 540. |
+| 1K.3 3D spike | 2026-10-01 | 1.1 KB entry plus a 154.2 KB lazy three.js chunk (app unchanged at 27.5 KB) | Blender ferret in three.js, 27.9 KB gzip model, scene ready 1.88 s on slow 4G + 4x CPU. See §3.2 |
 | Phase 1 gate | | | Full table of section 1. |
 
 ### 3.1 Renderer spike, 2026-09-30 (Part 1C)
@@ -58,6 +59,32 @@ Finding: PixiJS fits the 300 KB size budget but not the speed budget. The empty 
 
 Rule kept from this spike: `npm run size` counts the entry chunk and its static imports. A dynamic import that always fires at startup would slip past it, so never use dynamic `import()` for code needed for the first paint. Dynamic imports are for lazy features only (Firebase, shop, history, passport).
 
+### 3.2 three.js 3D spike, 2026-10-01 (Part 1K.3)
+
+The Blender ferret (`animation/export/ferret.glb`, 13 clips, 184 triangles in the file) in three.js, in a box room, with crossfaded loops and additive one-shots. Page: `dev/ferret3d.html` (dev only). Measured with `node scripts/measure-startup.mjs`, which builds only that page (`vite.spike.config.ts`), serves it with gzip like GitHub Pages, and drives the installed Chrome. Same profile as §3.1: 1.6 Mbps down, 150 ms latency, 4x CPU slowdown, cache off.
+
+| Measure | Result |
+|---|---|
+| Entry script (starts the model download, shows the loading text) | 1.1 KB gzip, runs at about 0.4 s on the slow profile |
+| three.js code, one lazy chunk (`WebGLRenderer`, `GLTFLoader`, `AnimationMixer`, lights, materials; no meshopt decoder) | **154.2 KB gzip** (617 KB raw). The earlier estimate with the meshopt decoder was 169 KB |
+| Ferret model, unoptimized | 175 KB raw, **27.9 KB gzip**. With `gltf-transform optimize --compress meshopt` it is 140 KB raw and 18.7 KB gzip (tool run in a scratch folder, not adopted yet) |
+| Texture | 64 by 64 PNG, 1.7 KB, inside the model |
+| Over the wire in one load | 184.7 KB |
+| Scene ready, no throttle | median 215 ms |
+| Scene ready, slow 4G + 4x CPU | **median 1.88 s** (five runs, 1.86 to 1.97 s). Phases: entry script 0.39 s, model bytes in 0.85 s, three.js code ready 1.60 s, first frame drawn 1.88 s |
+| Frames drawn while paused for 2 s | **0** (settled scene costs nothing) |
+| Triangles and draw calls | 140 for the ferret, 212 with the room. 13 draw calls for the ferret (13 pieces), 19 with the room |
+
+How to read it:
+
+- "Scene ready" means the first model frame is on the canvas. Headless Chrome draws WebGL in software (SwiftShader), so the shader compile and first draw are **slower than on a phone GPU**, and frame rate was not measured. This is a pessimistic proxy. The real low-end Android check (task 1J.4) still decides.
+- The first version of the measurement left the previous run's page open, and its render loop competed for the CPU. That read 4.2 to 4.9 s. It was a bug in the script, fixed by closing each page before the next run. Ignore any number above 4 s from earlier today.
+- Starting the model download before three.js has loaded (the two overlap) and showing the loading text from the tiny entry script is part of the design. A variant with everything in one bundle was not measured cleanly, so the gain from this is not quantified.
+- The 154 KB lives in a **dynamic import**, so `scripts/check-budgets.mjs` counts only the 1.1 KB entry. That is the loophole warned about at the end of §3.1. When the 3D scene joins the app (task 1K.6), the budget script must count the scene chunk too (name it in `scripts/budgets.json`), so the real initial cost stays visible. Today's app is 27.5 KB gzip, so app plus scene is about 182 KB.
+- Model animation data is most of the file, because every clip stores keys for all 17 bones even when a bone does not move. Dropping constant tracks and compressing is possible when it matters.
+
+Findings against the proposed budgets (`docs/PLAN.md` Part 1K): they hold with a wide margin. Suggested tighter values to approve at 1K.4: initial JS including the scene chunk at most 250 KB gzip, first-run art at most 1 MB, scene ready at most 3 s on the slow profile, texture memory at most 32 MB.
+
 ## 4. Decisions made to stay within budget
 
 | Date | Decision | Reason |
@@ -66,6 +93,7 @@ Rule kept from this spike: `npm run size` counts the entry chunk and its static 
 | 2026-09-30 | Checksum is FNV-1a, not SHA-256 (proposed D3) | No crypto dependency or async work for saves. |
 | 2026-09-30 | Placeholder rig drawn in code | 0 KB of art for Phase 1 (`ART_STYLE.md`). |
 | 2026-09-30 | Canvas 2D instead of PixiJS | 116 to 144 KB gzip and about 1.2 to 1.4 s slower scene-ready under throttle (section 3.1). |
+| 2026-10-01 | three.js for the 3D ferret, replacing Canvas 2D (pending approval at 1K.4) | Quality over the smallest bundle. Measured cost is acceptable: 154 KB gzip lazy chunk, scene ready 1.88 s on the slow profile (section 3.2). |
 
 ## 5. Platform targets (guide §25.6)
 

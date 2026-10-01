@@ -32,7 +32,7 @@ const bannedMath = [
 }));
 
 export default [
-  { ignores: ['dist/', 'node_modules/', 'coverage/', '.vite/'] },
+  { ignores: ['dist/', 'dist-spike/', 'node_modules/', 'coverage/', '.vite/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
