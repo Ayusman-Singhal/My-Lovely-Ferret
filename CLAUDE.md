@@ -2,7 +2,7 @@
 
 A web-first virtual pet game. One person adopts a ferret and can share its care with one other person, who may eventually become the permanent owner. Core promise: **raise one pet with someone you care about.**
 
-Stack: TypeScript, Vite, Preact, Canvas 2D (no PixiJS, decided from measurements), Vitest, Playwright (`playwright-core` driving the installed Chrome). Zero-cost Firebase Spark "mailbox" for shared care (Phase 3 onward, lazy-loaded). Capacitor wraps the same code as an Android app (Phase 5).
+Stack: TypeScript, Vite, Preact, three.js for the 3D ferret (Blender model and clips in `animation/`), Vitest, Playwright (`playwright-core` driving the installed Chrome). Zero-cost Firebase Spark "mailbox" for shared care (Phase 3 onward, lazy-loaded). Capacitor wraps the same code as an Android app (Phase 5).
 
 `PET_GAME_GUIDE_v3.md` is the source of truth. Cite its sections (for example "guide §10.6") in code comments, docs, and reports. If the guide and this file disagree, ask the developer.
 
@@ -75,15 +75,15 @@ Create folders when they are first needed, not before.
 ## Hard constraints
 
 - **Never enable Firebase Blaze billing. Never add Cloud Functions, Cloud Storage, Cloud Run, or any paid service.** If a feature seems to need one, stop and ask the developer.
-- **Every dependency justifies its gzipped bytes.** Check the size impact before adding a package. Prefer a 20-line helper over a library. Avoid lodash, date libraries, UI kits, CSS frameworks, and heavy i18n libraries (guide §4.6).
-- **Budgets fail the build** (guide §4). Initial JS gzipped starts at 300 KB. Measured numbers go in `docs/PERFORMANCE.md` at every phase gate.
+- **Every dependency earns its place.** It must be maintained, permissively licensed, and save real work. Download size is no longer a main concern (decision 2026-10-01), but look at the size impact so nothing balloons by accident. Prefer a small helper over a library when the helper is simple. Avoid lodash, date libraries, UI kits, CSS frameworks, and heavy i18n libraries, mainly for the complexity they add (guide §4.6).
+- **Budgets fail the build.** Size budgets are realistic, like other apps (decision 2026-10-01, supersedes the numbers in guide §4.1): initial JS gzipped at most 1 MB including the 3D scene, first-run assets at most 10 MB. Speed and smoothness budgets stay (fast first feedback, steady frame rate, idle CPU near zero). Measured numbers go in `docs/PERFORMANCE.md` at every phase gate.
 - **Free tools and permissive assets only** (CC0 or permissive). Record the license of every third-party asset in `docs/ASSET_LICENSES.md` and every asset's size in `docs/ART_ASSET_LIST.md`.
 - **No secrets in the repo.** Firebase web config is public, but service accounts and signing keys are not.
 - **Lockfiles are generated, never edited.** Change `package.json` and let npm regenerate `package-lock.json`.
 
 ## Dropped on purpose (guide §0)
 
-Do not bring these back without asking the developer: Unity, C#, 3D art; peer-to-peer networking (Nearby Connections, WebRTC, STUN/TURN, Cloudflare Workers signaling); device key pairs, signed events, encrypted saves; server-side purchase verification; hygiene, enrichment, and bathing as stats, `trust`, and the traits `playfulness`, `foodPreference`, `socialPreference`; a second room, and camera panning. Also out of the MVP: multiple species, chat, friends list, trading, PvP, breeding, blockchain or NFTs, AI chatbot pet, more than one caretaker, Discord bot.
+Do not bring these back without asking the developer: Unity, C#; peer-to-peer networking (Nearby Connections, WebRTC, STUN/TURN, Cloudflare Workers signaling); device key pairs, signed events, encrypted saves; server-side purchase verification; hygiene, enrichment, and bathing as stats, `trust`, and the traits `playfulness`, `foodPreference`, `socialPreference`; a second room, and camera panning. Also out of the MVP: multiple species, chat, friends list, trading, PvP, breeding, blockchain or NFTs, AI chatbot pet, more than one caretaker, Discord bot.
 
 ## Verify before relying (guide §24)
 
@@ -93,8 +93,9 @@ Do not trust memory or the guide for facts that change: Firebase Spark quotas an
 
 - Preact (not React), with `preact/compat` only if a dependency needs it.
 - Roblox is a validation prototype only (`ferret-game-roblox/`, docs, started 2026-10-01), not the shipped product. It does not change the web and Android plan. Published free for 16+ and Trusted Friends, never paid Robux, no under-16 route.
-- Renderer: **Canvas 2D**, not PixiJS (decided 2026-09-30 from measurements). PixiJS adds 116 to 144 KB gzip and pushes scene-ready time to about 1.8 to 2.0 s (slow 4G, 4x CPU) against 0.6 s for Canvas 2D, which would use up the 2 s time-to-interactive budget. Do not add PixiJS back without new measurements and the developer's approval.
-- Art: layered-sprite rig animated in code. Phase 1 uses a code-drawn flat-color placeholder rig. Final art is drawn later in a free tool (Krita, Inkscape). Style: soft flat vector, small palette (`docs/ART_STYLE.md`).
+- Renderer: **three.js** (3D), decided 2026-10-01 by the developer: quality now matters more than the smallest bundle, and a flat 2D ferret would not satisfy users. Measured in the spike (`docs/PERFORMANCE.md` §3.2): 154 KB gzip lazy chunk, scene ready 1.88 to 2.14 s on slow 4G + 4x CPU. Canvas 2D (decision D5, 2026-09-30) and PixiJS are no longer used for the pet. Do not add PixiJS.
+- Art: a cute blocky 3D ferret, a modified copy of "Black Footed Ferret" by LandyStudio (CC BY 4.0, credit required), rigged and animated by the developer in Blender (`animation/`), played in three.js. Room and UI keep the small warm palette (`docs/ART_STYLE.md`, to be rewritten for 3D). The 2D code-drawn rig is a placeholder until the 3D scene replaces it (Part 1K).
+- Size is not a main constraint any more (decision 2026-10-01): initial phases kept everything tiny, now assets and bundles may be as large as typical apps. Keep the budgets in `docs/PERFORMANCE.md`. Speed to first feedback and smooth frame rate still matter.
 - General audience, 13+, minimal data collection.
 - Adoption is free until Phase 6. The closed beta is free. Web build is a closed preview, not the shipped product.
 - Item economy: shinies (soft currency, earned by caring, never bought, never needed for survival), Care Day milestone unlocks, cosmetic packs. Basic food and water are always free.

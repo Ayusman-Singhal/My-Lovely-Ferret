@@ -11,3 +11,6 @@ shots/
 *.blend1
 *.blend2
 dist-spike/
+animation/scripts/qa/
+animation/previews/
+animation/Claude outputs/

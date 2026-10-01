@@ -1,5 +1,7 @@
 # Art Style
 
+> **Note (2026-10-01):** the pet is now a cute blocky 3D ferret (`animation/`, three.js). Sections 1, 4, 5 and 7 below describe the old 2D layered-sprite rig and are superseded for the pet by `animation/RIG_SPEC.md` and `animation/CLIPS.md`. The palette (§3), the room (§6) and the UI rules still apply. Size limits are relaxed (`PERFORMANCE.md`). Full rewrite is task 1K.5.
+
 Fixed before any final art (guide §25.1). Decided in the setup session: **soft flat vector**, small palette, layered-sprite rig animated in code. Phase 1 uses a **code-drawn placeholder rig** (no image files). The developer draws the final rig later in a free tool (Krita or Inkscape), before the art style is locked (guide §25.1, after the real low-end phone check).
 
 ## 1. Look

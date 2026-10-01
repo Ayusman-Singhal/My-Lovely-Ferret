@@ -1,6 +1,6 @@
 # Art and Audio Asset List
 
-Every asset the game needs, with its size once it exists (guide §9.2, §22). Update the **Size** column whenever an asset is added or changed, and keep the totals in `PERFORMANCE.md` current. Budget for first-run art: about 1 to 1.5 MB (guide §4.1).
+Every asset the game needs, with its size once it exists (guide §9.2, §22). Update the **Size** column whenever an asset is added or changed, and keep the totals in `PERFORMANCE.md` current. Budget for first-run assets: at most 10 MB (relaxed on 2026-10-01, see `PERFORMANCE.md`).
 
 Status values: `todo`, `placeholder` (drawn in code, 0 KB), `final` (real art, in `public/`).
 

@@ -1,19 +1,22 @@
 # Performance
 
-Light and fast is a hard requirement (guide §4, Principle 11). Budgets are enforced in the build. This file holds the budgets, how they are measured, and the measured numbers at every phase gate. Update it at each gate.
+Fast and smooth is a hard requirement (guide §4, Principle 11): quick first feedback, a steady frame rate, near-zero idle CPU. **Small is no longer a hard requirement** (developer decision, 2026-10-01): the first phases kept everything tiny to prove the idea, and now sizes may be as large as typical apps. The size numbers below replace the stricter ones in guide §4.1. Budgets are enforced in the build. This file holds the budgets, how they are measured, and the measured numbers at every phase gate. Update it at each gate.
 
-## 1. Budgets (starting targets, guide §4.1)
+## 1. Budgets (relaxed on 2026-10-01; the original strict targets are in the table below it)
 
-| Metric | Starting target | Enforced by |
+| Metric | Target | Enforced by |
 |---|---|---|
-| Initial JS (UI, game, renderer), gzipped | at most about 300 KB, tighten after measuring | `npm run size` (fails the build) |
-| Firebase chunk (lazy), gzipped | own budget, set when it exists (Phase 3) | `npm run size`, `scripts/budgets.json` |
-| First-run art | at most about 1 to 1.5 MB | `ART_ASSET_LIST.md` totals, size check later |
-| Total installed art and audio | as small as possible | `ART_ASSET_LIST.md` totals |
-| Time to interactive, mid-range Android over 4G | under about 2 seconds | Lighthouse or DevTools throttling |
+| Initial JS (UI, game, renderer including the 3D scene chunk), gzipped | at most 1 MB | `npm run size` (fails the build). The script must count the scene chunk too, see §3.2 |
+| Other lazy chunks (Firebase, shop, history), gzipped | at most 500 KB each, set when each exists | `npm run size`, `scripts/budgets.json` |
+| First-run assets (3D model, textures, room) | at most 10 MB | `ART_ASSET_LIST.md` totals, size check later |
+| Total installed art and audio | web: keep under about 50 MB. Android: well under Google Play's bundle limit (check the limit at Phase 5) | `ART_ASSET_LIST.md` totals |
+| Loading screen visible, slow 4G + 4x CPU | under 1.5 seconds | `scripts/measure-startup.mjs` |
+| Scene ready (first pet frame), slow 4G + 4x CPU | at most 5 seconds | `scripts/measure-startup.mjs` |
 | Frame rate | steady 60 fps on a mid-range laptop, at least 30 fps under 4x CPU throttling | DevTools |
-| Idle CPU (pet asleep, nothing animating) | near zero | DevTools Performance |
-| Texture memory | start at about 32 MB, tracked | Sum of canvas and image sizes (width x height x 4 bytes), DevTools memory |
+| Idle CPU (pet asleep, nothing animating) | near zero | DevTools Performance, and the paused-frames check in `scripts/measure-startup.mjs` |
+| Texture memory | at most 128 MB, tracked | Sum of image sizes (width x height x 4 bytes), DevTools memory |
+
+Original strict targets, kept for history (guide §4.1): initial JS about 300 KB, first-run art 1 to 1.5 MB, time to interactive under 2 s, texture memory about 32 MB. The relaxed numbers still catch accidents (a 5 MB library, an uncompressed 50 MB texture) without forcing tiny assets.
 
 **How "initial JS" is counted.** `scripts/check-budgets.mjs` reads `dist/.vite/manifest.json`, takes the entry chunk plus everything it imports statically, gzips each file with Node's `zlib`, and sums them. Dynamically imported chunks (Firebase, lazy screens) are excluded on purpose.
 
@@ -85,7 +88,7 @@ How to read it:
 
 **Re-measured with rig v2 (2026-10-01, later the same day).** The developer rebuilt the rig (22 bones, two-box legs, split torso, 264 triangles) and the 13 clips. Same method: model 299 KB raw, **73.9 KB gzip** (was 27.9), 231 KB over the wire, scene ready **median 2.14 s** (2.11 to 2.20 s) on the slow profile, phases: entry 0.38 s, model bytes in 1.31 s, three.js code 1.82 s, first draw 2.14 s. 0 frames while paused. 292 triangles and 24 draw calls with the room. The animation data (22 bones x 3 channels x 13 clips, all keyed) is most of the size. `gltf-transform optimize --compress meshopt` (scratch run) brings the file to 215 KB raw and **31.8 KB gzip**, which would bring the model back to about 0.9 s on this profile. Worth doing at 1K.6, not needed to meet the budgets.
 
-Findings against the proposed budgets (`docs/PLAN.md` Part 1K): they hold with a wide margin. Suggested tighter values to approve at 1K.4: initial JS including the scene chunk at most 250 KB gzip, first-run art at most 1 MB, scene ready at most 3 s on the slow profile, texture memory at most 32 MB.
+Findings against the budgets (`docs/PLAN.md` Part 1K): the 3D ferret passes the relaxed budgets (section 1) with a very wide margin: about 182 KB gzip of 1 MB for JS, under 0.1 MB of 10 MB for the model, 1.9 to 2.1 s of 5 s for scene ready. Tighter values were suggested on 2026-10-01 and the developer chose the relaxed ones instead, because size is not a main concern any more.
 
 ## 4. Decisions made to stay within budget
 
@@ -95,7 +98,8 @@ Findings against the proposed budgets (`docs/PLAN.md` Part 1K): they hold with a
 | 2026-09-30 | Checksum is FNV-1a, not SHA-256 (proposed D3) | No crypto dependency or async work for saves. |
 | 2026-09-30 | Placeholder rig drawn in code | 0 KB of art for Phase 1 (`ART_STYLE.md`). |
 | 2026-09-30 | Canvas 2D instead of PixiJS | 116 to 144 KB gzip and about 1.2 to 1.4 s slower scene-ready under throttle (section 3.1). |
-| 2026-10-01 | three.js for the 3D ferret, replacing Canvas 2D (pending approval at 1K.4) | Quality over the smallest bundle. Measured cost is acceptable: 154 KB gzip lazy chunk, scene ready 1.88 s on the slow profile (section 3.2). |
+| 2026-10-01 | Size budgets relaxed to realistic app sizes (section 1) | Developer decision: size only mattered while proving the idea. Speed and smoothness budgets stay. |
+| 2026-10-01 | three.js for the 3D ferret, replacing Canvas 2D (approved) | Quality over the smallest bundle. Measured cost is acceptable: 154 KB gzip lazy chunk, scene ready 1.88 s on the slow profile (section 3.2). |
 
 ## 5. Platform targets (guide §25.6)
 

@@ -29,7 +29,7 @@ The final game files go to `public/models/` (Claude puts them there). Do not put
 
 One file, `animation/export/ferret.glb`, containing:
 
-1. The ferret mesh (still at most about 500 triangles, one material, one texture of at most 64 by 64 pixels).
+1. The ferret mesh (at most about 5,000 triangles, one material, one texture up to 256 by 256 pixels, see `RIG_SPEC.md` section 6).
 2. One armature with exactly the bones in `RIG_SPEC.md`.
 3. 13 animation clips named exactly as in `CLIPS.md`: `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`.
 

@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Next: 1K.4, the developer approves the budgets, then 1K.5 onward, before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Size budgets relaxed (D7). Next: 1K.5 (docs: `CLAUDE.md` is done, `ART_STYLE.md` and `ART_ASSET_LIST.md` rewrite remain), then 1K.6, before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -46,6 +46,8 @@ Open items that do not block Phase 1:
 | D3 | Save checksum is FNV-1a 32-bit | Guide says "checksum". Detects corruption only. Works over plain http. Transfer bundle keeps SHA-256 (Phase 4). |
 | D4 | TypeScript pinned to 6.x | TypeScript 7 is latest, but typescript-eslint 8.71 needs below 6.1. See `docs/VERIFY_LOG.md`. |
 | D5 | Canvas 2D renderer instead of the guide's default PixiJS | Approved 2026-09-30 from measurements (`docs/PERFORMANCE.md` §3.1). The guide allows this fallback (§3 Open Decision 2). |
+| D6 | three.js 3D ferret instead of Canvas 2D (replaces D5) | Approved 2026-10-01: quality over the smallest bundle. Spike numbers in `docs/PERFORMANCE.md` §3.2. Pet model: LandyStudio's ferret, CC BY 4.0, animated in Blender (`animation/`) |
+| D7 | Size budgets relaxed to realistic app sizes | Approved 2026-10-01: initial JS 1 MB gzip, first-run assets 10 MB, scene ready 5 s on slow 4G + 4x CPU. Supersedes the numbers in guide §4.1. Speed and frame-rate budgets stay |
 | R1 | Simulation RNG seeded per 10-minute step, from petId and the step start time | Refines "seed from petId + lastSimulationTime" so chunked and one-shot runs give the same result. Not a change of intent. |
 
 ## Phase 1 gate pass criteria (proposed, developer confirms at Phase 1 start)
@@ -182,13 +184,13 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 Why: the developer decided quality now outranks the smallest bundle, and a flat 2D ferret will not satisfy users (`docs/MARKET_RESEARCH.md` §5). Look: **cute blocky** (changed from stylized-real on 2026-10-01 after the developer picked the model below). Clips: made by the developer in Blender. This replaces decision D5 (Canvas 2D) once the spike numbers are approved. The logical 360 by 540 room stays; the 3D scene maps it to a floor plane, so `src/core`, `src/game`, `src/ui`, `brain.ts`, `plan.ts`, and `loop.ts` stay as they are.
 
-Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB (three.js is 169 KB of it), first-run art 1 MB (blocky model and 64 by 64 textures are a few KB), scene ready 4 s on slow 4G plus 4x CPU (loading screen visible under 1 s), texture memory 32 MB, ferret at most about 500 triangles, 24 bones, one 64 by 64 texture. The developer's Blender instructions are in `animation/` (README, RIG_SPEC, CLIPS, BLENDER_GUIDE, clips.json).
+Budgets (decision D7, 2026-10-01): initial JS 1 MB gzip including the three.js chunk, first-run assets 10 MB, loading screen under 1.5 s and scene ready at most 5 s on slow 4G + 4x CPU, texture memory 128 MB, rig limits in `animation/RIG_SPEC.md` §6. The developer's Blender instructions are in `animation/` (README, RIG_SPEC, CLIPS, BLENDER_GUIDE, clips.json).
 
 - [x] 1K.0 (S) `docs/MARKET_RESEARCH.md` written, proposals A1 to A11 and C1 to C4 recorded there as pending.
 - [x] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
 - [x] 1K.2 (S) Model chosen 2026-10-01: "Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles, no rig, no animations (checked through the Sketchfab API). Recorded in `docs/ASSET_LICENSES.md`. Still to do: CC0 room furniture (Kenney, Quaternius) at 1K.8.
 - [x] 1K.3 (M) Done 2026-10-01: `dev/ferret3d.html`, `src/dev/ferret3d.ts`, `src/dev/ferret3dScene.ts`, `vite.spike.config.ts`, `scripts/measure-startup.mjs`. Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
-- [ ] 1K.4 (developer) Approve or change the budgets from the numbers. Then add `three` to `package.json` and update `scripts/budgets.json`.
+- [x] 1K.4 (developer) Done 2026-10-01: the developer said size is no longer a main concern, so the budgets are relaxed (D7). `three` moved to `dependencies`, `scripts/budgets.json` set to 1000 KB.
 - [ ] 1K.5 (S) Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
 - [ ] 1K.6 (L) `src/render/scene3d.ts` behind the existing `Scene` and `BrainScene` contracts, with unit-tested logical-to-world mapping and floor raycast.
 - [ ] 1K.7 (M) `src/render/animator3d.ts` wrapping `AnimationMixer`: maps every `AnimationName` to a clip, crossfades, one-shot reactions. A test checks every name has a clip in the model manifest.

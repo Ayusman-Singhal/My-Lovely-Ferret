@@ -80,10 +80,10 @@ Numbers in `CLIPS.md` are in degrees and in percent of body size. They come from
 
 | Limit | Value |
 |---|---|
-| Bones | 22 in rig v2, at most 24 |
-| Triangles | At most about 500 for the whole pet (the original is 132) |
+| Bones | 22 in rig v2, at most 40 |
+| Triangles | At most about 5,000 for the whole pet (rig v2 has 264). Size is no longer a main concern, but the look is blocky on purpose |
 | Materials | 1 |
-| Texture | One 64 by 64 PNG at most. Nearest-neighbor filtering is used in game, so keep it crisp pixel art |
+| Texture | One PNG, 64 by 64 now, up to 256 by 256 if you want finer detail. Nearest-neighbor filtering is used in game, so keep it crisp pixel art |
 | Animation length (any clip) | At most 6 seconds |
 | Frame rate | **30 fps**, set in the Blender scene (Output properties) |
 
