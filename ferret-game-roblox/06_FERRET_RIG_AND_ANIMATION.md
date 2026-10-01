@@ -205,6 +205,8 @@ Directions: **pitch** is a rotation around the joint's X axis (nose up or down, 
 
 `envelope(t)`: ramps from 0 to 1 over the first 0.1 s, holds, and fades to 0 at the end.
 
+**Built (2026-10-01, `game/StarterPlayer/StarterPlayerScripts/FerretRig.luau`):** idle, walk, run, sniff, curious, sleep, eat, drink, happy, annoyed, surprise and blink. The numbers come from `animation/CLIPS.md` (the Blender clips), because `src/render/animations.ts` no longer exists. Differences from the table above: the walk is a lateral sequence (hind left, front left, hind right, front right) as in the Blender clips, one-shots are added on top of the running loop, and the rig fades between loops for 0.2 s and blinks by itself every 2 to 5 seconds (never asleep). Sign rules that took a few minutes to find, with the ferret facing -Z: pitch down is a negative X rotation, a raised tail is a negative X rotation of the tail joints, a perked ear is a negative X rotation, an open jaw is a negative X rotation, and a leg swinging forward is a positive X rotation. `sneak` and the four Part 1L.3 clips (stretch, dig, warDance, tailChase) are not built, the Roblox slice has no use for them.
+
 Because `Transform` cannot scale, the main game's "squash and stretch" is replaced by small position changes and hops. Eyes close by changing the eye piece's `Size` on the client (section 2A.5). If the ferret looks too stiff without squash, change the `Size` of the body slightly too, it is cheap for a few pieces.
 
 ## 6. Moving around the room
