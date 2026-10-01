@@ -183,7 +183,7 @@ Why: the developer decided quality now outranks the smallest bundle, and a flat 
 Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB, first-run art 2.5 MB, scene ready 4 s on slow 4G plus 4x CPU (loading screen visible under 1 s), texture memory 64 MB, ferret at most about 8K triangles, 40 bones, 1024 textures.
 
 - [x] 1K.0 (S) `docs/MARKET_RESEARCH.md` written, proposals A1 to A11 and C1 to C4 recorded there as pending.
-- [ ] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
+- [x] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
 - [ ] 1K.2 (S) Shortlist ferret models with license checked. Developer picks one. CC0 room furniture (Kenney, Quaternius).
 - [ ] 1K.3 (M) Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
 - [ ] 1K.4 (developer) Approve or change the budgets from the numbers. Then add `three` to `package.json` and update `scripts/budgets.json`.

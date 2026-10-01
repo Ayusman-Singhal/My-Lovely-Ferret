@@ -66,3 +66,18 @@ Source: `npm view` on the npm registry; measurements from the spike (see `docs/P
 - **pixi.js** 8.21.0, MIT. Ships as ES modules with many lazily loaded chunks. Its own docs (`node_modules/pixi.js/skills`) describe `skipExtensionImports` plus manual `import 'pixi.js/app'` style imports for custom builds. The lean build saved about 28 KB gzip against the default and still loaded both the WebGL and the Canvas renderer chunks. Removed after the decision.
 - **playwright-core** 1.63.0, Apache-2.0, no dependencies, dev only. Drives the Chrome already installed on this machine (`channel: 'chrome'`), so no browser download is needed. Used for real-browser checks and throttled startup measurements. Microsoft Edge was not found at its usual path.
 - Headless Chrome with software rendering (SwiftShader) is fine for correctness and relative startup timing, not for frame rate. Real fps and battery checks need a real device (Phase 1 gate, guide §19).
+
+## 2026-10-01: 3D stack facts (Part 1K.1)
+
+| Fact | Result | Source |
+|---|---|---|
+| three.js latest | 0.186.1 on npm | `npm view three version` |
+| Gzip cost of a minimal three.js scene | **169 KB gzip** (659 KB minified, 139 KB brotli). Bundle of WebGLRenderer, Scene, PerspectiveCamera, two lights, AnimationMixer, Clock, Raycaster, Plane, vectors, two materials, GLTFLoader, MeshoptDecoder, built with esbuild `--bundle --minify` in a scratch folder. The shader library is not tree-shaken, so adding features adds little. Above the 150 KB rule of thumb in forum posts. | measured here |
+| WebGL 2 support | 96.44% global usage (caniuse, August 2026). Chrome for Android since 58, Safari iOS and macOS, Firefox, Edge, Samsung Internet. Hardware needs OpenGL ES 3.0. Budget phones with Mali-G52 class GPUs run it but struggle with big textures and heavy shaders. | https://caniuse.com/webgl2 , https://www.testmuai.com/learning-hub/webgl-2-browser-compatibility/ |
+| Sketchfab "NoAI" tag | Terms forbid using NoAI-tagged models in datasets for, development of, or input to generative AI. It does not restrict normal use in a game. We do not feed models to AI tools. | https://sketchfab.com/blogs/community/introducing-the-noai-createdwithai-tags/ |
+| Sketchfab free model license | Free downloads are CC licenses. CC-BY needs attribution (record it in `docs/ASSET_LICENSES.md`). Exclude NC (no commercial use) and ND (no changes), because the plan is to sell cosmetics and edit the model in Blender. Check the license on each model page before download. | model pages, Sketchfab help |
+| Candidate ferret models | Verbeger "Ferret": CC-BY 4.0, 32K triangles, cartoonish, rig not stated, listing says made for Blender Cycles. ignkiran "Cartoon Ferret Rigged Low-poly": free, Rigify animal rig with face, 44K triangles, 4K textures, NoAI tag, `.blend` provided, license line not confirmed. SDPM Esare "Ferret": CC-BY. All need decimation. | https://sketchfab.com/3d-models/ferret-5e12e38229f041b28f24855f71de796a , https://sketchfab.com/3d-models/cartoon-ferret-rigged-low-poly-3d-model-e0ac2f7270f7453f9647627f19ccc457 |
+
+Still to verify before 1K.3 finishes: meshopt decoder size inside the 169 KB figure (it is included), gltfpack availability on this machine, and a real low-end Android check (1J.4).
+
+Decision input for 1K.4: the proposed 350 KB initial JS budget leaves about 180 KB for Preact, game code, and UI (now about 28 KB), so it fits with margin. Lazy-loading the three.js chunk after the first Preact paint would keep first paint small, but the pet is the product, so the loading screen must show quickly.
