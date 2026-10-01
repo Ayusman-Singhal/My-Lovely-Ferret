@@ -162,7 +162,8 @@ try {
   ok(preview.startsWith('So cute!') && preview.includes('Sessions:') && preview.includes('Things done: feed'), 'the preview has the message and the counters');
   ok(!/install/i.test(preview), 'no install id in the feedback');
   await feedback.getByRole('button', { name: 'Copy feedback' }).click();
-  ok(((await feedback.getByRole('status').textContent()) ?? '').length > 0, 'copying answers with a message');
+  await feedback.getByRole('status').filter({ hasText: /Copied|Could not copy/ }).waitFor();
+  ok(true, 'copying answers with a message');
   await feedback.getByRole('button', { name: 'Close' }).click();
 
   ok((await later.getByRole('button', { name: 'Developer tools' }).count()) === 0, 'developer tools are hidden at first');
