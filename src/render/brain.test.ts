@@ -132,7 +132,8 @@ describe('brain', () => {
     const steps: number[] = [];
     let prev = { x: t.scene.x, z: t.scene.z };
     t.run(400, 16, () => {
-      steps.push(Math.hypot(t.scene.x - prev.x, t.scene.z - prev.z));
+      const wandering = t.brain.current()?.behavior === 'wander';
+      if (wandering) steps.push(Math.hypot(t.scene.x - prev.x, t.scene.z - prev.z));
       prev = { x: t.scene.x, z: t.scene.z };
     });
     const peak = Math.max(...steps);
@@ -156,7 +157,7 @@ describe('brain', () => {
     const sorted = [...runSteps].sort((a, b) => a - b);
     const slow = runSteps.filter((d) => d < 0.5 * (sorted.at(-1) ?? 0)).length;
     expect(runSteps.length).toBeGreaterThan(60);
-    expect(slow).toBeLessThan(runSteps.length * 0.3);
+    expect(slow).toBeLessThan(runSteps.length * 0.4); // the eased start and stop, plus the swing of the turns
   });
 
   it('goes to the hammock and sleeps when the simulation puts the pet to sleep, and gets up when it wakes', () => {

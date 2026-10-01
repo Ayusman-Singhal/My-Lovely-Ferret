@@ -400,7 +400,7 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     options.onFrame?.(nowMs, scene);
 
     // Pace the legs to the ground speed so the paws stay planted.
-    if (dt > 0) speedMps += (Math.hypot(scene.x - lastX, scene.z - lastZ) / dt * M_PER_PX - speedMps) * 0.35;
+    if (dt > 0) speedMps += (Math.hypot(scene.x - lastX, scene.z - lastZ) / dt * M_PER_PX - speedMps) * 0.5;
     lastX = scene.x;
     lastZ = scene.z;
     const baseAction = bases.get(base);
@@ -421,7 +421,9 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     const wanted = scene.heading ?? (scene.facing * Math.PI) / 2;
     let diff = wanted - turn;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-    turn += diff * Math.min(1, dt * 14);
+    // The brain already turns the body at a limited rate, so follow its heading closely; only the
+    // facing-based turn (the mini-game) needs smoothing here.
+    turn += diff * Math.min(1, dt * (scene.heading === null ? 14 : 40));
     ferret.position.set(target.x, renderY, renderZ);
     ferret.rotation.y = turn;
     shadow.position.set(target.x, 0.003, renderZ);

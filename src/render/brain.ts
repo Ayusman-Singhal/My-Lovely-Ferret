@@ -20,6 +20,12 @@ const EASE_IN_MS = 350;
 const EASE_OUT_MS = 500;
 /** Never slower than this share of the pace, so a walk always arrives. */
 const MIN_PACE = 0.2;
+/** How fast the body turns, radians per second: a walk turns in about 0.3 s, a run a little faster. */
+const TURN_RATE_WALK = 5.5;
+const TURN_RATE_RUN = 9;
+/** Share of the pace a run keeps in the middle of a sharp turn. */
+const RUN_TURN_PACE = 0.55;
+const wrap = (angle: number): number => Math.atan2(Math.sin(angle), Math.cos(angle));
 const smooth = (k: number): number => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k));
 
 export interface BrainScene {
@@ -70,6 +76,8 @@ export function createBrain(options: BrainOptions): Brain {
   let lastFrame = 0;
   let paused = false;
   let resumed = false;
+  /** Direction to turn to while standing, set by a phase that wants the nose somewhere (at a bowl). */
+  let turnTo: number | null = null;
   let startedRequest = false;
   /** Requested behaviors, oldest first. The first starts at once, the rest wait their turn. */
   const requests: Behavior[] = [];
@@ -189,21 +197,25 @@ export function createBrain(options: BrainOptions): Brain {
           runAction(phase.startAction, scene);
           if (phase.y !== undefined) scene.y = phase.y;
           if (phase.z !== undefined) scene.z = phase.z;
-          if (phase.face) {
-            scene.facing = phase.face;
-            scene.heading = null;
-          }
+          turnTo = phase.face ? (phase.face * Math.PI) / 2 : null;
           if (phase.react) scene.animator.react(phase.react, frameMs);
         } else {
           runAction(phase.startAction, scene);
-          if (phase.face) {
-            scene.facing = phase.face;
-            scene.heading = null;
-          }
+          turnTo = null;
         }
       }
 
+      // The body is always pointed somewhere. The controller may have set only `facing` (the mini-game).
+      let heading = scene.heading ?? (scene.facing * Math.PI) / 2;
+
       if (phase.kind === 'do') {
+        if (turnTo !== null) {
+          const turn = wrap(turnTo - heading);
+          const most = TURN_RATE_WALK * (dt / 1000);
+          heading = wrap(heading + Math.max(-most, Math.min(most, turn)));
+          scene.heading = heading;
+          if (Math.abs(Math.sin(heading)) > 0.05) scene.facing = Math.sin(heading) > 0 ? 1 : -1;
+        }
         if (frameMs - phaseStart >= phase.ms) {
           index++;
           phaseStarted = false;
@@ -211,29 +223,36 @@ export function createBrain(options: BrainOptions): Brain {
         return;
       }
 
-      // Walking: move straight toward the target and arrive exactly on it. The pet always turns to
-      // face the way it goes (a pet that walks sideways to a bowl looks like a puppet); a phase that
-      // wants a direction at the end (nose to the bowl) turns it on arrival.
+      // Walking: steer toward the target. The body turns at a limited rate and moves along the way it
+      // points, so it never strafes (a pet that slides sideways to a bowl looks like a puppet, and its
+      // paws cannot match the ground). A sharp turn slows it to a near stop first, like a real animal.
       const dx = phase.x - scene.x;
       const dz = phase.z - scene.z;
       const distance = Math.hypot(dx, dz);
+      const wanted = Math.atan2(dx, dz);
+      const most = (phase.speed > 80 ? TURN_RATE_RUN : TURN_RATE_WALK) * (dt / 1000);
+      heading = wrap(heading + Math.max(-most, Math.min(most, wrap(wanted - heading))));
+      const off = Math.abs(wrap(wanted - heading));
+      // A walk almost stops for a sharp turn; a run (zoomies) swings wide and keeps most of its pace.
+      const aligned = Math.max(phase.speed > 80 ? RUN_TURN_PACE : 0, off > Math.PI / 2 ? 0 : Math.cos(off) ** 2);
       // Start and stop gently, except between two runs in a row: zoomies should flow.
       const easeIn = plan[index - 1]?.kind === 'go' ? 1 : smooth((frameMs - phaseStart) / EASE_IN_MS);
       const easeOut = plan[index + 1]?.kind === 'go' ? 1 : smooth(distance / (phase.speed * (EASE_OUT_MS / 1000)));
-      const step = phase.speed * Math.max(MIN_PACE, Math.min(easeIn, easeOut)) * (dt / 1000);
-      if (distance > 0.001) {
-        scene.heading = Math.atan2(dx, dz);
-        if (Math.abs(dx) > 0.01) scene.facing = dx > 0 ? 1 : -1;
-      }
-      if (distance <= step) {
+      const pace = phase.speed * Math.max(MIN_PACE, Math.min(easeIn, easeOut)) * aligned;
+      const step = Math.min(distance, pace * (dt / 1000));
+      scene.heading = heading;
+      if (Math.abs(Math.sin(heading)) > 0.05) scene.facing = Math.sin(heading) > 0 ? 1 : -1;
+      if (distance - step < 1e-6) {
+        // The last step reaches the target: land on it exactly, with no jump.
         scene.x = phase.x;
         scene.z = phase.z;
         runAction(phase.endAction, scene);
         index++;
         phaseStarted = false;
       } else {
-        scene.x += (dx / distance) * step;
-        scene.z += (dz / distance) * step;
+        // A wide turn near the edge of the floor must not carry the pet out of the roaming area.
+        scene.x = Math.min(ROOM.maxX, Math.max(ROOM.minX, scene.x + Math.sin(heading) * step));
+        scene.z = Math.min(ROOM.maxZ, Math.max(ROOM.minZ, scene.z + Math.cos(heading) * step));
       }
     },
   };

@@ -108,13 +108,15 @@ def body_local(world_pt):
     d = world_pt - BODY_HEAD; return (-d.x, -d.y, d.z)
 HIND_CONTACT = body_local(Vector((0, REST_FOOT["BL"].y, 0)))
 
-def gait(p, f, N, stride, duty, lift, phase, fold=55.0):
+def gait(p, f, N, stride, duty, lift, phase, fold=55.0, front_cal=1.0):
     """stride = ground covered per cycle. In place, a planted foot slides back at ground speed, so it
     travels stride * duty while planted. Planted legs are straight and push back from the hip (the
     blocky look); a lifted leg folds at the knee as it swings forward, like a real paw stepping."""
     step = stride * duty
     for s in SIDES:
-        L = L1[s] + L2[s]
+        # front_cal < 1 makes the front legs swing further. Measured on the exported walk (src/render/gait.test.ts):
+        # the front paws travelled only 71 percent of the ground speed, so they slid. 1/0.71 corrects it.
+        L = (L1[s] + L2[s]) * (front_cal if s in FRONT else 1.0)
         back, front = degrees(math.asin(clamp(-step / 2 / L, -1, 1))), degrees(math.asin(clamp(step / 2 / L, -1, 1)))
         u = (f / N + phase[s]) % 1.0
         sign = -1.0 if s in FRONT else 1.0
@@ -149,7 +151,7 @@ WALK = {"N": 16, "stride": 0.10, "duty": 0.62, "lift": 0.02,
         "phase": {"BL": 0.0, "FL": 0.75, "BR": 0.5, "FR": 0.25}}       # lateral sequence LH, LF, RH, RF
 def walk(f):
     W = WALK; N = W["N"]; p = Pose()
-    gait(p, f, N, W["stride"], W["duty"], W["lift"], W["phase"])
+    gait(p, f, N, W["stride"], W["duty"], W["lift"], W["phase"], front_cal=0.71)
     p.loc("body", z=-0.001 + 0.002 * cos(4 * pi * f / N))
     hip_yaw = 3 * wave(f, N); flex = 7 * wave(f, N, 1)
     p.rot("body", z=hip_yaw, y=2 * wave(f, N, 2))

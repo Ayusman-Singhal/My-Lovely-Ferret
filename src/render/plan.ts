@@ -15,8 +15,8 @@ export const WALK_MAX_Z = ROOM.maxZ;
 /** Nose reach ahead of the feet at the shown size (the model's nose is 0.34 m ahead), in px. */
 const NOSE_REACH = 71;
 
-/** Pixels per second. At 4.8 mm per px these are about 0.17, 0.6, and 0.1 m/s, the paces of the clips. */
-export const SPEED = { walk: 36, run: 125, sneak: 22 } as const;
+/** Pixels per second. At 4.8 mm per px these are about 0.22, 0.72, and 0.12 m/s, a little over the clips' own paces (0.19, 0.6, 0.1 m/s), which the scene makes up by playing them a little faster. */
+export const SPEED = { walk: 46, run: 150, sneak: 26 } as const;
 
 export type SockAction = 'pickSock' | 'dropSock';
 
