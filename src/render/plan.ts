@@ -18,11 +18,13 @@ const NOSE_REACH = 71;
 /** Pixels per second. At 4.8 mm per px these are about 0.22, 0.72, and 0.12 m/s, a little over the clips' own paces (0.19, 0.6, 0.1 m/s), which the scene makes up by playing them a little faster. */
 export const SPEED = { walk: 46, run: 150, sneak: 26 } as const;
 
-export type SockAction = 'pickSock' | 'dropSock';
+export type ItemAction = 'pickSock' | 'dropSock' | 'pickBall' | 'dropBall';
+/** The old name, from when the sock was the only thing the pet carried. */
+export type SockAction = ItemAction;
 
 export type Phase =
   | { kind: 'go'; anim: AnimationName; x: number; z: number; speed: number; face?: 1 | -1; startAction?: SockAction; endAction?: SockAction }
-  | { kind: 'do'; anim: AnimationName; ms: number; y?: number; z?: number; face?: 1 | -1; react?: AnimationName; startAction?: SockAction };
+  | { kind: 'do'; anim: AnimationName; ms: number; y?: number; z?: number; face?: 1 | -1; heading?: number; react?: AnimationName; startAction?: SockAction };
 
 export interface PlanContext {
   /** Where the pet is now. */
@@ -31,6 +33,9 @@ export interface PlanContext {
   /** Where the sock is on the floor. */
   sockX: number;
   sockZ: number;
+  /** Where the ball is on the floor. */
+  ballX: number;
+  ballZ: number;
 }
 
 /** Map a 0..999 spot to a position the pet can walk to. */
@@ -71,9 +76,9 @@ export function planFor(decision: Decision, ctx: PlanContext): Phase[] {
       ];
 
     case 'curious': {
-      const at = standNear(ROOM.toyX);
+      const at = standNear(ctx.ballX);
       return [
-        { kind: 'go', anim: 'walk', x: at.x, z: ROOM.toyZ, speed: SPEED.walk, face: at.face },
+        { kind: 'go', anim: 'walk', x: clampX(at.x), z: clampZ(ctx.ballZ), speed: SPEED.walk, face: at.face },
         { kind: 'do', anim: 'curious', ms: decision.durationMs, face: at.face },
       ];
     }
@@ -120,4 +125,39 @@ export function planFor(decision: Decision, ctx: PlanContext): Phase[] {
         { kind: 'do', anim: 'sleep', ms: Infinity, y: ROOM.hammockRestY, z: ROOM.hammockZ, face: 1 },
       ];
   }
+}
+
+// ---------------------------------------------------------------- plans the player starts by touching the room
+
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+export const clampX = (x: number): number => clamp(x, WALK_MIN_X, WALK_MAX_X);
+export const clampZ = (z: number): number => clamp(z, WALK_MIN_Z, WALK_MAX_Z);
+
+/** The pet comes to a spot the player tapped on the floor: a trot if it is far, then a happy look. */
+export function callPlan(from: { x: number; z: number }, to: { x: number; z: number }): Phase[] {
+  const x = clampX(to.x);
+  const z = clampZ(to.z);
+  const far = Math.hypot(x - from.x, z - from.z) > 110;
+  return [
+    { kind: 'go', anim: far ? 'run' : 'walk', x, z, speed: far ? SPEED.run : SPEED.walk },
+    { kind: 'do', anim: 'idle', ms: 900, react: 'happy' },
+  ];
+}
+
+/** The pet chases the thrown ball, picks it up, brings it to the player, drops it, and looks pleased. */
+export function fetchPlan(ball: { x: number; z: number }): Phase[] {
+  return [
+    { kind: 'go', anim: 'run', x: clampX(ball.x), z: clampZ(ball.z), speed: SPEED.run },
+    { kind: 'do', anim: 'idle', ms: 250, react: 'surprise', startAction: 'pickBall' },
+    { kind: 'go', anim: 'walk', x: ROOM.fetchDropX, z: ROOM.fetchDropZ, speed: SPEED.walk, endAction: 'dropBall' },
+    { kind: 'do', anim: 'idle', ms: 1200, react: 'happy' },
+  ];
+}
+
+/** The pet goes to the wall under the window and looks up and out of it. */
+export function windowPlan(): Phase[] {
+  return [
+    { kind: 'go', anim: 'walk', x: clampX(ROOM.windowX), z: WALK_MIN_Z, speed: SPEED.walk },
+    { kind: 'do', anim: 'curious', ms: 3500, heading: Math.PI },
+  ];
 }

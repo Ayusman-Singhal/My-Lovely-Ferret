@@ -9,7 +9,7 @@ import type { Clock } from '../core/time';
 import type { HistoryEvent, PetRecord } from '../core/types';
 import type { AnimationName } from './clipSpec';
 import { ROOM } from './layout';
-import { planFor, type Phase, type SockAction } from './plan';
+import { planFor, type ItemAction, type Phase } from './plan';
 
 /** The part of the scene the brain moves. Kept small so the brain is tested without a canvas. */
 /** Time away that counts as the player being gone (docs/GAME_DESIGN.md §8). */
@@ -25,6 +25,8 @@ const TURN_RATE_WALK = 5.5;
 const TURN_RATE_RUN = 9;
 /** Share of the pace a run keeps in the middle of a sharp turn. */
 const RUN_TURN_PACE = 0.55;
+/** The decision shown while the pet follows a script from the player. It has no effect on the pet's needs. */
+const SCRIPTED: Decision = { behavior: 'idle', durationMs: 0, spots: [0, 0, 0] };
 const wrap = (angle: number): number => Math.atan2(Math.sin(angle), Math.cos(angle));
 const smooth = (k: number): number => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k));
 
@@ -53,6 +55,10 @@ export interface Brain {
   tick(frameMs: number, scene: BrainScene): void;
   /** The sock lies on the floor here, or is being carried. Drawn by the scene. */
   readonly sock: { x: number; z: number; carried: boolean };
+  /** The ball, the same way. The player can throw it, and the pet fetches it. */
+  readonly ball: { x: number; z: number; carried: boolean };
+  /** Run these steps now (the player called the pet, threw the ball, tapped the window). Ignored while asleep. */
+  script(steps: Phase[]): void;
   /** Make the pet do this next, for example go and eat after a feed command. Ignored while asleep. */
   request(behavior: Behavior): void;
   /** Play a one-shot reaction on the next frame. */
@@ -67,6 +73,8 @@ export interface Brain {
 
 export function createBrain(options: BrainOptions): Brain {
   const sock = { x: 130, z: 0, carried: false };
+  const ball: { x: number; z: number; carried: boolean } = { x: ROOM.toyX, z: ROOM.toyZ, carried: false };
+  let scripted: Phase[] | null = null;
   let ai: AIState = createAIState();
   let decision: Decision | null = null;
   let plan: Phase[] = [];
@@ -85,7 +93,7 @@ export function createBrain(options: BrainOptions): Brain {
 
   const startDecision = (next: Decision, frameMs: number, scene: BrainScene): void => {
     decision = next;
-    plan = planFor(next, { x: scene.x, z: scene.z, sockX: sock.x, sockZ: sock.z });
+    plan = planFor(next, { x: scene.x, z: scene.z, sockX: sock.x, sockZ: sock.z, ballX: ball.x, ballZ: ball.z });
     index = 0;
     phaseStarted = false;
     phaseStart = frameMs;
@@ -99,7 +107,13 @@ export function createBrain(options: BrainOptions): Brain {
     startDecision(r.decision, frameMs, scene);
   };
 
-  const runAction = (action: SockAction | undefined, scene: BrainScene): void => {
+  const runAction = (action: ItemAction | undefined, scene: BrainScene): void => {
+    if (action === 'pickBall') ball.carried = true;
+    if (action === 'dropBall') {
+      ball.carried = false;
+      ball.x = scene.x;
+      ball.z = scene.z;
+    }
     if (action === 'pickSock') sock.carried = true;
     if (action === 'dropSock') {
       sock.carried = false;
@@ -110,6 +124,10 @@ export function createBrain(options: BrainOptions): Brain {
 
   return {
     sock,
+    ball,
+    script(steps) {
+      scripted = steps;
+    },
     request(behavior) {
       requests.push(behavior);
     },
@@ -142,6 +160,7 @@ export function createBrain(options: BrainOptions): Brain {
       // The simulation put the pet to sleep or woke it: switch straight away.
       if (asleep && decision?.behavior !== 'sleep') {
         if (sock.carried) runAction('dropSock', scene);
+        if (ball.carried) runAction('dropBall', scene);
         decide(frameMs, scene, wall);
       } else if (!asleep && decision?.behavior === 'sleep') {
         scene.y = ROOM.groundY;
@@ -154,10 +173,23 @@ export function createBrain(options: BrainOptions): Brain {
         decide(frameMs, scene, wall);
       }
 
+      if (scripted && !asleep) {
+        // The player asked for something by touch: it interrupts what the pet is doing.
+        const steps = scripted;
+        scripted = null;
+        if (sock.carried) runAction('dropSock', scene);
+        if (ball.carried) runAction('dropBall', scene);
+        decision = SCRIPTED;
+        plan = steps;
+        index = 0;
+        phaseStarted = false;
+        phaseStart = frameMs;
+      }
       if (requests.length > 0 && !asleep && !startedRequest) {
         // A new request interrupts what the pet is doing. Later ones wait until this one is finished.
         startedRequest = true;
         if (sock.carried) runAction('dropSock', scene);
+        if (ball.carried) runAction('dropBall', scene);
         const r = forceDecision(ai, options.pet.get(), requests.shift() as Behavior);
         ai = r.ai;
         startDecision(r.decision, frameMs, scene);
@@ -197,7 +229,7 @@ export function createBrain(options: BrainOptions): Brain {
           runAction(phase.startAction, scene);
           if (phase.y !== undefined) scene.y = phase.y;
           if (phase.z !== undefined) scene.z = phase.z;
-          turnTo = phase.face ? (phase.face * Math.PI) / 2 : null;
+          turnTo = phase.heading ?? (phase.face ? (phase.face * Math.PI) / 2 : null);
           if (phase.react) scene.animator.react(phase.react, frameMs);
         } else {
           runAction(phase.startAction, scene);

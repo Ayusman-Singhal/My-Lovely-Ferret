@@ -6,9 +6,9 @@ import type { PetRecord } from '../core/types';
 import type { AnimationName } from '../render/clipSpec';
 import type { BrainScene } from '../render/brain';
 import { ROOM } from '../render/layout';
-import { createGame, type PlayResult } from './controller';
+import { createGame, type GameOptions, type PlayResult, type RoomTouch } from './controller';
 
-function setup(pet: PetRecord) {
+function setup(pet: PetRecord, extra: Partial<GameOptions> = {}) {
   const clock = createManualClock(pet.timestamps.lastSimulationTime);
   const reactions: AnimationName[] = [];
   const bases: AnimationName[] = [];
@@ -22,7 +22,7 @@ function setup(pet: PetRecord) {
   };
   const plays: PlayResult[] = [];
   let changes = 0;
-  const game = createGame({ pet, clock, onChange: () => changes++, onPlayEnd: (r) => plays.push(r) });
+  const game = createGame({ pet, clock, onChange: () => changes++, onPlayEnd: (r) => plays.push(r), ...extra });
   let frame = 0;
   /** Run display frames of 16 ms real time. Game time moves 16 ms per frame too. */
   const run = (frames: number, each?: () => void): void => {
@@ -257,5 +257,118 @@ describe('the toy-chase mini-game', () => {
     t.clock.advance(3 * HOUR);
     t.game.startPlay('ball');
     expect(t.game.getPet().timestamps.lastSimulationTime).toBeGreaterThan(T0);
+  });
+});
+
+describe('touching the room', () => {
+  const awake = () => makePet({ id: 'room', state: { hunger: 8000, hydration: 8000, energy: 9000, happiness: 6000, bond: 1000 } });
+  const FAR = 0; // a y far above the pet, so the touch is not on the pet
+  const floorHit = (x: number, z: number) => ({ floor: { x, z }, target: null });
+
+  it('a tap on the floor calls the pet there, shows a marker, and counts as a call', () => {
+    const touches: RoomTouch[] = [];
+    const t = setup(awake(), { onRoomTouch: (k) => touches.push(k) });
+    t.run(5);
+    t.game.pointerDown(100, FAR, 1000, floorHit(250, 60));
+    t.game.pointerUp(1050, floorHit(250, 60));
+    expect(touches).toEqual(['call']);
+    t.run(2);
+    expect(t.game.props().marker).not.toBeNull();
+    let closest = Infinity;
+    t.run(400, () => {
+      closest = Math.min(closest, Math.hypot(t.scene.x - 250, t.scene.z - 60));
+    });
+    expect(closest).toBeLessThan(3); // it arrived, then went on with its day
+    expect(t.game.props().marker).toBeNull(); // faded
+  });
+
+  it('a tap that lands outside the roaming area is brought inside it', () => {
+    const t = setup(awake());
+    t.run(5);
+    t.game.pointerDown(100, FAR, 1000, floorHit(5, 500));
+    t.game.pointerUp(1050, floorHit(5, 500));
+    t.run(600);
+    expect(t.scene.x).toBeGreaterThanOrEqual(ROOM.minX - 1);
+    expect(t.scene.z).toBeLessThanOrEqual(ROOM.maxZ + 1);
+  });
+
+  it('a tap on the ball throws it, and the pet fetches it and brings it to the player', () => {
+    const touches: RoomTouch[] = [];
+    const t = setup(awake(), { onRoomTouch: (k) => touches.push(k) });
+    t.run(5);
+    const start = { x: t.game.brain.ball.x, z: t.game.brain.ball.z };
+    t.game.pointerDown(start.x, FAR, 1000, { floor: start, target: 'ball' });
+    t.game.pointerUp(1040, { floor: start, target: 'ball' });
+    expect(touches).toEqual(['fetch']);
+    expect(t.game.props().ball.flight).not.toBeNull();
+    expect(Math.hypot(t.game.brain.ball.x - start.x, t.game.brain.ball.z - start.z)).toBeGreaterThan(5);
+    let carried = false;
+    t.run(900, () => {
+      if (t.game.brain.ball.carried) carried = true;
+    });
+    expect(carried).toBe(true);
+    expect(t.game.brain.ball.carried).toBe(false);
+    expect(Math.hypot(t.game.brain.ball.x - ROOM.fetchDropX, t.game.brain.ball.z - ROOM.fetchDropZ)).toBeLessThan(4);
+  });
+
+  it('dragging the ball moves it and does not throw it', () => {
+    const touches: RoomTouch[] = [];
+    const t = setup(awake(), { onRoomTouch: (k) => touches.push(k) });
+    t.run(5);
+    const start = { x: t.game.brain.ball.x, z: t.game.brain.ball.z };
+    t.game.pointerDown(start.x, FAR, 1000, { floor: start, target: 'ball' });
+    t.game.pointerMove(150, FAR, { floor: { x: 150, z: -20 }, target: null });
+    t.game.pointerUp(1300, { floor: { x: 150, z: -20 }, target: null });
+    expect(t.game.brain.ball.x).toBe(150);
+    expect(t.game.brain.ball.z).toBe(-20);
+    expect(touches).toEqual([]);
+  });
+
+  it('a tap on a bowl or the hammock is passed on as a button press', () => {
+    const targets: string[] = [];
+    const t = setup(awake(), { onTarget: (x) => targets.push(x) });
+    t.run(5);
+    for (const target of ['foodBowl', 'waterBowl', 'hammock'] as const) {
+      t.game.pointerDown(100, FAR, 1000, { floor: null, target });
+      t.game.pointerUp(1040, { floor: null, target });
+    }
+    expect(targets).toEqual(['foodBowl', 'waterBowl', 'hammock']);
+  });
+
+  it('a tap on the window sends the pet to look out of it', () => {
+    const t = setup(awake());
+    t.run(5);
+    t.game.pointerDown(100, FAR, 1000, { floor: null, target: 'window' });
+    t.game.pointerUp(1040, { floor: null, target: 'window' });
+    let closest = Infinity;
+    let lookedOut = false;
+    t.run(600, () => {
+      closest = Math.min(closest, Math.abs(t.scene.x - ROOM.windowX));
+      if (t.bases[t.bases.length - 1] === 'curious' && closest < 3) lookedOut = true;
+    });
+    expect(closest).toBeLessThan(3);
+    expect(lookedOut).toBe(true);
+  });
+
+  it('a sleeping pet is not called', () => {
+    const touches: RoomTouch[] = [];
+    const t = setup(makePet({ id: 'zzz2', state: { energy: 4000 } }), { onRoomTouch: (k) => touches.push(k) });
+    t.run(5);
+    t.game.dispatch({ type: 'PutToBed' });
+    t.run(1500);
+    t.game.pointerDown(100, FAR, 9000, floorHit(250, 60));
+    t.game.pointerUp(9040, floorHit(250, 60));
+    expect(touches).toEqual([]);
+    expect(t.game.getPet().state.sleepState).toBe('asleep');
+  });
+
+  it('touches in the room are ignored during the mini-game', () => {
+    const touches: RoomTouch[] = [];
+    const t = setup(awake(), { onRoomTouch: (k) => touches.push(k) });
+    t.run(5);
+    expect(t.game.startPlay('ball').outcome.ok).toBe(true);
+    t.game.pointerDown(100, FAR, 1000, floorHit(250, 60));
+    t.game.pointerUp(1040, floorHit(250, 60));
+    expect(touches).toEqual([]);
   });
 });

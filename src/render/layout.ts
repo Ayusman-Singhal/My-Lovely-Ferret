@@ -22,6 +22,11 @@ export const ROOM = {
   hammockX: 232,
   hammockZ: -125,
   hammockApproachZ: -72,
+  /** The window on the back wall, as an x position. The pet goes to the wall below it to look out. */
+  windowX: 92,
+  /** Where a fetched ball is brought and dropped, in front of the player. */
+  fetchDropX: 190,
+  fetchDropZ: 70,
   /** The line the toy-chase mini-game is played on. */
   chaseZ: 10,
   /** Ground line the pet stands on. */

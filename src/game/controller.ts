@@ -5,13 +5,15 @@
 
 import { applyCommand, type Command, type CommandResult } from '../core/commands';
 import type { AIWorld } from '../core/petAI';
+import { hashString } from '../core/rng';
 import type { Clock } from '../core/time';
 import { CHASE, bandFromCatches, createChase, stepChase, type ChaseState } from '../core/toyChase';
 import { createTouchTracker } from '../core/touch';
 import type { HistoryEvent, PetRecord, ToyId } from '../core/types';
 import { createBrain, type Brain, type BrainScene } from '../render/brain';
 import { ROOM } from '../render/layout';
-import type { ScenePropsState } from '../render/petScene';
+import type { PickTarget, SceneHit, ScenePropsState } from '../render/petScene';
+import { callPlan, clampX, clampZ, fetchPlan, windowPlan } from '../render/plan';
 
 export interface PlayResult {
   band: 0 | 1 | 2 | 3;
@@ -34,7 +36,13 @@ export interface GameOptions {
    */
   onPetChange?(): void;
   onPlayEnd?(result: PlayResult): void;
+  /** The player tapped a thing in the room that is also a button: the bowls and the hammock. */
+  onTarget?(target: 'foodBowl' | 'waterBowl' | 'hammock'): void;
+  /** The player touched the room itself, for the counters and the first-time hints. */
+  onRoomTouch?(kind: RoomTouch): void;
 }
+
+export type RoomTouch = 'call' | 'fetch' | 'window';
 
 export interface MiniGameStatus {
   toyId: ToyId;
@@ -63,9 +71,9 @@ export interface Game {
    * Pointer input in logical room coordinates. Times are real milliseconds (event.timeStamp), not
    * game time, so a long press lasts 2 real seconds even when the preview runs the game faster.
    */
-  pointerDown(x: number, y: number, realMs: number): void;
-  pointerMove(x: number, y: number): void;
-  pointerUp(realMs: number): void;
+  pointerDown(x: number, y: number, realMs: number, hit?: SceneHit): void;
+  pointerMove(x: number, y: number, hit?: SceneHit): void;
+  pointerUp(realMs: number, hit?: SceneHit): void;
 }
 
 /** Where a touch counts as touching the pet, around its feet position. */
@@ -88,6 +96,18 @@ export function createGame(options: GameOptions): Game {
   let toyTarget = 180;
   let lastFrame = 0;
   let pressingPet = false;
+  // Touching the room (Part 1L.2): a tap on the floor calls the pet, a tap on the ball throws it, a
+  // drag moves the ball or the sock, a tap on the window makes the pet look out, a tap on a bowl or
+  // the hammock is the same as the button.
+  let dragging: 'ball' | 'sock' | null = null;
+  let dragMoved = false;
+  let dragFrom: { x: number; z: number } | null = null;
+  let tap: SceneHit | null = null;
+  let marker: { x: number; z: number; startMs: number } | null = null;
+  let flight: { fromX: number; fromZ: number; startMs: number } | null = null;
+  let throws = 0;
+  /** A touch that began during the mini-game is the toy's, even if the game ends before the finger lifts. */
+  let gameTouch = false;
   let petChanged = false;
   let lastNotify = 0;
 
@@ -122,6 +142,59 @@ export function createGame(options: GameOptions): Game {
     options.onCommand?.(command, result);
     options.onChange?.();
     return result;
+  };
+
+  /** Progress of the ball in the air, 0 to 1, or null when it has landed. */
+  const flightNow = (): { fromX: number; fromZ: number; t: number } | null => {
+    if (!flight) return null;
+    const t = (lastFrame - flight.startMs) / 650;
+    if (t >= 1) {
+      flight = null;
+      return null;
+    }
+    return { fromX: flight.fromX, fromZ: flight.fromZ, t: Math.max(0, t) };
+  };
+  const markerNow = (): { x: number; z: number; t: number } | null => {
+    if (!marker) return null;
+    const t = (lastFrame - marker.startMs) / 700;
+    if (t >= 1) {
+      marker = null;
+      return null;
+    }
+    return { x: marker.x, z: marker.z, t: Math.max(0, t) };
+  };
+  const awake = (): boolean => pet.state.sleepState === 'awake';
+
+  /** Throw the ball somewhere on the floor and send the pet after it. */
+  const throwBall = (): void => {
+    if (!awake() || brain.ball.carried) return;
+    throws += 1;
+    const h = hashString(`${pet.pet.id}|throw|${throws}`);
+    const x = clampX(ROOM.minX + ((h % 1000) / 999) * (ROOM.maxX - ROOM.minX));
+    const z = clampZ(ROOM.minZ + (((h >>> 10) % 1000) / 999) * (ROOM.maxZ - ROOM.minZ));
+    flight = { fromX: brain.ball.x, fromZ: brain.ball.z, startMs: lastFrame };
+    brain.ball.x = x;
+    brain.ball.z = z;
+    brain.script(fetchPlan({ x, z }));
+    options.onRoomTouch?.('fetch');
+  };
+
+  const handleTap = (hit: SceneHit): void => {
+    if (hit.target === 'foodBowl' || hit.target === 'waterBowl' || hit.target === 'hammock') {
+      options.onTarget?.(hit.target);
+      return;
+    }
+    if (!awake()) return; // a sleeping pet is not called
+    if (hit.target === 'window') {
+      brain.script(windowPlan());
+      options.onRoomTouch?.('window');
+      return;
+    }
+    if (hit.floor && lastScene) {
+      marker = { x: clampX(hit.floor.x), z: clampZ(hit.floor.z), startMs: lastFrame };
+      brain.script(callPlan({ x: lastScene.x, z: lastScene.z }, hit.floor));
+      options.onRoomTouch?.('call');
+    }
   };
 
   const finishPlay = (scene: BrainScene, frameMs: number): void => {
@@ -196,32 +269,77 @@ export function createGame(options: GameOptions): Game {
     props() {
       return {
         sock: { x: brain.sock.x, z: brain.sock.z, carried: brain.sock.carried },
+        ball: { x: brain.ball.x, z: brain.ball.z, carried: brain.ball.carried, flight: flightNow() },
+        marker: markerNow(),
         toy: chase ? { id: chaseToy, x: toyTarget } : null,
         timerFraction: chase ? Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs) : null,
         pressing: pressingPet,
       };
     },
 
-    pointerDown(x, y, realMs) {
+    pointerDown(x, y, realMs, hit) {
       if (chase) {
+        gameTouch = true;
         toyTarget = clampToy(x);
         return;
       }
       if (lastScene && hitsPet(lastScene, x, y)) {
         pressingPet = true;
         touch.down(realMs);
+        return;
+      }
+      const target: PickTarget | null = hit?.target ?? null;
+      if ((target === 'ball' && !brain.ball.carried) || (target === 'sock' && !brain.sock.carried)) {
+        dragging = target as 'ball' | 'sock';
+        dragMoved = false;
+        dragFrom = hit?.floor ?? null;
+        tap = null;
+      } else {
+        tap = hit ?? null;
       }
     },
 
-    pointerMove(x) {
-      if (chase) toyTarget = clampToy(x);
+    pointerMove(x, _y, hit) {
+      if (chase) {
+        toyTarget = clampToy(x);
+        return;
+      }
+      if (dragging && hit?.floor) {
+        if (!dragMoved && dragFrom && Math.hypot(hit.floor.x - dragFrom.x, hit.floor.z - dragFrom.z) < 10) return;
+        dragMoved = true;
+        const item = dragging === 'ball' ? brain.ball : brain.sock;
+        if (!item.carried) {
+          item.x = Math.min(330, Math.max(30, hit.floor.x));
+          item.z = Math.min(110, Math.max(-110, hit.floor.z));
+        }
+      }
     },
 
-    pointerUp(realMs) {
-      if (chase || !pressingPet) return;
-      pressingPet = false;
-      const { session } = touch.up(realMs);
-      dispatch({ type: 'PetTouch', session });
+    pointerUp(realMs, hit) {
+      if (chase) return;
+      if (gameTouch) {
+        gameTouch = false;
+        return;
+      }
+      if (pressingPet) {
+        pressingPet = false;
+        const { session } = touch.up(realMs);
+        dispatch({ type: 'PetTouch', session });
+        return;
+      }
+      if (dragging) {
+        const was = dragging;
+        dragging = null;
+        // A tap on the ball (no drag) throws it; a tap on the sock makes the pet look at it.
+        if (!dragMoved) {
+          if (was === 'ball') throwBall();
+          else if (awake()) brain.react('surprise');
+        }
+        return;
+      }
+      const landed = tap ?? hit ?? null;
+      tap = null;
+      if (landed) handleTap(landed);
     },
   };
 }

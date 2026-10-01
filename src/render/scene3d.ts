@@ -29,7 +29,9 @@ import {
   PerspectiveCamera,
   Plane,
   Raycaster,
+  RingGeometry,
   Scene as ThreeScene,
+  SphereGeometry,
   TorusGeometry,
   Vector2,
   Vector3,
@@ -44,7 +46,7 @@ import { COAT_TINT } from './coats3d';
 import { ROOM } from './layout';
 import { browserLoopDeps, cappedPixelRatio, createRenderLoop } from './loop';
 import { PALETTE, VIEW } from './palette';
-import type { PetAnimator, PetScene, ScenePointer, ScenePropsState } from './petScene';
+import type { PetAnimator, PetScene, PickTarget, SceneHit, ScenePointer, ScenePropsState } from './petScene';
 import { M_PER_PX, PET_SCALE, logicalToWorld, planeToLogical } from './stageMap';
 
 export interface Scene3DOptions {
@@ -221,8 +223,24 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   // Only a back rail: a front one would hide the sleeping pet from the camera.
   box(0.54, 0.03, 0.04, PALETTE.belly, hammock.x, hammock.y + 0.01, hammock.z - 0.14);
 
+  // Invisible, generous touch shapes for the things the player can tap (a finger is wider than a
+  // ball). They are raycast but never drawn (guide §9.3: touch targets at least 44 px).
+  const pickables: Object3D[] = [];
+  const pickMaterial = new MeshBasicMaterial();
+  const pickable = (target: PickTarget, geometry: BufferGeometry, x: number, y: number, z: number, parent: Object3D = stage): Mesh => {
+    const mesh = new Mesh(geometry, pickMaterial);
+    mesh.position.set(x, y, z);
+    mesh.visible = false;
+    mesh.userData.target = target;
+    parent.add(mesh);
+    pickables.push(mesh);
+    return mesh;
+  };
+  pickable('window', new BoxGeometry(0.4, 0.52, 0.06), win.x, win.y, BACK_Z + 0.03);
+  pickable('hammock', new BoxGeometry(0.6, 0.22, 0.34), hammock.x, hammock.y + 0.08, hammock.z);
+
   // Bowls: a coloured bowl with a lighter inside.
-  const bowl = (logicalX: number, logicalZ: number, color: number, inside: number): void => {
+  const bowl = (logicalX: number, logicalZ: number, color: number, inside: number, target: PickTarget): void => {
     const g = new Group();
     const body = new Mesh(new CylinderGeometry(0.1, 0.085, 0.06, 10), flat(color));
     body.position.y = 0.03;
@@ -232,15 +250,25 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     g.add(body, top);
     g.position.set(px(logicalX), 0, pz(logicalZ));
     stage.add(g);
+    pickable(target, new CylinderGeometry(0.14, 0.14, 0.16, 8), px(logicalX), 0.06, pz(logicalZ));
   };
-  bowl(ROOM.foodBowlX, ROOM.foodBowlZ, PALETTE.bowlRed, PALETTE.wallShade);
-  bowl(ROOM.waterBowlX, ROOM.waterBowlZ, PALETTE.waterBlue, PALETTE.cream);
+  bowl(ROOM.foodBowlX, ROOM.foodBowlZ, PALETTE.bowlRed, PALETTE.wallShade, 'foodBowl');
+  bowl(ROOM.waterBowlX, ROOM.waterBowlZ, PALETTE.waterBlue, PALETTE.cream, 'waterBowl');
 
   // Toys. The ball on the floor is the room's own; the others appear in the mini-game.
   const toy = (geometry: BufferGeometry, color: number): Mesh => new Mesh(geometry, flat(color));
   const roomBall = toy(new IcosahedronGeometry(0.04, 1), PALETTE.gold);
   roomBall.position.set(px(ROOM.toyX), 0.04, pz(ROOM.toyZ));
   stage.add(roomBall);
+  pickable('ball', new SphereGeometry(0.1, 6, 4), 0, 0, 0, roomBall);
+
+  // A ring that shows where the player tapped the floor, and fades.
+  const markerMaterial = new MeshBasicMaterial({ color: PALETTE.gold, transparent: true, depthWrite: false });
+  const marker = new Mesh(new RingGeometry(0.05, 0.075, 20), markerMaterial);
+  marker.rotation.x = -Math.PI / 2;
+  marker.position.y = 0.012;
+  marker.visible = false;
+  stage.add(marker);
 
   const makeSock = (): Group => {
     const g = new Group();
@@ -248,6 +276,7 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     g.add(box(SOCK_SIZE.w * 0.35, SOCK_SIZE.h * 1.05, SOCK_SIZE.d * 1.05, PALETTE.cream, SOCK_SIZE.w * 0.33, 0, 0, g));
     g.visible = false;
     stage.add(g);
+    pickable('sock', new BoxGeometry(0.2, 0.14, 0.2), 0, 0, 0, g);
     return g;
   };
   const sock = makeSock();
@@ -440,6 +469,27 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     const props = props0;
     if (props) {
       roomBall.visible = !props.toy;
+      if (props.ball.carried) {
+        carryBone.getWorldPosition(tmp);
+        roomBall.position.set(tmp.x, Math.max(0.04, tmp.y - 0.02 * PET_SCALE), tmp.z);
+      } else {
+        const to = logicalToWorld(props.ball.x, ROOM.groundY, props.ball.z);
+        const f = props.ball.flight;
+        if (f) {
+          // A throw: a short arc from where the ball was to where it lands.
+          const from = logicalToWorld(f.fromX, ROOM.groundY, f.fromZ);
+          roomBall.position.set(from.x + (to.x - from.x) * f.t, 0.04 + Math.sin(Math.PI * f.t) * 0.3, from.z + (to.z - from.z) * f.t);
+        } else {
+          roomBall.position.set(to.x, 0.04, to.z);
+        }
+      }
+      marker.visible = Boolean(props.marker);
+      if (props.marker) {
+        const at = logicalToWorld(props.marker.x, ROOM.groundY, props.marker.z);
+        marker.position.set(at.x, 0.012, at.z);
+        marker.scale.setScalar(0.7 + props.marker.t * 0.9);
+        markerMaterial.opacity = 0.9 * (1 - props.marker.t);
+      }
       for (const [id, object] of Object.entries(toyMeshes)) object.visible = props.toy?.id === id;
       if (props.toy) toyMeshes[props.toy.id].position.set(px(props.toy.x), 0, pz(ROOM.chaseZ));
       if (props.sock.carried) {
@@ -478,15 +528,30 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     plane.constant = -ferret.position.z; // the vertical plane through the pet, wherever it stands
     return raycaster.ray.intersectPlane(plane, hit) ? planeToLogical(hit.x, hit.y) : null;
   };
+  // What else is under the finger: a thing from `pickables`, and the spot on the floor.
+  const floorPlane = new Plane(new Vector3(0, 1, 0), 0);
+  const floorPoint = new Vector3();
+  const hitAt = (e: PointerEvent): SceneHit => {
+    const rect = wrapper.getBoundingClientRect();
+    ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -(((e.clientY - rect.top) / rect.height) * 2 - 1));
+    raycaster.setFromCamera(ndc, camera);
+    const first = raycaster.intersectObjects(pickables, false)[0];
+    const target = (first?.object.userData.target as PickTarget | undefined) ?? null;
+    let floor: SceneHit['floor'] = null;
+    if (raycaster.ray.intersectPlane(floorPlane, floorPoint) && Math.abs(floorPoint.x) <= ROOM_W / 2 && Math.abs(floorPoint.z) <= ROOM_D / 2) {
+      floor = { x: floorPoint.x / M_PER_PX + VIEW.width / 2, z: floorPoint.z / M_PER_PX };
+    }
+    return { floor, target };
+  };
   const listeners: Array<[string, (e: PointerEvent) => void]> = [];
   const pointer = options.onPointer;
   if (pointer) {
     wrapper.style.touchAction = 'none'; // dragging the toy must not scroll the page
     listeners.push(
-      ['pointerdown', (e) => { wrapper.setPointerCapture(e.pointerId); const p = toLogical(e); if (p) pointer.down(p.x, p.y, e.timeStamp); }],
-      ['pointermove', (e) => { const p = toLogical(e); if (p) pointer.move(p.x, p.y, e.timeStamp); }],
-      ['pointerup', (e) => pointer.up(e.timeStamp)],
-      ['pointercancel', (e) => pointer.up(e.timeStamp)],
+      ['pointerdown', (e) => { wrapper.setPointerCapture(e.pointerId); const p = toLogical(e); if (p) pointer.down(p.x, p.y, e.timeStamp, hitAt(e)); }],
+      ['pointermove', (e) => { const p = toLogical(e); if (p) pointer.move(p.x, p.y, e.timeStamp, hitAt(e)); }],
+      ['pointerup', (e) => pointer.up(e.timeStamp, hitAt(e))],
+      ['pointercancel', (e) => pointer.up(e.timeStamp, hitAt(e))],
     );
     for (const [type, fn] of listeners) wrapper.addEventListener(type, fn as EventListener);
   }

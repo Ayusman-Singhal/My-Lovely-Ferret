@@ -29,10 +29,24 @@ export interface PetScene {
   destroy(): void;
 }
 
+/** A thing in the room the player can touch. */
+export type PickTarget = 'window' | 'foodBowl' | 'waterBowl' | 'hammock' | 'ball' | 'sock';
+
+/** What a touch landed on besides the pet: the floor spot under the finger, and the thing, if any. */
+export interface SceneHit {
+  /** Logical px on the floor (x across, z in depth), or null if the finger is not over the floor. */
+  floor: { x: number; z: number } | null;
+  target: PickTarget | null;
+}
+
 /** Small movable things the controller owns and the scene draws. Plain data. */
 export interface ScenePropsState {
   /** The sock lies on the floor at x, or the pet carries it. */
   sock: { x: number; z: number; carried: boolean };
+  /** The ball. `flight` is set while it is in the air after a throw, t from 0 to 1. */
+  ball: { x: number; z: number; carried: boolean; flight: { fromX: number; fromZ: number; t: number } | null };
+  /** A ring where the player tapped the floor, t from 0 (just now) to 1 (gone). */
+  marker: { x: number; z: number; t: number } | null;
   /** The toy in the mini-game, on the floor at x. */
   toy: { id: ToyId; x: number } | null;
   /** 1 at the start of the mini-game down to 0 at the end, null outside it. */
@@ -43,7 +57,7 @@ export interface ScenePropsState {
 
 /** Pointer events in logical room coordinates (360 by 540), with real timestamps. */
 export interface ScenePointer {
-  down(x: number, y: number, realMs: number): void;
-  move(x: number, y: number, realMs: number): void;
-  up(realMs: number): void;
+  down(x: number, y: number, realMs: number, hit: SceneHit): void;
+  move(x: number, y: number, realMs: number, hit: SceneHit): void;
+  up(realMs: number, hit: SceneHit): void;
 }

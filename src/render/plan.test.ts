@@ -11,7 +11,7 @@ const decision = (behavior: Behavior, durationMs = 5000, spots: [number, number,
   spots,
 });
 
-const CTX = { x: 180, z: 0, sockX: 130, sockZ: 0 };
+const CTX = { x: 180, z: 0, sockX: 130, sockZ: 0, ballX: ROOM.toyX, ballZ: ROOM.toyZ };
 
 describe('spotToX and spotToZ', () => {
   it('maps 0..999 onto the walkable range and nowhere else', () => {

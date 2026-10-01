@@ -85,6 +85,20 @@ try {
   await page.getByRole('button', { name: 'Feed' }).click();
   ok((await page.locator('.status').textContent()).includes('not hungry'), 'feeding a full pet is politely refused');
 
+  stepName('touch the room: a tap on the floor calls the pet and shows a marker');
+  const room = await page.locator('canvas').first().boundingBox();
+  // The pet wanders, so a tap may land on it (that is a pet touch). Try a second spot if so.
+  let called = false;
+  for (const [fx, fy] of [[0.78, 0.84], [0.25, 0.72], [0.5, 0.62]]) {
+    await page.mouse.click(room.x + room.width * fx, room.y + room.height * fy);
+    await page.waitForTimeout(300);
+    called = (await page.locator('.status').textContent()).includes('comes to you');
+    if (called) break;
+  }
+  ok(called, 'the floor tap is answered');
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: 'shots/smoke-3b-called.png' });
+
   stepName('play: the toy-chase mini-game runs about 20 seconds, then reports a result');
   await page.getByRole('button', { name: 'Play' }).click();
   ok((await page.locator('.status').textContent()).includes('Drag the toy'), 'instructions are shown');
@@ -148,7 +162,7 @@ try {
   const aboutText = await about.textContent();
   ok(/Day \d+ together/.test(aboutText ?? ''), 'it says which day it is');
   ok(/meals: [1-9]/.test(aboutText ?? ''), 'it counts the meal fed in step 5');
-  ok(/games: [1-9]/.test(aboutText ?? ''), 'it counts the game played in step 6');
+  ok(/games: [1-9]/.test(aboutText ?? ''), 'it counts the game played in step 7');
   ok(/opened the game [2-9]\d* times/.test(aboutText ?? ''), 'it counts the sessions');
   ok((aboutText ?? '').includes('stay on your device'), 'it says the numbers stay on the device');
   await later.getByRole('button', { name: 'Close' }).click();

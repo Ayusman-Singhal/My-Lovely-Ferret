@@ -3,7 +3,7 @@ import type { Command, CommandResult } from '../../core/commands';
 import { bumpInteraction, type SaveFile } from '../../core/save';
 import type { Clock, OffsetClock } from '../../core/time';
 import type { PetRecord } from '../../core/types';
-import type { Game, PlayResult } from '../../game/controller';
+import type { Game, PlayResult, RoomTouch } from '../../game/controller';
 import { interactionOf, nextHint } from '../../game/hints';
 import { announcements } from '../../game/needs';
 import { devRequested, pretendAway } from '../../game/devTools';
@@ -132,6 +132,19 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
     if (command.type === 'PetTouch') setFeedback(describeResult(result, name));
   };
 
+  // Touching the room (Part 1L.2): the bowls and the hammock do what their buttons do, and the rest
+  // of the room answers with a line of text. The handlers read the game from the ref because the
+  // game is created once, with the first render's functions.
+  const onTarget = (target: 'foodBowl' | 'waterBowl' | 'hammock'): void => {
+    const g = gameRef.current;
+    if (!g || g.minigame()) return;
+    const current = g.getPet();
+    const command: Command =
+      target === 'foodBowl' ? { type: 'FeedPet', foodId: current.state.favoriteFood } : target === 'waterBowl' ? { type: 'GiveWater' } : { type: 'PutToBed' };
+    setFeedback(describeResult(g.dispatch(command), name));
+  };
+  const onRoomTouch = (kind: RoomTouch): void => setFeedback(t(`room.${kind}`, { name }));
+
   const onPlayEnd = (r: PlayResult): void => {
     const message = tDynamic(`play.band.${r.band}`);
     const noReward = r.result.outcome.ok && !r.result.outcome.rewarded ? ` ${t('play.noReward', { name })}` : '';
@@ -147,7 +160,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   };
   // No "put to bed" hint for a pet that is already asleep.
   const hint = pet.state.sleepState === 'asleep' ? null : nextHint(counters);
-  const statusLine = playing ? t('play.instructions', { name }) : feedback || (hint ? t(`hint.${hint}`, { name }) : '');
+  const statusLine = playing ? t('play.instructions', { name }) : feedback || (hint ? t(`hint.${hint}`, { name }) : t('hint.room', { name }));
 
   return (
     <div class="app">
@@ -156,7 +169,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
         <Stage
           pet={initialPet}
           clock={clock}
-          options={{ onChange: refresh, onPetChange: refresh, onCommand, onPlayEnd }}
+          options={{ onChange: refresh, onPetChange: refresh, onCommand, onPlayEnd, onTarget, onRoomTouch }}
           onGame={(g) => {
             gameRef.current = g;
             refresh();

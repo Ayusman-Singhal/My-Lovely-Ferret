@@ -54,9 +54,9 @@ export function Stage({ pet, clock, options, onGame }: StageProps) {
           onFrame: (now, s) => game.tick(now, s),
           getProps: () => game.props(),
           onPointer: {
-            down: (x, y, realMs) => game.pointerDown(x, y, realMs),
-            move: (x, y) => game.pointerMove(x, y),
-            up: (realMs) => game.pointerUp(realMs),
+            down: (x, y, realMs, hit) => game.pointerDown(x, y, realMs, hit),
+            move: (x, y, _realMs, hit) => game.pointerMove(x, y, hit),
+            up: (realMs, hit) => game.pointerUp(realMs, hit),
           },
         });
         if (cancelled) {
