@@ -16,6 +16,7 @@ import { downloadBackup } from '../../platform/web/download';
 import { isIosBrowserNotInstalled, readIosEnv, rememberDismissed, wasDismissed } from '../../platform/web/ios';
 import { AboutDialog } from '../components/AboutDialog';
 import { CollectionDialog } from '../components/CollectionDialog';
+import { ShopDialog } from '../components/ShopDialog';
 import { ActionBar } from '../components/ActionBar';
 import { DevPanel } from '../components/DevPanel';
 import { FeedbackDialog } from '../components/FeedbackDialog';
@@ -50,7 +51,8 @@ function safeLocalStorage(): Storage | null {
 function describeResult(result: CommandResult, name: string): string {
   const o = result.outcome;
   if (!o.ok) return tDynamic(`refuse.${o.reason}`, { name });
-  return o.bondGain > 0 ? t('result.bond', { name, amount: (o.bondGain / 100).toFixed(1) }) : t('result.done');
+  const base = o.bondGain > 0 ? t('result.bond', { name, amount: (o.bondGain / 100).toFixed(1) }) : t('result.done');
+  return o.shinyGain > 0 ? `${base} ${t('result.shinies', { amount: o.shinyGain })}` : base;
 }
 
 export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store, saveUnavailable }: HomeProps) {
@@ -59,9 +61,10 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   const prevState = useRef(initialPet.state);
   const [, redraw] = useState(0);
   const [feedback, setFeedback] = useState('');
+  const [shopMessage, setShopMessage] = useState('');
   const [live, setLive] = useState('');
   const [counters, setCounters] = useState(save.tester.interactionCounts);
-  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'collection' | 'dev'>('none');
+  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'collection' | 'shop' | 'dev'>('none');
   const [devUnlocked, setDevUnlocked] = useState(() => devRequested(window.location.search));
   const [iosNotice, setIosNotice] = useState(() => isIosBrowserNotInstalled(readIosEnv()) && !wasDismissed(safeLocalStorage()));
   const [welcomeOpen, setWelcomeOpen] = useState(welcome !== null);
@@ -145,6 +148,19 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
       target === 'foodBowl' ? { type: 'FeedPet', foodId: current.state.favoriteFood } : target === 'waterBowl' ? { type: 'GiveWater' } : { type: 'PutToBed' };
     setFeedback(describeResult(g.dispatch(command), name));
   };
+  /** Buy, wear, or take off something in the shop, and say what happened. */
+  const shopCommand = (command: Command): void => {
+    const g = gameRef.current;
+    if (!g) return;
+    const result = g.dispatch(command);
+    if (!result.outcome.ok) {
+      setShopMessage(tDynamic(`refuse.${result.outcome.reason}`, { name }));
+      return;
+    }
+    const item = tDynamic(`item.${'itemId' in command ? command.itemId : ''}`);
+    const key = command.type === 'BuyItem' ? 'shop.bought' : command.type === 'EquipItem' ? 'shop.worn' : 'shop.removed';
+    setShopMessage(t(key, { name, item }));
+  };
   const onRoomTouch = (kind: RoomTouch): void => setFeedback(t(`room.${kind}`, { name }));
 
   // A gift arrives while the app is open: say so, and the pet is pleased.
@@ -158,7 +174,8 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   const onPlayEnd = (r: PlayResult): void => {
     const message = tDynamic(`play.band.${r.band}`);
     const noReward = r.result.outcome.ok && !r.result.outcome.rewarded ? ` ${t('play.noReward', { name })}` : '';
-    setFeedback(`${t('play.result', { name, count: r.catches, message })}${noReward}`);
+    const earned = r.result.outcome.ok && r.result.outcome.shinyGain > 0 ? ` ${t('result.shinies', { amount: r.result.outcome.shinyGain })}` : '';
+    setFeedback(`${t('play.result', { name, count: r.catches, message })}${noReward}${earned}`);
   };
 
   const game = gameRef.current;
@@ -174,7 +191,16 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
 
   return (
     <div class="app">
-      <Hud name={name} state={pet.state} onMenu={() => setDialog('menu')} />
+      <Hud
+        name={name}
+        state={pet.state}
+        onMenu={() => setDialog('menu')}
+        shinies={pet.inventory.shinies}
+        onShop={() => {
+          setShopMessage('');
+          setDialog('shop');
+        }}
+      />
       <div class="stage-wrap">
         <Stage
           pet={initialPet}
@@ -247,6 +273,15 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
         />
       )}
       {dialog === 'about' && <AboutDialog pet={pet} tester={saveRef.current.tester} nowMs={clock.nowMs()} onClose={() => setDialog('menu')} />}
+      {dialog === 'shop' && (
+        <ShopDialog
+          pet={pet}
+          message={shopMessage}
+          onCommand={shopCommand}
+          onPreview={(on) => gameRef.current?.setPreview(on)}
+          onClose={() => setDialog('none')}
+        />
+      )}
       {dialog === 'collection' && <CollectionDialog pet={pet} onClose={() => setDialog('menu')} />}
       {dialog === 'feedback' && <FeedbackDialog pet={pet} tester={saveRef.current.tester} nowMs={clock.nowMs()} onClose={() => setDialog('menu')} />}
       {dialog === 'dev' && game && (

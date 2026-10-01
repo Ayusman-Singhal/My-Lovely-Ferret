@@ -1,6 +1,7 @@
 import { createRng, hashString } from './rng';
 import { validateName } from './name';
 import { localDate } from './time';
+import { TUNING } from './tuning';
 import type { ActivityId, Coat, FoodId, PetRecord, ToyId } from './types';
 
 // Weights out of 100 (docs/GAME_DESIGN.md §10).
@@ -61,9 +62,10 @@ export function createPet(params: CreatePetParams): PetRecord {
       lastFoundDate: today,
       lastPlayRewardAt: null,
       playStartedAt: null,
-      daily: { date: today, pet: 0, feed: 0, play: 0 },
+      daily: { date: today, pet: 0, feed: 0, play: 0, shinies: 0 },
     },
-    inventory: { shinies: 0, items: [] },
+    // A few shinies to start, so the first look at the shop is not empty.
+    inventory: { shinies: TUNING.shinies.start, items: [], equipped: [] },
     collection: {},
     home: { furniture: [], mess: 0 },
     ownership: {

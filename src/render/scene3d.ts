@@ -19,16 +19,19 @@ import {
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
+  Euler,
   Group,
   IcosahedronGeometry,
   LoopOnce,
   Material,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
   Object3D,
   PerspectiveCamera,
   Plane,
+  Quaternion,
   Raycaster,
   RingGeometry,
   Scene as ThreeScene,
@@ -46,6 +49,7 @@ import { CLIPS, CLIP_FPS, frameIntervalMs, playbackRate, type AnimationName } fr
 import { COAT_TINT } from './coats3d';
 import { ROOM } from './layout';
 import { browserLoopDeps, cappedPixelRatio, createRenderLoop } from './loop';
+import { OUTFIT_PARTS } from './outfits3d';
 import { PALETTE, VIEW } from './palette';
 import type { PetAnimator, PetScene, PickTarget, SceneHit, ScenePointer, ScenePropsState } from './petScene';
 import { M_PER_PX, PET_SCALE, logicalToWorld, planeToLogical } from './stageMap';
@@ -75,6 +79,10 @@ const CAMERA = { vfov: 22, pitchDeg: 32, yawDeg: 28 } as const;
 const OVERVIEW = { x: 0, y: 0.3, z: 0.0, radius: 0.84 } as const;
 const CLOSE = { radius: 0.56, lookAtHeight: 0.1 } as const;
 /** Clips during which the camera comes close. Wandering and sniffing do not: the camera must not swing about. */
+/** How far below the pet the camera looks while the shop is open, so the pet sits above the sheet. */
+const PREVIEW_DROP_M = 0.22;
+/** And how much closer the camera comes, so a bow or a bell is easy to see. */
+const PREVIEW_ZOOM_M = 0.12;
 const CLOSE_CLIPS: readonly AnimationName[] = ['eat', 'drink', 'sleep'];
 const SOCK_SIZE = { w: 0.1, h: 0.035, d: 0.045 } as const;
 
@@ -129,6 +137,8 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   const lookAt = new Vector3(OVERVIEW.x, OVERVIEW.y, OVERVIEW.z);
   /** 0 = whole room, 1 = close to the pet. Follows what the pet is doing, smoothly. */
   let closeness = 0;
+  /** 0 to 1, how far the shop has moved the pet up the screen to leave room for its sheet. */
+  let previewShift = 0;
   const petRef: { root?: Object3D } = {};
   const placeCamera = (): void => {
     const k = closeness * closeness * (3 - 2 * closeness);
@@ -142,7 +152,8 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     // Pull the camera back until the wanted part of the room fits across the screen, whatever the
     // shape. Narrow screens are limited by their width, wide ones by their height.
     const half = Math.tan((CAMERA.vfov * Math.PI) / 360) * Math.min(1, camera.aspect);
-    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k;
+    lookAt.y -= PREVIEW_DROP_M * previewShift * k; // looking lower puts the pet higher on screen
+    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k - PREVIEW_ZOOM_M * previewShift * k;
     const distance = radius / half;
     const pitch = (CAMERA.pitchDeg * Math.PI) / 180;
     const yaw = (CAMERA.yawDeg * Math.PI) / 180;
@@ -354,6 +365,41 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   petRef.root = ferret;
   const carryBone = ferret.getObjectByName('carry') ?? ferret;
 
+  // Outfits (Part 1L.5): boxes fastened to the head bone. Their positions are written in the model's
+  // rest pose, so each box is turned into the bone's own space once, with the pet at rest and at scale 1.
+  const headBone = ferret.getObjectByName('head') ?? ferret;
+  ferret.scale.setScalar(1);
+  ferret.updateMatrixWorld(true);
+  const headRestInverse = headBone.matrixWorld.clone().invert();
+  ferret.scale.setScalar(PET_SCALE);
+  const outfitGroups = new Map<string, Group>();
+  const outfitGroup = (id: string): Group => {
+    let group = outfitGroups.get(id);
+    if (group) return group;
+    group = new Group();
+    for (const part of OUTFIT_PARTS[id] ?? []) {
+      const mesh = new Mesh(new BoxGeometry(...part.size), flat(part.color));
+      const rest = new Matrix4().compose(
+        new Vector3(...part.at),
+        new Quaternion().setFromEuler(new Euler(0, part.rotY ?? 0, part.rotZ ?? 0)),
+        new Vector3(1, 1, 1),
+      );
+      mesh.applyMatrix4(headRestInverse.clone().multiply(rest));
+      group.add(mesh);
+    }
+    outfitGroups.set(id, group);
+    return group;
+  };
+  let wornKey = '';
+  const wear = (ids: readonly string[]): void => {
+    const key = ids.join('|');
+    if (key === wornKey) return;
+    wornKey = key;
+    for (const group of outfitGroups.values()) group.removeFromParent();
+    for (const id of ids) headBone.add(outfitGroup(id));
+    loop.request();
+  };
+
   // ------------------------------------------------------------------ animation
   const mixer = new AnimationMixer(ferret);
   const bases = new Map<AnimationName, AnimationAction>();
@@ -477,15 +523,19 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
 
     // The camera comes close while the pet does something close, and goes back to the whole room after.
     const props0 = options.getProps?.();
-    const wantsClose = Boolean(props0?.pressing) || CLOSE_CLIPS.includes(base) || nowMs < focusUntil;
+    const wantsClose = Boolean(props0?.pressing) || Boolean(props0?.preview) || CLOSE_CLIPS.includes(base) || nowMs < focusUntil;
     const goal = wantsClose && !props0?.toy ? 1 : 0;
     const before = closeness;
     closeness += (goal - closeness) * Math.min(1, dt * 2.6);
     if (Math.abs(goal - closeness) < 0.002) closeness = goal;
-    if (closeness !== before || closeness > 0) placeCamera();
+    const beforeShift = previewShift;
+    previewShift += ((props0?.preview ? 1 : 0) - previewShift) * Math.min(1, dt * 4);
+    if (Math.abs((props0?.preview ? 1 : 0) - previewShift) < 0.002) previewShift = props0?.preview ? 1 : 0;
+    if (closeness !== before || closeness > 0 || previewShift !== beforeShift) placeCamera();
 
     const props = props0;
     if (props) {
+      wear(props.outfit);
       roomBall.visible = !props.toy;
       if (props.ball.carried) {
         carryBone.getWorldPosition(tmp);

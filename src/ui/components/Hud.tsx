@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { t, tDynamic } from '../../i18n/t';
 import { hudMeters, type NeedId } from '../../game/needs';
 import type { PetState } from '../../core/types';
-import { BoltIcon, BowlIcon, DropIcon, HeartIcon, MenuIcon, MoonIcon } from './Icons';
+import { BoltIcon, BowlIcon, DropIcon, HeartIcon, MenuIcon, MoonIcon, ShinyIcon } from './Icons';
 
 const ICON: Record<NeedId, () => ComponentChildren> = {
   hunger: () => <BowlIcon />,
@@ -15,10 +15,13 @@ interface HudProps {
   name: string;
   state: PetState;
   onMenu?: () => void;
+  /** Shinies in hand; tapping them opens the shop. */
+  shinies?: number;
+  onShop?: () => void;
 }
 
 /** The needs at the top. Each meter has an icon, a label, a number, a level word, and a bar length: never color alone. */
-export function Hud({ name, state, onMenu }: HudProps) {
+export function Hud({ name, state, onMenu, shinies, onShop }: HudProps) {
   const meters = hudMeters(state);
   return (
     <header class="hud">
@@ -31,6 +34,11 @@ export function Hud({ name, state, onMenu }: HudProps) {
             </span>
           )}
         </h1>
+        {onShop && shinies !== undefined && (
+          <button type="button" class="shiny-chip" onClick={onShop} aria-label={t('shop.open', { count: shinies })}>
+            <ShinyIcon size={18} /> {shinies}
+          </button>
+        )}
         {onMenu && (
           <button type="button" class="icon-btn" onClick={onMenu} aria-label={t('action.menu')}>
             <MenuIcon />

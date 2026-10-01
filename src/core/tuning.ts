@@ -57,6 +57,21 @@ export const TUNING = {
     giftDivisor: 30000,
   },
 
+  /**
+   * Shinies (Part 1L.5): the soft currency, earned by caring, never bought. Care earns at most
+   * `dailyCap` a day, so there is nothing to grind. Gifts add their value on top.
+   */
+  shinies: {
+    start: 10,
+    dailyCap: 20,
+    feed: 1,
+    water: 1,
+    petSession: 2,
+    /** Indexed by the mini-game band 0 to 3. */
+    play: [0, 2, 3, 4],
+    gift: { common: 3, odd: 6, rare: 15 },
+  },
+
   history: { maxEvents: 500 },
 } as const;
 

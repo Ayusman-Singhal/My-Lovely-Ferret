@@ -50,6 +50,14 @@ export function BallIcon({ size = 20 }: IconProps) {
   );
 }
 
+export function ShinyIcon({ size = 20 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 2 15 9l7 3-7 3-3 7-3-7-7-3 7-3z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function MoonIcon({ size = 20 }: IconProps) {
   return (
     <svg {...base(size)}>

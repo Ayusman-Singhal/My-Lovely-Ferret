@@ -22,6 +22,8 @@ export interface DailyCounters {
   pet: number;
   feed: number;
   play: number;
+  /** Shinies earned by care today, against the daily cap (Part 1L.5). */
+  shinies: number;
 }
 
 export interface PetState {
@@ -64,7 +66,8 @@ export interface PetRecord {
   pet: { id: string; name: string; species: 'ferret'; coat: Coat; born: number };
   personality: Personality;
   state: PetState;
-  inventory: { shinies: number; items: string[] };
+  /** Shinies to spend, the cosmetics owned, and which of them are worn or placed now (Part 1L.5). */
+  inventory: { shinies: number; items: string[]; equipped: string[] };
   /** Gifts the pet has brought, by item id: when first found and how many times (Part 1L.4). */
   collection: Record<string, { first: number; count: number }>;
   home: { furniture: string[]; mess: number };

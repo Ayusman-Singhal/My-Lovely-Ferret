@@ -13,7 +13,7 @@ import type { HistoryEvent, PetRecord, ToyId } from '../core/types';
 import { createBrain, type Brain, type BrainScene } from '../render/brain';
 import { ROOM } from '../render/layout';
 import type { PickTarget, SceneHit, ScenePropsState } from '../render/petScene';
-import { callPlan, clampX, clampZ, fetchPlan, windowPlan } from '../render/plan';
+import { callPlan, clampX, clampZ, fetchPlan, previewPlan, windowPlan } from '../render/plan';
 
 export interface PlayResult {
   band: 0 | 1 | 2 | 3;
@@ -67,6 +67,8 @@ export interface Game {
   tick(frameMs: number, scene: BrainScene): void;
   /** What the scene should draw besides the room and the pet: the sock, the toy, and the timer. */
   props(): ScenePropsState;
+  /** The shop is open (true) or closed: the camera comes close to show what the pet wears. */
+  setPreview(on: boolean): void;
   /**
    * Pointer input in logical room coordinates. Times are real milliseconds (event.timeStamp), not
    * game time, so a long press lasts 2 real seconds even when the preview runs the game faster.
@@ -96,6 +98,7 @@ export function createGame(options: GameOptions): Game {
   let toyTarget = 180;
   let lastFrame = 0;
   let pressingPet = false;
+  let preview = false;
   // Touching the room (Part 1L.2): a tap on the floor calls the pet, a tap on the ball throws it, a
   // drag moves the ball or the sock, a tap on the window makes the pet look out, a tap on a bowl or
   // the hammock is the same as the button.
@@ -266,11 +269,22 @@ export function createGame(options: GameOptions): Game {
       if (chase.over) finishPlay(scene, frameMs);
     },
 
+    setPreview(on) {
+      if (on === preview) return;
+      preview = on;
+      if (chase) return;
+      // Open: the pet comes to the middle and faces the player. Closed: it carries on with its day.
+      if (on) brain.script(previewPlan());
+      else brain.script([{ kind: 'do', anim: 'idle', ms: 200 }]);
+    },
+
     props() {
       return {
         sock: { x: brain.sock.x, z: brain.sock.z, carried: brain.sock.carried },
         ball: { x: brain.ball.x, z: brain.ball.z, carried: brain.ball.carried, flight: flightNow() },
         marker: markerNow(),
+        outfit: pet.inventory.equipped,
+        preview,
         toy: chase ? { id: chaseToy, x: toyTarget } : null,
         timerFraction: chase ? Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs) : null,
         pressing: pressingPet,

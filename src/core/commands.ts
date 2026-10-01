@@ -4,6 +4,7 @@
 // in the past), and then the effect is applied. Pure: same pet, command, and time give the
 // same result.
 
+import { findItem } from './catalog';
 import { NEED_MAX, clamp } from './fixed';
 import { FOODS, TOYS } from './pet';
 import { simulate } from './simulate';
@@ -17,10 +18,23 @@ export type Command =
   | { type: 'PetTouch'; session: boolean }
   | { type: 'StartPlay'; toyId: ToyId }
   | { type: 'FinishPlay'; band: number }
-  | { type: 'PutToBed' };
+  | { type: 'PutToBed' }
+  | { type: 'BuyItem'; itemId: string }
+  | { type: 'EquipItem'; itemId: string }
+  | { type: 'UnequipItem'; itemId: string };
 
 export type Reaction = 'happy' | 'annoyed' | 'surprise';
-export type Refusal = 'invalid' | 'not_hungry' | 'not_thirsty' | 'too_tired' | 'not_sleepy' | 'no_play_started';
+export type Refusal =
+  | 'invalid'
+  | 'not_hungry'
+  | 'not_thirsty'
+  | 'too_tired'
+  | 'not_sleepy'
+  | 'no_play_started'
+  | 'unknown_item'
+  | 'already_owned'
+  | 'not_enough_shinies'
+  | 'not_owned';
 
 export type Outcome =
   | {
@@ -34,6 +48,8 @@ export type Outcome =
       bondGain: number;
       /** FinishPlay only: the reward was given (not inside the 30 minute cooldown). */
       rewarded: boolean;
+      /** Shinies earned by this command, after the daily cap. */
+      shinyGain: number;
     }
   | { ok: false; reason: Refusal; reaction: 'annoyed' };
 
@@ -76,6 +92,12 @@ export function parseCommand(raw: unknown): Command | null {
         : null;
     case 'PutToBed':
       return { type: 'PutToBed' };
+    case 'BuyItem':
+    case 'EquipItem':
+    case 'UnequipItem':
+      return typeof c['itemId'] === 'string' && c['itemId'].length > 0 && c['itemId'].length <= 40
+        ? { type: c['type'], itemId: c['itemId'] }
+        : null;
     default:
       return null;
   }
@@ -89,7 +111,7 @@ const refuse = (pet: PetRecord, events: HistoryEvent[], reason: Refusal): Comman
 
 /** Reset the daily counters when the owner-local date has changed. */
 function withToday(state: PetState, today: string): PetState {
-  return state.daily.date === today ? state : { ...state, daily: { date: today, pet: 0, feed: 0, play: 0 } };
+  return state.daily.date === today ? state : { ...state, daily: { date: today, pet: 0, feed: 0, play: 0, shinies: 0 } };
 }
 
 function wake(state: PetState): PetState {
@@ -109,15 +131,32 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
   const today = localDate(nowMs, record.tzOffsetMin);
   let state = withToday(sim.pet.state, today);
   const wasAsleep = state.sleepState === 'asleep';
+  let inventory = sim.pet.inventory;
+  let shinyGain = 0;
+  /** Shinies for care, up to the daily cap (guide §14: nothing to grind). */
+  const earn = (amount: number): void => {
+    const room = Math.max(0, TUNING.shinies.dailyCap - state.daily.shinies);
+    const given = Math.min(amount, room);
+    if (given <= 0) return;
+    state = { ...state, daily: { ...state.daily, shinies: state.daily.shinies + given } };
+    inventory = { ...inventory, shinies: inventory.shinies + given };
+    shinyGain += given;
+  };
   const done = (extra: Partial<Extract<Outcome, { ok: true }>> = {}, extraEvents: HistoryEvent[] = []): CommandResult => ({
     pet: {
       ...sim.pet,
       state: { ...state, lastInteractionTime: nowMs },
+      inventory,
       history: [...sim.pet.history, ...extraEvents].slice(-TUNING.history.maxEvents),
     },
     events: [...events, ...extraEvents],
-    outcome: { ok: true, woke: false, reaction: null, stock: null, bondGain: 0, rewarded: false, ...extra },
+    outcome: { ok: true, woke: false, reaction: null, stock: null, bondGain: 0, rewarded: false, shinyGain, ...extra },
   });
+  /** Wear or place an item: a second item in the same slot takes the first off. */
+  const equip = (id: string): void => {
+    const slot = findItem(id)?.slot;
+    inventory = { ...inventory, equipped: [...inventory.equipped.filter((other) => findItem(other)?.slot !== slot && other !== id), id] };
+  };
   const bond = (kind: keyof typeof BOND_TABLE): number => {
     const table = BOND_TABLE[kind];
     const gain = table[Math.min(state.daily[kind], table.length - 1)] as number;
@@ -138,6 +177,7 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
         happiness: favorite ? Math.min(NEED_MAX, state.happiness + 500) : state.happiness,
       };
       const gain = bond('feed');
+      earn(TUNING.shinies.feed);
       const fed: HistoryEvent[] =
         firstToday || favorite
           ? [{ id: `PET_FED-${nowMs}`, t: nowMs, type: 'PET_FED', actor: 'owner', payload: { foodId: cmd.foodId } }]
@@ -149,6 +189,7 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
       if (state.hydration >= REFUSE_ABOVE) return refuse(sim.pet, events, 'not_thirsty');
       if (wasAsleep) state = wake(state);
       state = { ...state, hydration: Math.min(NEED_MAX, state.hydration + 3500) };
+      earn(TUNING.shinies.water);
       return done({ woke: wasAsleep, stock: 'water' });
     }
 
@@ -164,6 +205,7 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
       if (cmd.session) {
         state = { ...state, happiness: Math.min(NEED_MAX, state.happiness + 300) };
         gain = bond('pet');
+        earn(TUNING.shinies.petSession);
       }
       return done({ woke: wasAsleep, reaction, bondGain: gain });
     }
@@ -190,6 +232,7 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
         state = { ...state, happiness: Math.min(NEED_MAX, state.happiness + 500 + band * 400), lastPlayRewardAt: nowMs };
         if (band >= 1) {
           gain = bond('play');
+          earn(TUNING.shinies.play[band] as number);
           played = [{ id: `PET_PLAYED-${nowMs}`, t: nowMs, type: 'PET_PLAYED', actor: 'owner', payload: { band } }];
         }
       }
@@ -200,6 +243,29 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
       if (wasAsleep) return done();
       if (state.energy >= REFUSE_ABOVE) return refuse(sim.pet, events, 'not_sleepy');
       state = { ...state, sleepState: 'asleep', sleepStartedAt: nowMs, currentActivity: 'sleep' };
+      return done();
+    }
+
+    case 'BuyItem': {
+      const item = findItem(cmd.itemId);
+      if (!item) return refuse(sim.pet, events, 'unknown_item');
+      if (inventory.items.includes(item.id)) return refuse(sim.pet, events, 'already_owned');
+      if (inventory.shinies < item.price) return refuse(sim.pet, events, 'not_enough_shinies');
+      inventory = { ...inventory, shinies: inventory.shinies - item.price, items: [...inventory.items, item.id] };
+      equip(item.id); // a new thing is put on at once: the player wants to see it
+      return done({ reaction: 'happy' });
+    }
+
+    case 'EquipItem': {
+      if (!findItem(cmd.itemId)) return refuse(sim.pet, events, 'unknown_item');
+      if (!inventory.items.includes(cmd.itemId)) return refuse(sim.pet, events, 'not_owned');
+      equip(cmd.itemId);
+      return done({ reaction: 'happy' });
+    }
+
+    case 'UnequipItem': {
+      if (!inventory.equipped.includes(cmd.itemId)) return refuse(sim.pet, events, 'not_owned');
+      inventory = { ...inventory, equipped: inventory.equipped.filter((id) => id !== cmd.itemId) };
       return done();
     }
   }

@@ -6,10 +6,12 @@ interface DialogProps {
   children: ComponentChildren;
   /** Called when the player presses Escape. */
   onClose?: () => void;
+  /** `bottom` is a sheet along the bottom that leaves the room above it in view and touchable. */
+  placement?: 'center' | 'bottom';
 }
 
 /** A simple modal card. Focus moves into it when it opens, and Escape closes it. */
-export function Dialog({ title, children, onClose }: DialogProps) {
+export function Dialog({ title, children, onClose, placement = 'center' }: DialogProps) {
   const card = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function Dialog({ title, children, onClose }: DialogProps) {
   }, [onClose]);
 
   return (
-    <div class="overlay">
+    <div class={placement === 'bottom' ? 'overlay bottom' : 'overlay'}>
       <div class="card" role="dialog" aria-modal="true" aria-label={title} ref={card}>
         <h2 class="card-title">{title}</h2>
         {children}

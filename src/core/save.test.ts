@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CURRENT_SCHEMA_VERSION,
+  MIGRATIONS,
   backupFileName,
   buildBackup,
   canonicalJson,
@@ -55,8 +56,8 @@ describe('validateSave', () => {
   });
 
   it('rejects a wrong schema version', () => {
-    expect(validateSave({ ...makeSave(), schemaVersion: 1 })).toMatch(/schemaVersion/);
-    expect(validateSave({ ...makeSave(), schemaVersion: 3 })).toMatch(/schemaVersion/);
+    expect(validateSave({ ...makeSave(), schemaVersion: 2 })).toMatch(/schemaVersion/);
+    expect(validateSave({ ...makeSave(), schemaVersion: 4 })).toMatch(/schemaVersion/);
   });
 
   it('rejects out-of-range and non-integer needs', () => {
@@ -218,7 +219,12 @@ describe('the v1 to v2 migration (Part 1L.4: the collection)', () => {
   function v1Save(): Record<string, unknown> {
     const save = clone(makeSave(['old-a', 'old-b'])) as unknown as Record<string, unknown>;
     const pets = save['pets'] as Array<Record<string, unknown>>;
-    for (const p of pets) delete p['collection'];
+    for (const p of pets) {
+      delete p['collection'];
+      delete (p['state'] as { daily: Record<string, unknown> }).daily['shinies'];
+      delete (p['inventory'] as Record<string, unknown>)['equipped'];
+      (p['inventory'] as Record<string, unknown>)['shinies'] = 0;
+    }
     const found = (id: string, t: number, item: string) => ({ id, t, type: 'PET_FOUND_ITEM', actor: 'pet', payload: { itemId: item } });
     (pets[0] as Record<string, unknown>)['history'] = [
       found('f1', T0 + 3, 'button'),
@@ -230,15 +236,22 @@ describe('the v1 to v2 migration (Part 1L.4: the collection)', () => {
     return save;
   }
 
-  it('gives each pet an album built from the gifts in its history, and the result is a valid v2 save', () => {
-    const result = migrate(v1Save());
+  it('gives each pet an album built from the gifts in its history', () => {
+    const result = migrate(v1Save(), MIGRATIONS, 2);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.save['schemaVersion']).toBe(2);
-    expect(validateSave(result.save)).toBeNull();
     const pets = result.save['pets'] as Array<{ collection: Record<string, { first: number; count: number }> }>;
     expect(pets[0]?.collection).toEqual({ button: { first: T0 + 3, count: 2 }, feather: { first: T0 + 1, count: 1 } });
     expect(pets[1]?.collection).toEqual({});
+  });
+
+  it('the whole chain brings a v1 save to a valid current save', () => {
+    const result = migrate(v1Save());
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save['schemaVersion']).toBe(CURRENT_SCHEMA_VERSION);
+    expect(validateSave(result.save)).toBeNull();
   });
 
   it('does not change the old save it was given', () => {

@@ -23,6 +23,9 @@ export function interactionOf(command: Command): Interaction | null {
     case 'PetTouch':
       return 'pet';
     case 'FinishPlay':
+    case 'BuyItem':
+    case 'EquipItem':
+    case 'UnequipItem':
       return null;
   }
 }

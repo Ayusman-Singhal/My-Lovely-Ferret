@@ -8,7 +8,7 @@ import { localDate } from './time';
 import { TUNING } from './tuning';
 import type { PetRecord } from './types';
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 export const MAX_PETS = 2; // guide Open Decision 11
 
 export interface Settings {
@@ -164,11 +164,12 @@ function checkPet(raw: unknown, p: string): void {
   if (s['lastFoundDate'] !== null) str(s['lastFoundDate'], `${p}.state.lastFoundDate`);
   const daily = obj(s['daily'], `${p}.state.daily`);
   str(daily['date'], `${p}.state.daily.date`);
-  for (const k of ['pet', 'feed', 'play']) int(daily[k], `${p}.state.daily.${k}`, 0, 1_000_000);
+  for (const k of ['pet', 'feed', 'play', 'shinies']) int(daily[k], `${p}.state.daily.${k}`, 0, 1_000_000);
 
   const inv = obj(r['inventory'], `${p}.inventory`);
   int(inv['shinies'], `${p}.inventory.shinies`, 0, 1_000_000_000);
   arr(inv['items'], `${p}.inventory.items`, 10_000);
+  arr(inv['equipped'], `${p}.inventory.equipped`, 100).forEach((id, i) => str(id, `${p}.inventory.equipped[${i}]`));
   const collection = obj(r['collection'], `${p}.collection`);
   for (const [id, entry] of Object.entries(collection)) {
     const e = obj(entry, `${p}.collection.${id}`);
@@ -281,7 +282,30 @@ export const migrateV1toV2: Migration = (save) => {
   };
 };
 
-export const MIGRATIONS: Readonly<Record<number, Migration>> = { 1: migrateV1toV2 };
+/**
+ * v2 to v3 (Part 1L.5): the shinies and the shop. Each pet gets a daily shinies counter and a list of
+ * worn items. A pet that has nothing yet gets the same 10 shinies to start that a new pet gets.
+ */
+export const migrateV2toV3: Migration = (save) => {
+  const pets = Array.isArray(save['pets']) ? (save['pets'] as Array<Record<string, unknown>>) : [];
+  return {
+    ...save,
+    pets: pets.map((pet) => {
+      const state = isObj(pet['state']) ? pet['state'] : {};
+      const daily = isObj(state['daily']) ? state['daily'] : {};
+      const inventory = isObj(pet['inventory']) ? pet['inventory'] : {};
+      const items = Array.isArray(inventory['items']) ? inventory['items'] : [];
+      const shinies = typeof inventory['shinies'] === 'number' ? inventory['shinies'] : 0;
+      return {
+        ...pet,
+        state: { ...state, daily: { ...daily, shinies: 0 } },
+        inventory: { ...inventory, items, shinies: shinies === 0 && items.length === 0 ? 10 : shinies, equipped: [] },
+      };
+    }),
+  };
+};
+
+export const MIGRATIONS: Readonly<Record<number, Migration>> = { 1: migrateV1toV2, 2: migrateV2toV3 };
 
 export type MigrateResult =
   | { ok: true; save: Record<string, unknown> }

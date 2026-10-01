@@ -8,6 +8,7 @@ Status values: `todo`, `placeholder` (stand-in until the real thing), `code` (bu
 
 | Asset | Status | Size |
 |---|---|---|
+| Outfits (bow, flower, party hat, bell collar, bandana, scarf): boxes in `src/render/outfits3d.ts`, no files | final | 0 KB |
 | `animation/export/ferret.glb`: mesh (264 triangles, 20 box pieces), armature (22 bones), 17 clips, one 64 by 64 texture | final (first pass of the clips, polish welcome) | 394 KB raw, 94 KB gzip |
 | coat textures `coat_cinnamon.png`, `coat_albino.png`, `coat_panda.png` (same layout as the sable texture inside the model) | todo (a colour tint stands in, `src/render/coats3d.ts`) | about 1 KB each |
 

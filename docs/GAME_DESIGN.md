@@ -139,6 +139,20 @@ Players must never have to wait for the pet to wake up, and never need an extra 
 - Waking sets `sleepState` to `awake` and clears `sleepStartedAt`. The normal sleep rules then apply again: a woken pet may fall asleep again on its own, and one at `energy <= 2000` falls asleep at once (play refuses at that energy anyway).
 - Wake-ups by the player are never logged as history events.
 
+### 4.3 Shinies and the shop (Part 1L.5, guide §7.8, §14)
+
+Shinies are the soft currency: **earned by caring, never bought, never needed** to keep the pet alive or happy. Food and water stay free and unlimited. Numbers are in `TUNING.shinies`:
+
+| Source | Shinies |
+|---|---|
+| A new pet | 10 to start |
+| Feed, or give water (when accepted) | 1 each |
+| A petting session | 2 |
+| A played game, by band 1 / 2 / 3 | 2 / 3 / 4 (only when the play reward is given) |
+| A gift (section 3.5) | 3 common, 6 odd, 15 rare, outside the cap |
+
+Care earns at most **20 shinies a day** (owner-local date, `state.daily.shinies`), so there is nothing to grind. Time away costs nothing. The shop sells cosmetics only: six outfits for the head and the neck (`src/core/catalog.ts`), priced 20 to 55, each within about three days of care. Commands: `BuyItem` (spends, owns, and puts the item on), `EquipItem`, `UnequipItem`. One item per slot is worn; a second takes the first off. Shopping does not wake a sleeping pet and does not count as care. The screen is a sheet along the bottom with the pet standing in front of the camera, so the player sees an outfit on at once.
+
 ## 5. Mood (derived)
 
 First matching rule wins. All thresholds are hundredths.

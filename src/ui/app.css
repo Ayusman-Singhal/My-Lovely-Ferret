@@ -148,6 +148,20 @@ input {
   background: transparent;
 }
 
+.shiny-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 2px solid var(--brown);
+  border-radius: 22px;
+  background: var(--card);
+  font-weight: 700;
+}
+
 .meters {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -257,6 +271,58 @@ input {
 }
 
 /* --------------------------------------------------- cards, sheets, forms */
+/* A sheet along the bottom (the shop): the room above stays in view and can still be touched. */
+.overlay.bottom {
+  align-items: flex-end;
+  padding: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.overlay.bottom .card {
+  max-width: none;
+  max-height: 46vh;
+  overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 18px rgb(59 47 38 / 0.25);
+  pointer-events: auto;
+}
+
+.shop-balance {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.shop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shop-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-row button {
+  flex: 0 0 auto;
+  max-width: 48%;
+}
+
 .overlay {
   position: fixed;
   inset: 0;

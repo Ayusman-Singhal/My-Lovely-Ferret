@@ -98,6 +98,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
   let { hunger, hydration, energy, happiness } = record.state;
   let { sleepState, sleepStartedAt, lastStoleAt, lastFoundDate } = record.state;
   let collection = record.collection;
+  let giftShinies = 0;
   const events: HistoryEvent[] = [];
   let asleepSteps = 0;
 
@@ -164,6 +165,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
         );
         const before = collection[item.id];
         collection = { ...collection, [item.id]: { first: before?.first ?? t, count: (before?.count ?? 0) + 1 } };
+        giftShinies += TUNING.shinies.gift[item.tier];
         events.push({ id: `PET_FOUND_ITEM-${t}`, t, type: 'PET_FOUND_ITEM', actor: 'pet', payload: { itemId: item.id } });
       }
 
@@ -196,6 +198,7 @@ export function simulate(record: PetRecord, nowMs: number, options: SimulateOpti
         currentActivity: sleepState === 'asleep' ? 'sleep' : 'idle',
       },
       collection,
+      inventory: giftShinies === 0 ? record.inventory : { ...record.inventory, shinies: record.inventory.shinies + giftShinies },
       history,
       timestamps: { ...record.timestamps, lastSimulationTime: last + rawSteps * TUNING.stepMs },
     },

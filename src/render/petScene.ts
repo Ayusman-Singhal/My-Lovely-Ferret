@@ -45,6 +45,10 @@ export interface ScenePropsState {
   sock: { x: number; z: number; carried: boolean };
   /** The ball. `flight` is set while it is in the air after a throw, t from 0 to 1. */
   ball: { x: number; z: number; carried: boolean; flight: { fromX: number; fromZ: number; t: number } | null };
+  /** What the pet is wearing, by item id (docs/GAME_DESIGN.md, Part 1L.5). */
+  outfit: readonly string[];
+  /** The shop is open: the camera comes close to show the pet, a little higher on screen. */
+  preview: boolean;
   /** A ring where the player tapped the floor, t from 0 (just now) to 1 (gone). */
   marker: { x: number; z: number; t: number } | null;
   /** The toy in the mini-game, on the floor at x. */

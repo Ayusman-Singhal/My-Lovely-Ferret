@@ -207,6 +207,19 @@ export function fetchPlan(ball: { x: number; z: number }): Phase[] {
   ];
 }
 
+/** The shop is open: the pet comes to the middle of the room and stands facing the player. */
+export function previewPlan(): Phase[] {
+  return [
+    { kind: 'go', anim: 'walk', x: PREVIEW_SPOT.x, z: PREVIEW_SPOT.z, speed: SPEED.walk },
+    // Facing the camera, which sits a little to the right of straight ahead (scene3d.ts CAMERA.yawDeg).
+    { kind: 'do', anim: 'idle', ms: Infinity, heading: PREVIEW_HEADING },
+  ];
+}
+
+/** Where, and which way, the pet stands while the shop is open. */
+export const PREVIEW_SPOT = { x: 180, z: 24 } as const;
+export const PREVIEW_HEADING = 0.5;
+
 /** The pet goes to the wall under the window and looks up and out of it. */
 export function windowPlan(): Phase[] {
   return [

@@ -118,6 +118,19 @@ try {
   await page.waitForTimeout(600);
   const result = await page.locator('.status').textContent();
   ok(/caught the toy \d+ times/.test(result), `the result is shown (${result})`);
+  ok(/\+\d+ shinies/.test(result), 'playing earned shinies and the result says so');
+
+  stepName('shop: the shinies chip opens a sheet, and what is too dear says how many more it takes');
+  const chip = page.getByRole('button', { name: /^Shop, \d+ shinies$/ });
+  const have = Number(/(\d+)/.exec(await chip.getAttribute('aria-label'))[1]);
+  ok(have >= 10 && have < 20, `a new pet has a few shinies from caring (${have})`);
+  await chip.click();
+  await page.getByRole('heading', { name: 'Shop' }).waitFor();
+  ok((await page.locator('.shop-row').count()) === 6, 'six things for sale');
+  ok(await page.getByRole('button', { name: /more for the scarf/ }).isDisabled(), 'the scarf is too dear and says how many more');
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: 'shots/smoke-3c-shop.png' });
+  await page.getByRole('button', { name: 'Close' }).click();
 
   stepName('the pet stays after a reload (saved on its own)');
   await page.waitForTimeout(2500); // the debounced autosave
@@ -137,7 +150,7 @@ try {
   ok(file.format === 'ferret-backup' && typeof file.checksum === 'string', 'it is a Ferret backup with a checksum');
   ok(!text.includes('installId'), 'no installId inside');
   ok(file.save.pets[0].pet.name === 'Mochi', 'it holds the pet');
-  ok(file.schemaVersion === 2 && file.save.pets[0].collection !== undefined, 'the backup is schema 2 and has the gift collection');
+  ok(file.schemaVersion === 3 && file.save.pets[0].collection !== undefined && file.save.pets[0].inventory.equipped !== undefined, 'the backup is schema 3 and has the gift collection and the worn list');
   await page.getByRole('button', { name: 'Gifts and collection' }).click();
   await page.getByText('Found 0 of 14.').waitFor();
   ok((await page.locator('.album li').count()) === 14, 'the album lists every gift, all still unknown on day one');

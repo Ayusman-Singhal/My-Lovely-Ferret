@@ -28,7 +28,7 @@ interface PetRecord {
   pet: { id: string; name: string; species: 'ferret'; coat: Coat; born: number };
   personality: { mischief: number; curiosity: number; affection: number };   // 0..100
   state: PetState;
-  inventory: { shinies: number; items: string[] };   // present, unused until Phase 2
+  inventory: { shinies: number; items: string[]; equipped: string[] };   // shinies to spend, cosmetics owned, cosmetics worn (v3, Part 1L.5)
   collection: Record<string, { first: number; count: number }>;   // gifts brought: id -> first time, times (v2, Part 1L.4)
   home: { furniture: string[]; mess: number };       // present, unused until Phase 2
   ownership: {                                       // Phase 1 always the defaults below
@@ -61,7 +61,7 @@ interface PetState {
   lastFoundDate: string | null;               // owner-local date "YYYY-MM-DD" of the last found item
   lastPlayRewardAt: number | null;            // play reward cooldown (30 minutes)
   playStartedAt: number | null;               // set by StartPlay, cleared by FinishPlay (added in Part 1F, before any save shipped)
-  daily: { date: string; pet: number; feed: number; play: number };   // counters for bond diminishing returns
+  daily: { date: string; pet: number; feed: number; play: number; shinies: number };   // counters for bond diminishing returns and the daily shinies cap (shinies: v3)
 }
 
 interface HistoryEvent {
@@ -125,7 +125,7 @@ Implementation: `src/platform/saveStore.ts` (slot logic, storage-agnostic), `src
 
 ## 4. Migrations
 
-- **Schema versions.** v1: the first preview. v2 (Part 1L.4): each pet has `collection`; the migration builds it from the `PET_FOUND_ITEM` events still in the pet's history (`migrateV1toV2` in `src/core/save.ts`). `CURRENT_SCHEMA_VERSION` is 2.
+- **Schema versions.** v1: the first preview. v2 (Part 1L.4): each pet has `collection`; the migration builds it from the `PET_FOUND_ITEM` events still in the pet's history (`migrateV1toV2` in `src/core/save.ts`). v3 (Part 1L.5): `state.daily.shinies` and `inventory.equipped`; a pet with no shinies and no items gets the 10 starting shinies (`migrateV2toV3`). `CURRENT_SCHEMA_VERSION` is 3.
 - Every save has `schemaVersion`. The migration chain is an ordered list `migrations[n]` that turns version `n` into `n + 1`. Never assume an old save has a new field.
 - Migrations run **before** the new UI loads (guide §25.8). A failed migration keeps the old save untouched and offers Export.
 - A save with a `schemaVersion` **higher** than the app knows is rejected with "this backup is from a newer version" and left alone.
