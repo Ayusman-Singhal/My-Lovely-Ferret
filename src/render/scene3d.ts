@@ -156,7 +156,7 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   const hammock = logicalToWorld(ROOM.hammockX, ROOM.hammockRestY);
   for (const side of [-1, 1]) box(0.04, hammock.y + 0.08, 0.04, PALETTE.floorShade, hammock.x + side * 0.4, (hammock.y + 0.08) / 2, hammock.z);
   box(0.8, 0.02, 0.36, PALETTE.belly, hammock.x, hammock.y - 0.01, hammock.z);
-  box(0.76, 0.035, 0.05, PALETTE.belly, hammock.x, hammock.y + 0.01, hammock.z + 0.17);
+  // Only a back rail: a front one would hide the sleeping pet from the camera.
   box(0.76, 0.035, 0.05, PALETTE.belly, hammock.x, hammock.y + 0.01, hammock.z - 0.17);
 
   // Bowls: a coloured bowl with a lighter inside.
