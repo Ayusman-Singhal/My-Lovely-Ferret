@@ -153,6 +153,10 @@ Shinies are the soft currency: **earned by caring, never bought, never needed** 
 
 Care earns at most **20 shinies a day** (owner-local date, `state.daily.shinies`), so there is nothing to grind. Time away costs nothing. The shop sells cosmetics only (`src/core/catalog.ts`), in two tabs. **Outfits**: six, for the head and the neck, priced 20 to 55. **Room** (Part 1L.6): wall colours (3), floors (3), rugs (3) and two pieces of corner furniture (a plant and a floor lamp), priced 30 to 70. Everything costs at most four days of care (a test checks it). Decorations are placed by choosing them: one per slot (wall, floor, rug, corner), and a second takes the first out. On the Room tab the camera shows the whole room above a shorter sheet; the furniture stands between the hammock and the water bowl, where the camera sees it, and a pet that walks east along the back may poke its nose through the lamp. Commands: `BuyItem` (spends, owns, and puts the item on), `EquipItem`, `UnequipItem`. One item per slot is worn; a second takes the first off. Shopping does not wake a sleeping pet and does not count as care. The screen is a sheet along the bottom with the pet standing in front of the camera, so the player sees an outfit on at once.
 
+### 4.4 Tricks (Part 1L.7)
+
+The bond opens tricks (`src/core/tricks.ts`): **sit up** at bond 15, **bow** at 25, **spin around** at 40, **war dance** at 60 (bond is shown 0 to 100). A new pet starts at 10 and busy care adds about 4.5 a day, so the first comes on the second day and the last after about ten days. The command that carries the bond over a line adds a `MILESTONE_REACHED` event to the history (payload: trick, bond), once, and the screen says the pet learned a trick. A **Tricks** button appears in the action bar after the first. Asking for a trick is not a command: it only plays an animation on the spot, with the pet turning to face the player, and changes nothing in the pet (no bond, no shinies). A sleeping pet, or a game in progress, refuses it. Roll over was left out: it needs a new clip.
+
 ## 5. Mood (derived)
 
 First matching rule wins. All thresholds are hundredths.

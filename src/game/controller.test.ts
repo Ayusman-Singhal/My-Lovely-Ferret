@@ -372,3 +372,66 @@ describe('touching the room', () => {
     expect(touches).toEqual([]);
   });
 });
+
+describe('tricks (Part 1L.7)', () => {
+  const bonded = (bond: number) => makePet({ id: 'tricky', state: { bond, hunger: 8000, hydration: 8000, energy: 9000, happiness: 6000 } });
+
+  it('does a trick it has learned: plays the trick clip and then goes back to its day', () => {
+    const t = setup(bonded(7000));
+    t.run(5);
+    expect(t.game.doTrick('dance')).toBe(true);
+    t.run(300);
+    expect(t.bases.includes('warDance')).toBe(true);
+    t.run(400);
+    expect(t.bases[t.bases.length - 1]).not.toBe('warDance');
+  });
+
+  it('every trick plays its clip', () => {
+    for (const [id, clip] of [['sit_up', 'curious'], ['bow', 'stretch'], ['spin', 'tailChase'], ['dance', 'warDance']] as const) {
+      const t = setup(bonded(9000));
+      t.run(5);
+      expect(t.game.doTrick(id)).toBe(true);
+      t.run(300);
+      expect(t.bases.includes(clip), id).toBe(true);
+    }
+  });
+
+  it('refuses a trick the bond has not reached, an unknown trick, a sleeping pet, and a game in progress', () => {
+    const young = setup(bonded(1200));
+    young.run(5);
+    expect(young.game.doTrick('sit_up')).toBe(false);
+    const t = setup(bonded(9000));
+    t.run(5);
+    expect(t.game.doTrick('backflip')).toBe(false);
+    expect(t.game.startPlay('ball').outcome.ok).toBe(true);
+    expect(t.game.doTrick('bow')).toBe(false);
+    const asleep = setup(makePet({ id: 'zz', state: { bond: 9000, energy: 3000 } }));
+    asleep.run(5);
+    asleep.game.dispatch({ type: 'PutToBed' });
+    asleep.run(1500);
+    expect(asleep.game.doTrick('bow')).toBe(false);
+  });
+
+  it('a trick changes nothing in the pet: no bond, no needs, no shinies', () => {
+    const t = setup(bonded(9000));
+    t.run(5);
+    const before = JSON.stringify(t.game.getPet().inventory) + t.game.getPet().state.bond;
+    t.game.doTrick('spin');
+    t.run(400);
+    expect(JSON.stringify(t.game.getPet().inventory) + t.game.getPet().state.bond).toBe(before);
+  });
+
+  it('the shop sheet brings the pet to the middle facing the player, and closing it lets it go', () => {
+    const t = setup(bonded(3000));
+    t.run(5);
+    t.game.setPreview('pet');
+    expect(t.game.props().preview).toBe('pet');
+    t.run(900);
+    expect(Math.hypot(t.scene.x - 180, t.scene.z - 24)).toBeLessThan(3);
+    expect(t.scene.heading).toBeCloseTo(0.5, 1);
+    t.game.setPreview(null);
+    expect(t.game.props().preview).toBeNull();
+    t.run(800);
+    expect(t.game.brain.current()).not.toBeNull();
+  });
+});

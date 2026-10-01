@@ -5,6 +5,7 @@ import { bumpInteraction, type SaveFile } from '../../core/save';
 import type { Clock, OffsetClock } from '../../core/time';
 import type { HistoryEvent, PetRecord } from '../../core/types';
 import type { Game, PlayResult, RoomTouch } from '../../game/controller';
+import { unlockedTricks } from '../../core/tricks';
 import { giftIn } from '../../game/collection';
 import { interactionOf, nextHint } from '../../game/hints';
 import { announcements } from '../../game/needs';
@@ -18,6 +19,7 @@ import { isIosBrowserNotInstalled, readIosEnv, rememberDismissed, wasDismissed }
 import { AboutDialog } from '../components/AboutDialog';
 import { CollectionDialog } from '../components/CollectionDialog';
 import { ShopDialog } from '../components/ShopDialog';
+import { TricksDialog } from '../components/TricksDialog';
 import { ActionBar } from '../components/ActionBar';
 import { DevPanel } from '../components/DevPanel';
 import { FeedbackDialog } from '../components/FeedbackDialog';
@@ -65,7 +67,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
   const [shopMessage, setShopMessage] = useState('');
   const [live, setLive] = useState('');
   const [counters, setCounters] = useState(save.tester.interactionCounts);
-  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'collection' | 'shop' | 'dev'>('none');
+  const [dialog, setDialog] = useState<'none' | 'menu' | 'about' | 'feedback' | 'collection' | 'shop' | 'tricks' | 'dev'>('none');
   const [devUnlocked, setDevUnlocked] = useState(() => devRequested(window.location.search));
   const [iosNotice, setIosNotice] = useState(() => isIosBrowserNotInstalled(readIosEnv()) && !wasDismissed(safeLocalStorage()));
   const [welcomeOpen, setWelcomeOpen] = useState(welcome !== null);
@@ -176,6 +178,12 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
 
   // A gift arrives while the app is open: say so, and the pet is pleased.
   const onEvents = (events: HistoryEvent[]): void => {
+    const learned = events.find((e) => e.type === 'MILESTONE_REACHED');
+    if (learned) {
+      setFeedback(t('tricks.learned', { name, trick: tDynamic(`tricks.${String(learned.payload['trick'])}`) }));
+      gameRef.current?.brain.react('happy');
+      return;
+    }
     const gift = giftIn(events);
     if (gift === null) return;
     setFeedback(t('gift.found', { name, item: tDynamic(`item.${gift}`) }));
@@ -238,6 +246,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
             setFeedback(r.outcome.ok ? '' : describeResult(r, name));
           }}
           onSleep={() => act({ type: 'PutToBed' })}
+          onTricks={unlockedTricks(pet.state.bond).length > 0 ? () => setDialog('tricks') : undefined}
         />
       </div>
 
@@ -284,6 +293,18 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
         />
       )}
       {dialog === 'about' && <AboutDialog pet={pet} tester={saveRef.current.tester} nowMs={clock.nowMs()} onClose={() => setDialog('menu')} />}
+      {dialog === 'tricks' && (
+        <TricksDialog
+          pet={pet}
+          onAsk={(id) => {
+            const g = gameRef.current;
+            const ok = g?.doTrick(id) ?? false;
+            setFeedback(ok ? t('tricks.doing', { name, trick: tDynamic(`tricks.${id}`) }) : t('tricks.cannot', { name }));
+          }}
+          onPreview={(on) => gameRef.current?.setPreview(on ? 'pet' : null)}
+          onClose={() => setDialog('none')}
+        />
+      )}
       {dialog === 'shop' && (
         <ShopDialog
           pet={pet}

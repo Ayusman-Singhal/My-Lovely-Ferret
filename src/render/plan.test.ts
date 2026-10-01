@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Behavior, Decision } from '../core/petAI';
 import { ANIMATION_NAMES } from './clipSpec';
-import { SPEED, WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z, planFor, spotToX, spotToZ, stashSpot, type Phase } from './plan';
+import { PREVIEW_HEADING, SPEED, WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z, planFor, spotToX, spotToZ, stashSpot, trickPlan, type Phase } from './plan';
 import { ROOM } from './layout';
 
 const BEHAVIORS: Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'sleep', 'stretch', 'dig', 'tunnel', 'dance', 'tailchase'];
@@ -145,5 +145,22 @@ describe('the things it does for itself (Part 1L.3)', () => {
     clipOf('stretch', 'stretch');
     clipOf('dig', 'dig');
     clipOf('dance', 'warDance');
+  });
+});
+
+describe('trickPlan (Part 1L.7)', () => {
+  it('every trick stays on the spot, uses real clips, turns to face the player, and ends pleased', () => {
+    for (const id of ['sit_up', 'bow', 'spin', 'dance']) {
+      const plan = trickPlan(id);
+      expect(plan.every((p) => p.kind === 'do'), id).toBe(true);
+      for (const phase of plan) expect(ANIMATION_NAMES).toContain(phase.anim);
+      const last = plan[plan.length - 1] as Extract<Phase, { kind: 'do' }>;
+      expect(last.react, id).toBe('happy');
+      expect(plan.some((p) => p.kind === 'do' && p.heading === PREVIEW_HEADING) || id === 'spin', id).toBe(true);
+    }
+  });
+
+  it('an unknown trick is a short pause, never an error', () => {
+    expect(trickPlan('backflip')).toEqual([{ kind: 'do', anim: 'idle', ms: 300 }]);
   });
 });

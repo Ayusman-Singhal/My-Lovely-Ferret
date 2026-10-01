@@ -1,3 +1,4 @@
+/* global window */
 // End-to-end smoke test in real Chrome (guide §19): first run, naming, caring, the mini-game,
 // a reload that keeps the pet, a backup export, and the welcome-back summary after time away.
 // Run after a build: npm run build && npm run smoke. Uses the Chrome installed on the machine
@@ -232,6 +233,27 @@ try {
   await dev.getByRole('button', { name: 'Close' }).click();
   ok(((await dev.getByRole('list', { name: 'Needs' }).textContent()) ?? '').includes('12'), 'the hunger meter follows the slider');
   await dev.close();
+
+  stepName('tricks: a bonded pet shows a Tricks button, and does a trick when asked');
+  const trick = await context.newPage();
+  watch(trick);
+  await trick.goto(`${url}?pet=tricky&debug=1`, { waitUntil: 'networkidle' });
+  await trick.waitForFunction(() => window.__game, null, { timeout: 30000 });
+  ok((await trick.getByRole('button', { name: 'Tricks' }).count()) === 0, 'a new pet has no Tricks button yet');
+  await trick.evaluate(() => {
+    const g = window.__game;
+    const p = g.getPet();
+    g.replacePet({ ...p, state: { ...p.state, bond: 3000 } });
+  });
+  await trick.getByRole('button', { name: 'Tricks' }).click();
+  await trick.getByRole('button', { name: /Ask Mochi to sit up/ }).waitFor();
+  ok((await trick.getByText(/Locked\. Bond 30 of 40 needed\./).count()) === 1, 'the next trick says how much bond it needs');
+  await trick.waitForTimeout(1500);
+  await trick.getByRole('button', { name: /Ask Mochi to bow/ }).click();
+  ok((await trick.locator('.status').textContent()).includes('does the bow'), 'asking for a trick is answered');
+  await trick.waitForTimeout(900);
+  await trick.screenshot({ path: 'shots/smoke-3e-trick.png' });
+  await trick.close();
 
   stepName('iPhone in the browser: the Home Screen notice, once');
   const iphone = await browser.newContext({

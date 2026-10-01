@@ -220,6 +220,37 @@ export function previewPlan(): Phase[] {
 export const PREVIEW_SPOT = { x: 180, z: 24 } as const;
 export const PREVIEW_HEADING = 0.5;
 
+/** Tricks the player asks for (Part 1L.7). The pet stays where it is and turns to face the player. */
+export function trickPlan(id: string): Phase[] {
+  switch (id) {
+    case 'sit_up':
+      return [
+        { kind: 'do', anim: 'idle', ms: 350, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'curious', ms: 2800, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'idle', ms: 500, react: 'happy' },
+      ];
+    case 'bow':
+      return [
+        { kind: 'do', anim: 'idle', ms: 350, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'stretch', ms: 3000, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'idle', ms: 500, react: 'happy' },
+      ];
+    case 'spin':
+      return [
+        { kind: 'do', anim: 'tailChase', ms: 2200, spin: TAIL_CHASE_SPIN },
+        { kind: 'do', anim: 'idle', ms: 500, heading: PREVIEW_HEADING, react: 'happy' },
+      ];
+    case 'dance':
+      return [
+        { kind: 'do', anim: 'idle', ms: 350, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'warDance', ms: 2600, heading: PREVIEW_HEADING },
+        { kind: 'do', anim: 'idle', ms: 500, react: 'happy' },
+      ];
+    default:
+      return [{ kind: 'do', anim: 'idle', ms: 300 }];
+  }
+}
+
 /** The pet goes to the wall under the window and looks up and out of it. */
 export function windowPlan(): Phase[] {
   return [

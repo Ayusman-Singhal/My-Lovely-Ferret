@@ -9,11 +9,12 @@ import { hashString } from '../core/rng';
 import type { Clock } from '../core/time';
 import { CHASE, bandFromCatches, createChase, stepChase, type ChaseState } from '../core/toyChase';
 import { createTouchTracker } from '../core/touch';
+import { findTrick } from '../core/tricks';
 import type { HistoryEvent, PetRecord, ToyId } from '../core/types';
 import { createBrain, type Brain, type BrainScene } from '../render/brain';
 import { ROOM } from '../render/layout';
 import type { PickTarget, SceneHit, ScenePropsState } from '../render/petScene';
-import { callPlan, clampX, clampZ, fetchPlan, previewPlan, windowPlan } from '../render/plan';
+import { callPlan, clampX, clampZ, fetchPlan, previewPlan, trickPlan, windowPlan } from '../render/plan';
 
 export interface PlayResult {
   band: 0 | 1 | 2 | 3;
@@ -69,6 +70,8 @@ export interface Game {
   props(): ScenePropsState;
   /** The shop is open on a tab (or closed, null): the camera shows what the pet wears, or the whole room. */
   setPreview(mode: 'pet' | 'room' | null): void;
+  /** Ask for a trick. False when the bond is too low, the pet is asleep, or a game is on. */
+  doTrick(id: string): boolean;
   /**
    * Pointer input in logical room coordinates. Times are real milliseconds (event.timeStamp), not
    * game time, so a long press lasts 2 real seconds even when the preview runs the game faster.
@@ -267,6 +270,13 @@ export function createGame(options: GameOptions): Game {
       scene.animator.setBase(chase.pauseMs > 0 ? 'idle' : moved ? 'run' : 'curious', frameMs);
       if (chase.justCaught) scene.animator.react('happy', frameMs);
       if (chase.over) finishPlay(scene, frameMs);
+    },
+
+    doTrick(id) {
+      const trick = findTrick(id);
+      if (!trick || chase || !awake() || pet.state.bond < trick.bond) return false;
+      brain.script(trickPlan(id));
+      return true;
     },
 
     setPreview(mode) {

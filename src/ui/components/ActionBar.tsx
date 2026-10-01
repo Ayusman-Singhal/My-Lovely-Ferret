@@ -1,6 +1,6 @@
 import { t } from '../../i18n/t';
 import type { Interaction } from '../../game/hints';
-import { BallIcon, BowlIcon, DropIcon, MoonIcon } from './Icons';
+import { BallIcon, BowlIcon, DropIcon, MoonIcon, StarIcon } from './Icons';
 
 interface ActionBarProps {
   disabled: boolean;
@@ -10,10 +10,12 @@ interface ActionBarProps {
   onWater(): void;
   onPlay(): void;
   onSleep(): void;
+  /** Shown once the pet has learned a trick. */
+  onTricks?(): void;
 }
 
 /** Big, thumb-sized buttons (at least 44 px) with an icon and a word each. */
-export function ActionBar({ disabled, hinted, onFeed, onWater, onPlay, onSleep }: ActionBarProps) {
+export function ActionBar({ disabled, hinted, onFeed, onWater, onPlay, onSleep, onTricks }: ActionBarProps) {
   const button = (id: Interaction, label: string, icon: preact.ComponentChildren, onClick: () => void) => (
     <button type="button" class="action" data-hinted={hinted === id ? 'true' : undefined} disabled={disabled} onClick={onClick}>
       {icon}
@@ -21,11 +23,17 @@ export function ActionBar({ disabled, hinted, onFeed, onWater, onPlay, onSleep }
     </button>
   );
   return (
-    <nav class="actions" aria-label={t('action.bar')}>
+    <nav class="actions" aria-label={t('action.bar')} style={{ gridTemplateColumns: `repeat(${onTricks ? 5 : 4}, 1fr)` }}>
       {button('feed', t('action.feed'), <BowlIcon size={22} />, onFeed)}
       {button('water', t('action.water'), <DropIcon size={22} />, onWater)}
       {button('play', t('action.play'), <BallIcon size={22} />, onPlay)}
       {button('sleep', t('action.sleep'), <MoonIcon size={22} />, onSleep)}
+      {onTricks && (
+        <button type="button" class="action" disabled={disabled} onClick={onTricks}>
+          <StarIcon size={22} />
+          <span>{t('action.tricks')}</span>
+        </button>
+      )}
     </nav>
   );
 }

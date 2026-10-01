@@ -6,6 +6,7 @@
 
 import { findItem } from './catalog';
 import { NEED_MAX, clamp } from './fixed';
+import { newlyUnlocked } from './tricks';
 import { FOODS, TOYS } from './pet';
 import { simulate } from './simulate';
 import { MINUTE_MS, localDate } from './time';
@@ -142,16 +143,27 @@ export function applyCommand(record: PetRecord, raw: unknown, nowMs: number): Co
     inventory = { ...inventory, shinies: inventory.shinies + given };
     shinyGain += given;
   };
-  const done = (extra: Partial<Extract<Outcome, { ok: true }>> = {}, extraEvents: HistoryEvent[] = []): CommandResult => ({
-    pet: {
-      ...sim.pet,
-      state: { ...state, lastInteractionTime: nowMs },
-      inventory,
-      history: [...sim.pet.history, ...extraEvents].slice(-TUNING.history.maxEvents),
-    },
-    events: [...events, ...extraEvents],
-    outcome: { ok: true, woke: false, reaction: null, stock: null, bondGain: 0, rewarded: false, shinyGain, ...extra },
-  });
+  const done = (extra: Partial<Extract<Outcome, { ok: true }>> = {}, commandEvents: HistoryEvent[] = []): CommandResult => {
+    // A bond that grew past a line opens a trick: a memorable moment (Part 1L.7).
+    const milestones: HistoryEvent[] = newlyUnlocked(sim.pet.state.bond, state.bond).map((trick) => ({
+      id: `MILESTONE_REACHED-${trick.id}`,
+      t: nowMs,
+      type: 'MILESTONE_REACHED',
+      actor: 'pet',
+      payload: { trick: trick.id, bond: trick.bond },
+    }));
+    const extraEvents = [...commandEvents, ...milestones];
+    return {
+      pet: {
+        ...sim.pet,
+        state: { ...state, lastInteractionTime: nowMs },
+        inventory,
+        history: [...sim.pet.history, ...extraEvents].slice(-TUNING.history.maxEvents),
+      },
+      events: [...events, ...extraEvents],
+      outcome: { ok: true, woke: false, reaction: null, stock: null, bondGain: 0, rewarded: false, shinyGain, ...extra },
+    };
+  };
   /** Wear or place an item: a second item in the same slot takes the first off. */
   const equip = (id: string): void => {
     const slot = findItem(id)?.slot;
