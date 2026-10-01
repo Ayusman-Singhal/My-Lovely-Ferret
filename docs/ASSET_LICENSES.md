@@ -11,9 +11,9 @@ Rules (guide §0, §9.2, §25.1):
 
 | Asset | Used for | Author | Source | License | Attribution needed | Added |
 |---|---|---|---|---|---|---|
-| (none yet) | | | | | | |
+| "Black Footed Ferret" 3D model (base for the pet, to be rigged, animated, and repainted by the developer) | Pet model | LandyStudio | https://sketchfab.com/3d-models/black-footed-ferret-540a23f77ca74c9c9572cd6b6b25171e | CC Attribution 4.0 (commercial use allowed, changes allowed) | Yes: credit the author and say it was modified, in the in-app credits screen | 2026-10-01 (chosen, not yet committed) |
 
-Phase 1 uses only code-drawn placeholder art (`ART_STYLE.md`), so there are no third-party art assets.
+Until the 3D pet ships, the game uses only code-drawn placeholder art (`ART_STYLE.md`). The model file itself may be committed only after this row is complete.
 
 ## Code dependencies
 

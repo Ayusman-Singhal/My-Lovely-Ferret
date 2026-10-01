@@ -74,7 +74,7 @@ Unique angles no competitor has: a ferret with real ferret behavior (stealing an
 
 ## 5. The 3D decision (2026-10-01)
 
-The developer judged that a non-realistic 2D look will not satisfy users and that quality now outranks the smallest bundle. Chosen: **stylized-real 3D** (real ferret proportions and markings, soft shading, painted fur texture, expressive eyes, no real-time fur), animated by the developer in Blender, rendered with three.js. This reverses the Canvas 2D decision D5 and the "3D art dropped" rule. The spike and the new budgets are Part 1K in `docs/PLAN.md`.
+The developer judged that a flat 2D look will not satisfy users and that quality now outranks the smallest bundle. First choice was stylized-real 3D. After seeing a cute blocky ferret ("Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles) the developer chose **cute blocky 3D** instead: Blockbench style, small pixel texture, animated by the developer in Blender, rendered with three.js. This reverses the Canvas 2D decision D5 and the "3D art dropped" rule. A blocky model keeps the download tiny and runs on low-end phones, so only three.js (169 KB gzip) costs real bytes. It also makes limited-time pets cheap later (a new pet is a small model and a texture), though extra pets stay outside the MVP. Use original blocky models only, never Mojang's assets. The spike and budgets are Part 1K in `docs/PLAN.md`, and the Blender instructions are in `animation/`.
 
 ## Sources
 

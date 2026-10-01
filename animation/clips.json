@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "fps": 30,
+  "notes": "frames = length of the cycle for loops (the last keyframe is a copy of the first and is trimmed in code) or length of the clip for one-shots. Names must match the Blender action names exactly. Keep in sync with animation/CLIPS.md and src/render/animations.ts (AnimationName).",
+  "clips": {
+    "idle":     { "loop": true,  "frames": 96,  "required": true,  "behavior": "idle" },
+    "walk":     { "loop": true,  "frames": 16,  "required": true,  "behavior": "wander" },
+    "run":      { "loop": true,  "frames": 12,  "required": true,  "behavior": "playful" },
+    "sniff":    { "loop": true,  "frames": 42,  "required": true,  "behavior": "sniff" },
+    "curious":  { "loop": true,  "frames": 78,  "required": true,  "behavior": "curious" },
+    "sleep":    { "loop": true,  "frames": 126, "required": true,  "behavior": "sleep" },
+    "eat":      { "loop": true,  "frames": 24,  "required": true,  "behavior": "eat" },
+    "drink":    { "loop": true,  "frames": 36,  "required": true,  "behavior": "drink" },
+    "sneak":    { "loop": true,  "frames": 19,  "required": true,  "behavior": "steal" },
+    "happy":    { "loop": false, "frames": 39,  "required": true,  "reaction": true },
+    "annoyed":  { "loop": false, "frames": 30,  "required": true,  "reaction": true },
+    "surprise": { "loop": false, "frames": 24,  "required": true,  "reaction": true },
+    "blink":    { "loop": false, "frames": 5,   "required": true,  "reaction": true, "bones": ["eyeL", "eyeR"] }
+  },
+  "bones": [
+    "root", "body", "head", "jaw", "nose", "earL", "earR", "eyeL", "eyeR",
+    "tail1", "tail2", "legFL", "legFR", "legBL", "legBR", "carry"
+  ]
+}

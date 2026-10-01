@@ -1,0 +1,183 @@
+# Clip specs
+
+13 clips, 30 fps. Names are exact. All motion is **in place** (the pet does not travel in the clip; the game moves it and scales playback speed to match).
+
+Numbers come from the working 2D animations in `src/render/animations.ts`, converted to degrees (1 rad = 57.3 degrees). They are the feel the game was tuned for. Match the feel. Because the model is blocky and chibi, you may exaggerate pose angles by up to 30 percent. Keep the **timing**.
+
+## General rules
+
+1. **Loops** (`idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`): put keyframes on frames `0` to `N`, where frame `N` is an exact copy of frame `0`. `N` is the `frames` value in the table. The game drops frame `N` so the loop has no hitch. Key **every bone** on frame 0 and frame N (select all bones in Pose mode, then insert a keyframe).
+2. **One-shots** (`happy`, `annoyed`, `surprise`, `blink`): frame `0` and frame `N` are both the rest pose. Key only the bones that move. The game plays them on top of whatever loop is running, so they must start and end in the rest pose to avoid a pop.
+3. **Ease everything.** Use Bezier interpolation (the Blender default). No linear or constant keys except on blink if you want it snappy.
+4. **Overlap.** The tail lags the body by 3 to 5 frames. Ears lag the head by 2 to 3 frames. Never move all parts on the same frame.
+5. **Anticipate, act, settle.** A small wind-up before big moves, a small overshoot after.
+6. **Keep feet planted** on Z = 0 for standing clips. In walk and run the foot that touches down must not slide backward more than it has to.
+7. **Do not move `root`.** Do not key `carry`.
+8. Eyes: scale `eyeL` and `eyeR` on their vertical axis only. 1.0 open, 0.5 narrowed, 0.15 almost closed, 0.0 closed (use 0.05 to avoid a flat box), 1.2 wide. Both eyes together.
+9. Sign conventions: ears and head follow `RIG_SPEC.md` §5. Ear "perk" is forward and up, "flatten" is back against the head.
+
+## Summary
+
+| Clip | Type | Frames | Seconds | Plays when | Priority |
+|---|---|---|---|---|---|
+| `idle` | loop | 96 | 3.2 | Standing still, default | 1 |
+| `walk` | loop | 16 | 0.53 | Wandering, going to the bowl or bed | 1 |
+| `run` | loop | 12 | 0.40 | Zoomies, mini-game chase (playful) | 2 |
+| `sniff` | loop | 42 | 1.4 | Exploring | 2 |
+| `curious` | loop | 78 | 2.6 | Looking at something | 3 |
+| `sleep` | loop | 126 | 4.2 | Asleep in the hammock | 1 |
+| `eat` | loop | 24 | 0.8 | Eating from the bowl | 1 |
+| `drink` | loop | 36 | 1.2 | Drinking from the bowl | 1 |
+| `sneak` | loop | 19 | 0.63 | Carrying the stolen sock | 3 |
+| `happy` | one-shot | 39 | 1.3 | After petting, feeding, playing | 2 |
+| `annoyed` | one-shot | 30 | 1.0 | Woken up, refuses an action | 3 |
+| `surprise` | one-shot | 24 | 0.8 | Found item, sudden event | 3 |
+| `blink` | one-shot | 5 | 0.17 | Random, every 2 to 5 seconds | 2 |
+
+## idle (loop, 96 frames)
+
+Calm standing, alive but small. Must be pleasant to watch for minutes.
+
+- **Breathing:** `body` scales up by 2 percent on its vertical axis at frame 24 and back down at frame 72 (one slow breath per cycle). The chest lifts about 1 cm with it.
+- **Head:** very small drift, plus or minus 2 degrees nod, on a different rhythm than the breath (peaks near frames 30 and 90).
+- **Tail:** sways side to side plus or minus 7 degrees over 78 frames, `tail2` lags by 5 frames and moves plus or minus 6 degrees. Slightly raised, about 9 degrees.
+- **Ears:** relaxed, nearly upright. One quick twitch (about 17 degrees, 8 frames) of `earR` around frame 20 and of `earL` around frame 68. Never both at once.
+- **Nose:** tiny twitch (scale 1.0 to 1.15) twice per cycle.
+- Everything else at rest. Eyes open (the game does the blinking).
+
+## walk (loop, 16 frames)
+
+A cute, bouncy ferret walk. Diagonal pairs move together: `legFL` with `legBR`, and `legFR` with `legBL`.
+
+- **Legs:** swing plus or minus 31 degrees around the rest pose. The pairs are half a cycle (8 frames) apart.
+- **Body bob:** the body rises about 2 percent of body length twice per cycle (once for each step), lowest when a pair passes under the body.
+- **Body sway:** plus or minus 2 degrees of turn (yaw) twice per cycle, so the spine wiggles.
+- **Head:** nods plus or minus 3 degrees twice per cycle, a frame or two behind the body.
+- **Tail:** one slow swing per cycle, plus or minus 6 degrees, `tail2` a few frames behind.
+- **Ears:** relaxed, flattened 9 degrees.
+- The game sets the playback speed so feet match the ground speed. Make the stride look natural at normal speed.
+
+## run (loop, 12 frames), "zoomies"
+
+A bounding gallop for the playful behavior. This is the happiest-looking clip: big and fast, but still readable at 0.4 seconds.
+
+- **Legs:** swing plus or minus 49 degrees. Gallop pairs: both front legs reach forward together while both back legs push, then swap. There is a flight phase: all feet off the floor for about 2 frames.
+- **Body:** hops up to 5 percent of body length. Stretches 10 percent longer at full extension and squashes 4 percent shorter at landing (use scale on `body`).
+- **Head:** raised 6 degrees, nods plus or minus 3 degrees twice per cycle.
+- **Tail:** high, raised 40 degrees with a plus or minus 9 degree flick, `tail2` curled up another 17 degrees.
+- **Ears:** pinned back 23 degrees.
+- **Mouth:** `jaw` open about 15 degrees (a happy pant).
+
+## sniff (loop, 42 frames)
+
+Nose to the ground, investigating.
+
+- **Head:** nod down 14 degrees with a plus or minus 5 degree bob over the whole cycle. Slides side to side by about 1 cm every 21 frames.
+- **Nose:** twitches fast, scale 1.0 to 1.4 every 3 frames. This is the star of the clip.
+- **Body:** leans forward 3 degrees. `legFL` is lifted slightly (6 degrees).
+- **Ears:** perked forward 11 degrees.
+- **Tail:** low, a slow plus or minus 5 degree swing.
+
+## curious (loop, 78 frames)
+
+Standing a bit taller and looking at something, head tilting.
+
+- **Body:** nose up 9 degrees (rearing slightly), lifted 1 percent.
+- **Head:** raised 14 degrees with a slow plus or minus 6 degree nod, tilted side to side plus or minus 4 degrees (tilt) over the cycle.
+- **Eyes:** wide, scale 1.2 (or 1.15 to keep the cute proportion).
+- **Ears:** perked forward 17 degrees.
+- **Nose:** a moderate twitch every 5 frames.
+- **Front legs:** a slight step back, 6 degrees.
+- **Tail:** raised 23 degrees, plus or minus 6 degree sway.
+
+## sleep (loop, 126 frames)
+
+Curled up in a ball. Nearly still, so the game can draw it at 10 frames per second. Only breathing moves.
+
+- **Pose:** the body lowers onto the floor (about 8 percent of its height), flattened to 86 percent on its vertical axis, shortened to 92 percent. `legFL`, `legFR`, `legBL`, `legBR` tucked under (swing and fold). Tail wraps around the body (158 degrees around `tail1`, 40 degrees more on `tail2`). Head tucked down toward the chest and a little to the side (31 degrees), ears flat and folded down 29 degrees. Eyes closed (scale 0.05).
+- **Loop:** only a slow breath. `body` vertical scale 0.86 to 0.895 (plus 3.5 percent) and back across 126 frames.
+- The game blends in and out with a short crossfade. You do not need to make a "lie down" or "wake up" clip.
+- Make sure the mesh does not poke through the floor or itself in this pose.
+
+## eat (loop, 24 frames)
+
+Head in the bowl, chewing. Three chews per cycle (every 8 frames).
+
+- **Head:** lowered 43 degrees and pushed forward 2 cm.
+- **Jaw:** opens and closes with each chew: closed at frames 0, 8, 16, 24 and open about 22 degrees at frames 4, 12, 20.
+- **Body:** leans forward 6 degrees. Back legs stay planted.
+- **Ears:** relaxed, flattened 6 degrees.
+- **Tail:** gentle plus or minus 9 degree sway, raised 11 degrees.
+
+## drink (loop, 36 frames)
+
+Lapping water.
+
+- **Head:** lowered 54 degrees and pushed forward 3 cm. Lower than `eat`.
+- **Jaw:** a fast lap every 6 frames, open about 15 degrees.
+- **Body:** leans forward 8 degrees. Front legs planted.
+- **Nose:** a small twitch every 12 frames.
+- **Ears:** back 17 degrees.
+- **Tail:** low, plus or minus 6 degree sway.
+
+## sneak (loop, 19 frames)
+
+A low, mischievous walk. The pet carries a sock in its mouth (the game attaches it to `carry`, so keep the head steady enough that it reads).
+
+- **Legs:** swing plus or minus 26 degrees, diagonal pairs like `walk`, slower and smaller.
+- **Body:** low, 3 percent lower than `walk`, squashed to 92 percent on its vertical axis. Tiny bob only.
+- **Head:** raised 11 degrees (holding the item up), side to side about 1 cm every 19 frames, like it is checking around.
+- **Ears:** flat back 14 degrees.
+- **Tail:** low, nearly still.
+- **Eyes:** narrowed to 0.7.
+
+## happy (one-shot, 39 frames)
+
+Joy. Plays on top of whatever loop is running after petting, feeding, or playing.
+
+- **Three hops** (one every 13 frames): body lifts up to 9 percent of body length, with a squash on each landing (vertical scale 0.94 for 3 frames, then back).
+- **Tail:** raised 23 degrees and wagging fast (a full back and forth every 4 frames, plus or minus 29 degrees), `tail2` lagging 2 frames.
+- **Head:** raised 6 degrees.
+- **Eyes:** happy squint, scale 0.3 from frame 5 to frame 33 (the cute closed-smile look).
+- **Mouth:** `jaw` open about 15 degrees.
+- Start and end on the rest pose.
+
+## annoyed (one-shot, 30 frames)
+
+A grumpy reaction (woken up, refusing a command). Cute grumpy, never scary.
+
+- **Head:** shakes plus or minus 10 degrees (turn), a full shake every 5 frames, for 5 shakes.
+- **Ears:** flatten 40 degrees by frame 3, stay, release by frame 28.
+- **Tail:** flicks plus or minus 17 degrees, a full flick every 8 frames, raised 11 degrees.
+- **Body:** squashes 3 percent.
+- **Eyes:** narrowed to 0.5 from frame 3 to frame 26.
+
+## surprise (one-shot, 24 frames)
+
+A startled hop.
+
+- **Jump:** body lifts 10 percent of body length by frame 5, back down by frame 9 (fast up, quick settle).
+- **Body:** stretches 5 percent taller (vertical scale 1.05), leans back 6 degrees, held until frame 20.
+- **Head:** raised 11 degrees.
+- **Ears:** perked forward 14 degrees.
+- **Tail:** shoots up 52 degrees.
+- **Eyes:** wide, scale 1.2.
+- **Mouth:** `jaw` open about 8 degrees from frame 5 to frame 18.
+
+## blink (one-shot, 5 frames)
+
+`eyeL` and `eyeR` only. Open (1.0) at frame 0, half (0.5) at frame 1, closed (0.05) at frame 2, half at frame 3, open at frame 4. Use linear interpolation for a crisp blink. The game plays it at random times. Do not key any other bone in this clip.
+
+## After the first export
+
+If a clip feels too slow or fast, tell Claude. The game can change the playback speed per clip and the crossfade time, so you do not need to re-export for pure timing changes.
+
+## Later and optional
+
+| Clip | Why | When |
+|---|---|---|
+| `warDance` | Weasel war dance when very happy, the signature ferret move (proposal A1, `docs/MARKET_RESEARCH.md`) | After approval |
+| `dook` | A chirping hop-walk | After approval |
+| `deadSleep` | Flopped on the side, limp | After approval |
+| `shake` | Shake after waking up | After approval |
+| `scratch`, `groom` | Phase 2 (guide §9.1) | Phase 2 |

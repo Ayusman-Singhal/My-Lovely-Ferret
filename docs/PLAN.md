@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D (stylized-real, Blender clips, three.js). Next: Part 1K, 3D pivot (task 1K.1, verify facts, then the spike), before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Next: Part 1K, 3D pivot (task 1K.3, the spike, while the developer prepares the model), before Part 1H. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -31,6 +31,7 @@ Decided in the setup session (2026-09-30), from guide §3 defaults unless noted:
 
 Open items that do not block Phase 1:
 
+- Limited-time or extra pets (for example a blocky baby pink sheep, original art): out of the MVP (CLAUDE.md, guide §0). The rig and clip names in `animation/RIG_SPEC.md` §7 are kept species-agnostic so a new pet needs no code change. Decide at Phase 2 planning.
 - Hindi translator and reviewer (needed at Phase 2, guide §25.9).
 - Android minimum OS and WebView version (Phase 5, guide §25.6).
 - (Resolved) Pixi versus Canvas 2D: Canvas 2D, see Part 1C.
@@ -178,13 +179,13 @@ Goal (guide §20): open the page and feel like a little creature lives there. On
 
 ## Part 1K: 3D pivot (inserted 2026-10-01, runs before 1H)
 
-Why: the developer decided quality now outranks the smallest bundle, and a flat 2D ferret will not satisfy users (`docs/MARKET_RESEARCH.md` §5). Look: stylized-real. Clips: made by the developer in Blender. This replaces decision D5 (Canvas 2D) once the spike numbers are approved. The logical 360 by 540 room stays; the 3D scene maps it to a floor plane, so `src/core`, `src/game`, `src/ui`, `brain.ts`, `plan.ts`, and `loop.ts` stay as they are.
+Why: the developer decided quality now outranks the smallest bundle, and a flat 2D ferret will not satisfy users (`docs/MARKET_RESEARCH.md` §5). Look: **cute blocky** (changed from stylized-real on 2026-10-01 after the developer picked the model below). Clips: made by the developer in Blender. This replaces decision D5 (Canvas 2D) once the spike numbers are approved. The logical 360 by 540 room stays; the 3D scene maps it to a floor plane, so `src/core`, `src/game`, `src/ui`, `brain.ts`, `plan.ts`, and `loop.ts` stay as they are.
 
-Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB, first-run art 2.5 MB, scene ready 4 s on slow 4G plus 4x CPU (loading screen visible under 1 s), texture memory 64 MB, ferret at most about 8K triangles, 40 bones, 1024 textures.
+Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB (three.js is 169 KB of it), first-run art 1 MB (blocky model and 64 by 64 textures are a few KB), scene ready 4 s on slow 4G plus 4x CPU (loading screen visible under 1 s), texture memory 32 MB, ferret at most about 500 triangles, 24 bones, one 64 by 64 texture. The developer's Blender instructions are in `animation/` (README, RIG_SPEC, CLIPS, BLENDER_GUIDE, clips.json).
 
 - [x] 1K.0 (S) `docs/MARKET_RESEARCH.md` written, proposals A1 to A11 and C1 to C4 recorded there as pending.
 - [x] 1K.1 (S) Verify and log in `docs/VERIFY_LOG.md`: three.js version and gzip cost with GLTFLoader and skinning, WebGL on target browsers and Android WebView, gltfpack and meshopt options (WebP textures, not KTX2), Sketchfab license terms (CC-BY attribution, "NoAI" tag, no NC or ND).
-- [ ] 1K.2 (S) Shortlist ferret models with license checked. Developer picks one. CC0 room furniture (Kenney, Quaternius).
+- [x] 1K.2 (S) Model chosen 2026-10-01: "Black Footed Ferret" by LandyStudio, CC-BY 4.0, 132 triangles, no rig, no animations (checked through the Sketchfab API). Recorded in `docs/ASSET_LICENSES.md`. Still to do: CC0 room furniture (Kenney, Quaternius) at 1K.8.
 - [ ] 1K.3 (M) Dev-only spike page: three.js, GLTFLoader, meshopt, the ferret in a box room. Reusable startup measurement script in `scripts/` (closes 1C.5). Record numbers in `docs/PERFORMANCE.md` §3.2.
 - [ ] 1K.4 (developer) Approve or change the budgets from the numbers. Then add `three` to `package.json` and update `scripts/budgets.json`.
 - [ ] 1K.5 (S) Update CLAUDE.md, this file (decision D6), `ART_STYLE.md`, `ART_ASSET_LIST.md`, `ASSET_LICENSES.md`. Add `docs/ART_PIPELINE_3D.md` (Blender export rules and clip names).
@@ -196,7 +197,7 @@ Proposed budgets, to confirm at 1K.4: initial JS gzip 350 KB, first-run art 2.5 
 - [ ] 1K.11 (M) Update `npm run smoke`, `scripts/shots.mjs`, and a dev clip gallery. All existing tests pass.
 - [ ] 1K.12 (S) Delete the 2D rig and its tests after smoke passes. Measure, record in `docs/PERFORMANCE.md`. Report at the end of the part.
 
-Developer track (parallel): Blender work to the 1K.5 pipeline doc. Clips named `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`. Until they exist the game plays the rest pose, so code work is not blocked. The Phase 1 gate waits on the clips.
+Developer track (parallel): Blender work following `animation/BLENDER_GUIDE.md` (written in 1K.2, replaces the planned `ART_PIPELINE_3D.md`). Clips named `idle`, `walk`, `run`, `sniff`, `curious`, `sleep`, `eat`, `drink`, `sneak`, `happy`, `annoyed`, `surprise`, `blink`. Until they exist the game plays the rest pose, so code work is not blocked. The Phase 1 gate waits on the clips.
 
 ## Part 1H: Tester tools
 
