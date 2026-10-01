@@ -83,6 +83,8 @@ How to read it:
 - The 154 KB lives in a **dynamic import**, so `scripts/check-budgets.mjs` counts only the 1.1 KB entry. That is the loophole warned about at the end of §3.1. When the 3D scene joins the app (task 1K.6), the budget script must count the scene chunk too (name it in `scripts/budgets.json`), so the real initial cost stays visible. Today's app is 27.5 KB gzip, so app plus scene is about 182 KB.
 - Model animation data is most of the file, because every clip stores keys for all 17 bones even when a bone does not move. Dropping constant tracks and compressing is possible when it matters.
 
+**Re-measured with rig v2 (2026-10-01, later the same day).** The developer rebuilt the rig (22 bones, two-box legs, split torso, 264 triangles) and the 13 clips. Same method: model 299 KB raw, **73.9 KB gzip** (was 27.9), 231 KB over the wire, scene ready **median 2.14 s** (2.11 to 2.20 s) on the slow profile, phases: entry 0.38 s, model bytes in 1.31 s, three.js code 1.82 s, first draw 2.14 s. 0 frames while paused. 292 triangles and 24 draw calls with the room. The animation data (22 bones x 3 channels x 13 clips, all keyed) is most of the size. `gltf-transform optimize --compress meshopt` (scratch run) brings the file to 215 KB raw and **31.8 KB gzip**, which would bring the model back to about 0.9 s on this profile. Worth doing at 1K.6, not needed to meet the budgets.
+
 Findings against the proposed budgets (`docs/PLAN.md` Part 1K): they hold with a wide margin. Suggested tighter values to approve at 1K.4: initial JS including the scene chunk at most 250 KB gzip, first-run art at most 1 MB, scene ready at most 3 s on the slow profile, texture memory at most 32 MB.
 
 ## 4. Decisions made to stay within budget
