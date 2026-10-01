@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'preact/hooks';
 import { createPet } from '../core/pet';
 import { createEmptySave, defaultSettings, type SaveFile } from '../core/save';
-import { createScaledClock, type Clock } from '../core/time';
+import { createOffsetClock, createScaledClock, type Clock, type OffsetClock } from '../core/time';
 import type { PetRecord } from '../core/types';
 import { bootSession, type BootResult } from '../game/session';
 import { t } from '../i18n/t';
 import { createMemoryBackend } from '../platform/memoryBackend';
 import { createFirstRunSave, createSaveStore, type SaveStore, type SaveStoreDeps } from '../platform/saveStore';
 import { createIdbBackend } from '../platform/web/idbBackend';
+import { copyText } from '../platform/web/clipboard';
+import { createErrorLog, formatErrorReport, installErrorHandler } from '../platform/web/errorReport';
 import { requestPersistentStorage } from '../platform/web/persist';
+import { ErrorBanner } from './components/Notices';
 import { Home } from './screens/Home';
 import { Onboarding } from './screens/Onboarding';
 import { Recovery } from './screens/Recovery';
@@ -20,12 +23,36 @@ import { Recovery } from './screens/Recovery';
 type Screen =
   | { kind: 'loading' }
   | { kind: 'boot'; boot: BootResult; store: SaveStore; deps: SaveStoreDeps; saveUnavailable: boolean }
-  | { kind: 'preview'; pet: PetRecord; save: SaveFile; clock: Clock }
+  | { kind: 'preview'; pet: PetRecord; save: SaveFile; clock: OffsetClock }
   | { kind: 'home'; save: SaveFile; pet: PetRecord; store: SaveStore; saveUnavailable: boolean };
 
 const realClock: Clock = { nowMs: () => Date.now() };
+/** The one clock real play reads. Plain play never moves its offset; only the dev panel does (guide §25.7). */
+const gameClock: OffsetClock = createOffsetClock(realClock);
+/** The last few uncaught errors, for "copy error details" (guide §25.3). */
+const errorLog = createErrorLog();
 
+/** Shows a small notice after an uncaught error and lets the tester copy the details. */
 export function App() {
+  const [errored, setErrored] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => installErrorHandler(window, errorLog, () => Date.now(), () => { setErrored(true); setCopied(false); }), []);
+
+  const copyDetails = (): void => {
+    const text = formatErrorReport(errorLog.list(), { version: __APP_VERSION__, userAgent: navigator.userAgent, url: window.location.origin + window.location.pathname, nowIso: new Date().toISOString() });
+    void copyText(text).then((ok) => setCopied(ok));
+  };
+
+  return (
+    <>
+      <Screens />
+      {errored && <ErrorBanner copied={copied} onCopy={copyDetails} onDismiss={() => { setErrored(false); errorLog.clear(); }} />}
+    </>
+  );
+}
+
+function Screens() {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
 
   useEffect(() => {
@@ -39,7 +66,7 @@ export function App() {
 
       if (params.has('pet') || params.has('speed')) {
         const speed = Math.min(600, Math.max(1, Number(params.get('speed')) || 1));
-        const clock = createScaledClock(() => Date.now(), () => performance.now(), speed);
+        const clock = createOffsetClock(createScaledClock(() => Date.now(), () => performance.now(), speed));
         const pet = createPet({
           id: params.get('pet') ?? 'demo-pet-1',
           name: 'Mochi',
@@ -72,11 +99,11 @@ export function App() {
   if (screen.kind === 'loading') return <p class="loading">{t('app.loading')}</p>;
 
   if (screen.kind === 'preview') {
-    return <Home save={screen.save} pet={screen.pet} welcome={null} clock={screen.clock} store={null} />;
+    return <Home save={screen.save} pet={screen.pet} welcome={null} clock={screen.clock} offsetClock={screen.clock} store={null} />;
   }
 
   if (screen.kind === 'home') {
-    return <Home save={screen.save} pet={screen.pet} welcome={null} clock={realClock} store={screen.store} saveUnavailable={screen.saveUnavailable} />;
+    return <Home save={screen.save} pet={screen.pet} welcome={null} clock={gameClock} offsetClock={gameClock} store={screen.store} saveUnavailable={screen.saveUnavailable} />;
   }
 
   const { boot, store, deps, saveUnavailable } = screen;
@@ -99,7 +126,7 @@ export function App() {
     return (
       <Onboarding
         save={boot.save}
-        clock={realClock}
+        clock={gameClock}
         onAdopted={(save, pet) => {
           void store.save(save).catch(() => undefined); // Home saves again and reports a problem
           setScreen({ kind: 'home', save, pet, store, saveUnavailable });
@@ -108,5 +135,5 @@ export function App() {
     );
   }
 
-  return <Home save={boot.save} pet={boot.pet} welcome={boot.welcome} clock={realClock} store={store} saveUnavailable={saveUnavailable} />;
+  return <Home save={boot.save} pet={boot.pet} welcome={boot.welcome} clock={gameClock} offsetClock={gameClock} store={store} saveUnavailable={saveUnavailable} />;
 }

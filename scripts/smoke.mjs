@@ -138,6 +138,81 @@ try {
   await later.getByRole('button', { name: 'OK' }).click();
   await later.getByRole('dialog').waitFor({ state: 'detached' });
 
+  stepName('tester tools: About my pet, feedback, the hidden developer tools, copy error details');
+  // The page from step 9 is still open (8 hours later), which is a good moment to look at the counters.
+  await later.getByRole('button', { name: 'Menu' }).click();
+  await later.getByRole('button', { name: 'About my pet' }).click();
+  const about = later.getByRole('dialog', { name: /About Mochi/ });
+  await about.waitFor();
+  const aboutText = await about.textContent();
+  ok(/Day \d+ together/.test(aboutText ?? ''), 'it says which day it is');
+  ok(/meals: [1-9]/.test(aboutText ?? ''), 'it counts the meal fed in step 5');
+  ok(/games: [1-9]/.test(aboutText ?? ''), 'it counts the game played in step 6');
+  ok(/opened the game [2-9]\d* times/.test(aboutText ?? ''), 'it counts the sessions');
+  ok((aboutText ?? '').includes('stay on your device'), 'it says the numbers stay on the device');
+  await later.getByRole('button', { name: 'Close' }).click();
+
+  await later.getByRole('button', { name: 'Send feedback' }).click();
+  const feedback = later.getByRole('dialog', { name: 'Send feedback' });
+  await feedback.waitFor();
+  await feedback.getByRole('textbox').fill('So cute!');
+  await feedback.getByText('What will be sent').click();
+  const preview = (await feedback.locator('.preview').textContent()) ?? '';
+  ok(preview.startsWith('So cute!') && preview.includes('Sessions:') && preview.includes('Things done: feed'), 'the preview has the message and the counters');
+  ok(!/install/i.test(preview), 'no install id in the feedback');
+  await feedback.getByRole('button', { name: 'Copy feedback' }).click();
+  ok(((await feedback.getByRole('status').textContent()) ?? '').length > 0, 'copying answers with a message');
+  await feedback.getByRole('button', { name: 'Close' }).click();
+
+  ok((await later.getByRole('button', { name: 'Developer tools' }).count()) === 0, 'developer tools are hidden at first');
+  for (let i = 0; i < 7; i++) await later.getByText(/Preview build/).click();
+  ok((await later.getByRole('button', { name: 'Developer tools' }).count()) === 1, 'seven taps on the version line reveal them');
+  await later.getByRole('button', { name: 'Close' }).last().click();
+
+  await later.evaluate(() => { void Promise.reject(new Error('smoke test error')); });
+  await later.getByRole('alert').waitFor();
+  await later.getByRole('button', { name: 'Copy error details' }).click();
+  await later.getByText('Copied. Please send it to us.').waitFor();
+  await later.getByRole('button', { name: 'Dismiss' }).click();
+  errors.length = 0; // the error above was thrown on purpose
+  await later.close();
+
+  stepName('developer tools in a preview: clock, needs, behaviors');
+  const dev = await context.newPage();
+  watch(dev);
+  await dev.goto(`${url}?pet=devtest&dev=1`, { waitUntil: 'networkidle' });
+  await dev.getByRole('button', { name: 'Menu' }).click();
+  await dev.getByRole('button', { name: 'Developer tools' }).click();
+  const panel = dev.getByRole('dialog', { name: 'Developer tools' });
+  await panel.waitFor();
+  await panel.getByRole('button', { name: '+8 hours' }).first().click();
+  await panel.getByText('Clock moved forward by 8 hours.').waitFor();
+  ok(true, 'the clock moves by hand');
+  await panel.getByLabel(/^hunger/).fill('12');
+  await dev.waitForTimeout(200);
+  await panel.getByRole('button', { name: 'Close' }).last().click();
+  await dev.getByRole('button', { name: 'Close' }).click();
+  ok(((await dev.getByRole('list', { name: 'Needs' }).textContent()) ?? '').includes('12'), 'the hunger meter follows the slider');
+  await dev.close();
+
+  stepName('iPhone in the browser: the Home Screen notice, once');
+  const iphone = await browser.newContext({
+    viewport: { width: 390, height: 780 },
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    hasTouch: true,
+  });
+  const phone = await iphone.newPage();
+  watch(phone);
+  await phone.goto(`${url}?pet=ios`, { waitUntil: 'networkidle' });
+  await phone.getByText(/Add this page to your Home Screen/).waitFor();
+  await phone.screenshot({ path: 'shots/smoke-6-ios.png' });
+  await phone.getByRole('button', { name: 'Got it' }).click();
+  ok((await phone.getByText(/Add this page to your Home Screen/).count()) === 0, 'the notice goes away');
+  await phone.reload({ waitUntil: 'networkidle' });
+  await phone.getByRole('button', { name: 'Menu' }).waitFor();
+  ok((await phone.getByText(/Add this page to your Home Screen/).count()) === 0, 'and stays away after a reload');
+  await iphone.close();
+
   stepName('no errors in the console');
   ok(errors.length === 0, errors.length ? errors.join(' | ') : 'clean');
   console.log('\nSmoke test passed.');

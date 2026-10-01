@@ -46,6 +46,8 @@ export interface Game {
   readonly world: AIWorld;
   readonly brain: Brain;
   getPet(): PetRecord;
+  /** Dev panel only (guide §25.7): put a changed pet in place of the current one. */
+  replacePet(next: PetRecord): void;
   /** Run a command through the command layer and show its effects. */
   dispatch(command: Command): CommandResult;
   /** StartPlay, and if the pet is willing, begin the toy-chase mini-game. */
@@ -138,6 +140,11 @@ export function createGame(options: GameOptions): Game {
     world,
     brain,
     getPet: () => pet,
+    replacePet(next) {
+      pet = next;
+      petChanged = true;
+      options.onChange?.();
+    },
     dispatch,
 
     startPlay(toyId) {

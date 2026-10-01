@@ -2,7 +2,7 @@
 
 Source of truth for design: `PET_GAME_GUIDE_v3.md` (cited as "guide §N"). Working rules: `CLAUDE.md`.
 
-**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Size budgets relaxed (D7). Part 1K done except the three painted coat textures (1K.9, the developer's Blender-side step 8): the real app now shows the 3D ferret (sleeping, eating, mini-game, petting all verified in Chrome, smoke test passes). Next: Part 1H, tester tools. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
+**Current status:** Phase 1, Parts 1A to 1G done (341 tests plus the smoke test). Market research done (`docs/MARKET_RESEARCH.md`). Developer decided on 2026-10-01 to move the pet to 3D: cute blocky ferret (LandyStudio, CC-BY 4.0), clips made by the developer in Blender (`animation/`), rendered with three.js. Animation export done (13 clips, `animation/export/ferret.glb`). Part 1K.3 spike done: three.js 154 KB gzip, scene ready 1.88 s on the slow profile (`docs/PERFORMANCE.md` §3.2). Size budgets relaxed (D7). Part 1K done except the three painted coat textures (1K.9, the developer's Blender-side step 8): the real app now shows the 3D ferret (sleeping, eating, mini-game, petting all verified in Chrome, smoke test passes). Part 1H done (tester tools: dev panel, About my pet, feedback, error copy, iOS notice; smoke test covers them). Next: Part 1I, PWA. Preview URL: https://ayusman-singhal.github.io/My-Lovely-Ferret/  Dev URLs: ?pet=anything (test pet, no saving), ?speed=600 (fast time, no saving), ?debug=1.
 
 How to use this file: take the next unchecked task in the current part, do it, tick it, update the status line above. Sizes: S (under an hour), M (a few hours), L (a day or more). Stop at the end of each part and at each phase gate.
 
@@ -204,11 +204,11 @@ Developer track (parallel): Blender work following `animation/BLENDER_GUIDE.md` 
 
 ## Part 1H: Tester tools
 
-- [ ] 1H.1 (M) Dev panel (clock control through the single time source, seed override, need setters, behavior trigger, save inspector). Excluded from production or behind a hidden gesture.
-- [ ] 1H.2 (S) Local tester counters and an "About my pet" screen (guide §25.3).
-- [ ] 1H.3 (S) One-tap feedback (`mailto:` or a free form) including the counters.
-- [ ] 1H.4 (S) `window.onerror` handler with "copy error details".
-- [ ] 1H.5 (S) iOS Safari outside an installed PWA: "Add to Home Screen, and export a backup" message.
+- [x] 1H.1 (M) Done 2026-10-01 (`DevPanel.tsx`, `devTools.ts`). Dev panel (clock control through the single time source, seed override, need setters, behavior trigger, save inspector). Excluded from production or behind a hidden gesture.
+- [x] 1H.2 (S) Done 2026-10-01 (`AboutDialog.tsx`, `aboutPet.ts`). Local tester counters and an "About my pet" screen (guide §25.3).
+- [x] 1H.3 (S) Done 2026-10-01 (`FeedbackDialog.tsx`, `feedback.ts`). One-tap feedback (`mailto:` or a free form) including the counters.
+- [x] 1H.4 (S) Done 2026-10-01 (`errorReport.ts`, `Notices.tsx`). `window.onerror` handler with "copy error details".
+- [x] 1H.5 (S) Done 2026-10-01 (`ios.ts`, `Notices.tsx`). iOS Safari outside an installed PWA: "Add to Home Screen, and export a backup" message.
 
 ## Part 1I: PWA
 

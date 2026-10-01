@@ -265,3 +265,30 @@ describe('export and import', () => {
     expect(store.exportFileName()).toBe('ferret-backup-20261001.json');
   });
 });
+
+describe('debugCorrupt (dev panel)', () => {
+  it('damaging the newest slot makes load fall back to the older copy', async () => {
+    const { store } = makeStore();
+    const id = await store.getInstallId();
+    await store.save(saveWithPet(id, 'older'));
+    await store.save(saveWithPet(id, 'newer'));
+    await store.debugCorrupt('newest');
+    const info = await store.loadWithInfo();
+    expect(info.status).toBe('recovered');
+    expect(info.file?.pets[0]?.pet.id).toBe('older');
+  });
+
+  it('damaging both slots gives the corrupt status and never throws', async () => {
+    const { store } = makeStore();
+    const id = await store.getInstallId();
+    await store.save(saveWithPet(id));
+    await store.debugCorrupt('both');
+    expect((await store.loadWithInfo()).status).toBe('corrupt');
+  });
+
+  it('with nothing saved it still leaves nothing readable', async () => {
+    const { store } = makeStore();
+    await store.debugCorrupt('newest');
+    expect((await store.loadWithInfo()).file).toBeNull();
+  });
+});

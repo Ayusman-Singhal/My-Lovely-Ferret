@@ -34,6 +34,7 @@ The developer is a solo developer with no budget. Cut scope before adding it.
 | `node scripts/shots.mjs` | Screenshots of the running app (3D ferret) into `shots/` (uses installed Chrome). Look at them after changing the room, the model, or the layout |
 | `node scripts/measure-startup.mjs 5 app` | Builds the app and measures size and start-up time on a slow 4G + 4x CPU profile (`spike` instead of `app` measures the dev clip viewer `dev/ferret3d.html`) |
 | `npm run smoke` | End-to-end test in real Chrome against the built app (run `npm run build` first): first run, naming, care, mini-game, reload, backup, welcome-back. Takes about 40 seconds |
+| Tester tools | `?dev=1` (or 7 taps on the version line in the menu) opens developer tools. The menu has About my pet and Send feedback. Set `FEEDBACK_EMAIL` and `FEEDBACK_FORM_URL` as GitHub repository variables (or `VITE_FEEDBACK_EMAIL`, `VITE_FEEDBACK_FORM_URL` in a local `.env`) to point feedback at a mailbox or a form. Without them testers can still copy the text |
 | `npm run check` | typecheck, lint, test, build, size. Run before every commit that changes code |
 
 ## Layout (guide §18)

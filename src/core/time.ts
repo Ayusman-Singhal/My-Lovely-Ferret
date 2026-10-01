@@ -70,6 +70,32 @@ export function createManualClock(startMs: number): ManualClock {
   };
 }
 
+/**
+ * The game clock with a hand-set offset on top of a base clock, for the dev panel (guide §25.7).
+ * Everything that needs "now" reads this one clock, so moving it moves the whole game together and
+ * nothing patches `Date`. Plain play never changes the offset.
+ */
+export interface OffsetClock extends Clock {
+  offsetMs(): number;
+  /** Move "now" forward (or back, with a negative number). */
+  advance(ms: number): void;
+  reset(): void;
+}
+
+export function createOffsetClock(base: Clock): OffsetClock {
+  let offset = 0;
+  return {
+    nowMs: () => base.nowMs() + offset,
+    offsetMs: () => offset,
+    advance: (ms) => {
+      offset += ms;
+    },
+    reset: () => {
+      offset = 0;
+    },
+  };
+}
+
 export type ResyncResult = 'same' | 'forward' | 'backward-ignored';
 
 export interface SessionClock extends Clock {

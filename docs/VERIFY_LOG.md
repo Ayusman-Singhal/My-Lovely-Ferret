@@ -100,3 +100,12 @@ Full table with status per fact (confirmed, reported, unverified) is in `ferret-
 | DevEx | 30,000 Robux minimum, 13+, about $0.0035 per Robux (one source says $0.0054 for US 18+ verified). **India eligibility not verified** (official page returned HTTP 403) | https://generalistprogrammer.com/tutorials/roblox-devex-guide-how-to-cash-out-robux |
 
 Decision: publish for 16+ and Trusted Friends, pay no Robux. Re-check on the day of publishing.
+
+## 2026-10-01: iOS Safari storage rule (Part 1H.5)
+
+| Fact | Result | Source |
+|---|---|---|
+| Safari's tracking prevention deletes all script-writable storage (IndexedDB, localStorage, service worker registrations and caches) after 7 days of Safari use without the person interacting with the site | Confirmed. It counts days of Safari use, not calendar days | https://webkit.org/tracking-prevention/ |
+| A site added to the Home Screen as a web app is exempt, and its data is kept apart from Safari | Confirmed | same page |
+
+Decision: the browser build shows a one-time notice on iPhones and iPads that are not launched from the Home Screen: "Add this page to your Home Screen, and export a backup." (`src/platform/web/ios.ts`). A lost pet on non-installed iOS Safari is not a Phase 1 gate failure (guide §25.3).

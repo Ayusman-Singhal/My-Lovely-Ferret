@@ -59,6 +59,11 @@ export interface SaveStore {
   /** Validates checksum and schema, then replaces the save. Keeps this install's installId. */
   import(blob: Blob): Promise<SaveFile>;
   getInstallId(): Promise<string>;
+  /**
+   * Dev panel only (guide §25.7): damage the newest slot, or both, so a reload exercises the
+   * fallback and the recovery screen. Never called by normal play.
+   */
+  debugCorrupt(which: 'newest' | 'both'): Promise<void>;
 }
 
 export interface SaveStoreDeps {
@@ -153,6 +158,16 @@ export function createSaveStore(backend: KeyValueBackend, deps: SaveStoreDeps): 
     return { file: null, status: anyPresent ? 'corrupt' : 'empty', problems };
   };
 
+  const debugCorrupt = async (which: 'newest' | 'both'): Promise<void> => {
+    const slots = await readSlots();
+    const best = bestOf(slots);
+    const targets: SlotKey[] = which === 'both' || !best ? [...SLOT_KEYS] : [best.key];
+    for (const key of targets) {
+      const record: SlotRecord = { seq: 1_000_000, checksum: 'damaged-on-purpose', json: '{"damaged":' };
+      await backend.set(slotStorageKey(key), record);
+    }
+  };
+
   const save = async (file: SaveFile): Promise<void> => {
     const slots = await readSlots();
     if (SLOT_KEYS.some((k) => slots[k].kind === 'too_new')) {
@@ -189,6 +204,7 @@ export function createSaveStore(backend: KeyValueBackend, deps: SaveStoreDeps): 
     loadWithInfo,
     save,
     getInstallId,
+    debugCorrupt,
     exportFileName: () => backupFileName(deps.nowMs()),
 
     async export() {

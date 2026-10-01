@@ -3,6 +3,7 @@ import { clamp, idiv, sign, toDisplay } from './fixed';
 import {
   DAY_MS,
   createManualClock,
+  createOffsetClock,
   createScaledClock,
   createSessionClock,
   floorDiv,
@@ -178,5 +179,21 @@ describe('scaled clock', () => {
     const clock = createScaledClock(() => state.wall, () => state.mono, 1);
     state.mono = 250;
     expect(clock.nowMs()).toBe(292);
+  });
+});
+
+describe('createOffsetClock', () => {
+  it('follows the base clock plus a hand-set offset, and can be reset', () => {
+    const base = createManualClock(1000);
+    const clock = createOffsetClock(base);
+    expect(clock.nowMs()).toBe(1000);
+    clock.advance(5000);
+    expect(clock.nowMs()).toBe(6000);
+    base.advance(100);
+    expect(clock.nowMs()).toBe(6100);
+    clock.advance(-1000);
+    expect(clock.offsetMs()).toBe(4000);
+    clock.reset();
+    expect(clock.nowMs()).toBe(1100);
   });
 });

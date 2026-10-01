@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { t, tDynamic } from '../../i18n/t';
 import { ImportError, type SaveStore } from '../../platform/saveStore';
+import { downloadBackup } from '../../platform/web/download';
 import { Dialog } from './Dialog';
 
 interface MenuDialogProps {
@@ -9,11 +10,18 @@ interface MenuDialogProps {
   store: SaveStore | null;
   /** Save first, so the backup has the latest state. */
   beforeExport(): Promise<void>;
+  onAbout(): void;
+  onFeedback(): void;
+  /** Developer tools are shown once unlocked (`?dev=1`, or 7 taps on the version line). */
+  devUnlocked: boolean;
+  onDev(): void;
+  onUnlockDev(): void;
   onClose(): void;
 }
 
 /** Export and import a backup (guide §8). Backups never contain the installId. */
-export function MenuDialog({ petName, store, beforeExport, onClose }: MenuDialogProps) {
+export function MenuDialog({ petName, store, beforeExport, onAbout, onFeedback, devUnlocked, onDev, onUnlockDev, onClose }: MenuDialogProps) {
+  const versionTaps = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<File | null>(null);
@@ -22,15 +30,7 @@ export function MenuDialog({ petName, store, beforeExport, onClose }: MenuDialog
     if (!store) return;
     try {
       await beforeExport();
-      const blob = await store.export();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = store.exportFileName();
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      await downloadBackup(store);
       setMessage(t('menu.exportDone'));
     } catch {
       setMessage(t('menu.exportFailed'));
@@ -66,6 +66,19 @@ export function MenuDialog({ petName, store, beforeExport, onClose }: MenuDialog
 
   return (
     <Dialog title={t('menu.title')} onClose={onClose}>
+      <div class="stack">
+        <button type="button" onClick={onAbout}>
+          {t('menu.about')}
+        </button>
+        <button type="button" onClick={onFeedback}>
+          {t('menu.feedback')}
+        </button>
+        {devUnlocked && (
+          <button type="button" onClick={onDev}>
+            {t('menu.dev')}
+          </button>
+        )}
+      </div>
       {store ? (
         <div class="stack">
           <button type="button" onClick={() => void doExport()}>
@@ -91,7 +104,15 @@ export function MenuDialog({ petName, store, beforeExport, onClose }: MenuDialog
         {message}
       </p>
       <p class="muted">{t('menu.credits')}</p>
-      <p class="muted">{t('menu.version')}</p>
+      <p
+        class="muted"
+        onClick={() => {
+          versionTaps.current += 1;
+          if (versionTaps.current >= 7) onUnlockDev();
+        }}
+      >
+        {t('menu.version')} {__APP_VERSION__}
+      </p>
       <button type="button" onClick={onClose}>
         {t('menu.close')}
       </button>
