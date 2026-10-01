@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOG } from '../core/catalog';
 import { makePet } from '../core/testkit';
+import { CORNER_PARTS, FLOOR_SKINS, RUG_SKINS, WALL_SKINS } from '../render/decor3d';
 import { OUTFIT_PARTS } from '../render/outfits3d';
 import { shopRows } from './shop';
 
@@ -21,6 +22,22 @@ describe('shopRows', () => {
     expect(rows.find((r) => r.id === 'bow')).toMatchObject({ owned: true, worn: false, missing: 0 });
     expect(rows.find((r) => r.id === 'scarf')).toMatchObject({ owned: true, worn: true, missing: 0 });
     expect(rows.find((r) => r.id === 'flower')).toMatchObject({ owned: false, worn: false });
+  });
+});
+
+describe('decorations in the room', () => {
+  it('every decoration in the shop has a look, and every look is in the shop', () => {
+    const decor = CATALOG.filter((i) => i.kind === 'decor');
+    const looks = [...Object.keys(WALL_SKINS), ...Object.keys(FLOOR_SKINS), ...Object.keys(RUG_SKINS), ...Object.keys(CORNER_PARTS)];
+    expect(looks.sort()).toEqual(decor.map((i) => i.id).sort());
+  });
+
+  it('each look is on the slot its name says', () => {
+    const slotOf = (id: string) => CATALOG.find((i) => i.id === id)?.slot;
+    for (const id of Object.keys(WALL_SKINS)) expect(slotOf(id)).toBe('wall');
+    for (const id of Object.keys(FLOOR_SKINS)) expect(slotOf(id)).toBe('floor');
+    for (const id of Object.keys(RUG_SKINS)) expect(slotOf(id)).toBe('rug');
+    for (const id of Object.keys(CORNER_PARTS)) expect(slotOf(id)).toBe('corner');
   });
 });
 

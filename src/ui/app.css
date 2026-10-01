@@ -289,6 +289,19 @@ input {
   pointer-events: auto;
 }
 
+.overlay.bottom .card.compact {
+  max-height: 34vh;
+}
+
+.shop-tabs {
+  margin-bottom: 8px;
+}
+
+.shop-tabs button[aria-pressed='true'] {
+  background: var(--brown);
+  color: var(--bg);
+}
+
 .shop-balance {
   display: flex;
   align-items: center;

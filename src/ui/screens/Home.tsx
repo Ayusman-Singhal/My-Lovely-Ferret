@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { findItem } from '../../core/catalog';
 import type { Command, CommandResult } from '../../core/commands';
 import { bumpInteraction, type SaveFile } from '../../core/save';
 import type { Clock, OffsetClock } from '../../core/time';
@@ -157,8 +158,18 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
       setShopMessage(tDynamic(`refuse.${result.outcome.reason}`, { name }));
       return;
     }
-    const item = tDynamic(`item.${'itemId' in command ? command.itemId : ''}`);
-    const key = command.type === 'BuyItem' ? 'shop.bought' : command.type === 'EquipItem' ? 'shop.worn' : 'shop.removed';
+    const id = 'itemId' in command ? command.itemId : '';
+    const item = tDynamic(`item.${id}`);
+    const decor = findItem(id)?.kind === 'decor';
+    const key = decor
+      ? command.type === 'UnequipItem'
+        ? 'shop.unplaced'
+        : 'shop.placed'
+      : command.type === 'BuyItem'
+        ? 'shop.bought'
+        : command.type === 'EquipItem'
+          ? 'shop.worn'
+          : 'shop.removed';
     setShopMessage(t(key, { name, item }));
   };
   const onRoomTouch = (kind: RoomTouch): void => setFeedback(t(`room.${kind}`, { name }));

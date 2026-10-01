@@ -126,10 +126,14 @@ try {
   ok(have >= 10 && have < 20, `a new pet has a few shinies from caring (${have})`);
   await chip.click();
   await page.getByRole('heading', { name: 'Shop' }).waitFor();
-  ok((await page.locator('.shop-row').count()) === 6, 'six things for sale');
+  ok((await page.locator('.shop-row').count()) === 6, 'six outfits for sale');
   ok(await page.getByRole('button', { name: /more for the scarf/ }).isDisabled(), 'the scarf is too dear and says how many more');
   await page.waitForTimeout(1500);
   await page.screenshot({ path: 'shots/smoke-3c-shop.png' });
+  await page.getByRole('button', { name: 'Room', exact: true }).click();
+  ok((await page.locator('.shop-row').count()) === 11, 'eleven things for the room: walls, floors, rugs, furniture');
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: 'shots/smoke-3d-room-shop.png' });
   await page.getByRole('button', { name: 'Close' }).click();
 
   stepName('the pet stays after a reload (saved on its own)');

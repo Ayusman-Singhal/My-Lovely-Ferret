@@ -1,11 +1,12 @@
 // What the shop screen shows (Part 1L.5): the catalog with, for this pet, what is owned, worn, and
 // affordable. Pure, so the rules the screen follows are tested without it.
 
-import { CATALOG, type ItemSlot } from '../core/catalog';
+import { CATALOG, type ItemKind, type ItemSlot } from '../core/catalog';
 import type { PetRecord } from '../core/types';
 
 export interface ShopRow {
   id: string;
+  kind: ItemKind;
   slot: ItemSlot;
   price: number;
   owned: boolean;
@@ -20,6 +21,7 @@ export function shopRows(pet: PetRecord): ShopRow[] {
     const owned = items.includes(item.id);
     return {
       id: item.id,
+      kind: item.kind,
       slot: item.slot,
       price: item.price,
       owned,

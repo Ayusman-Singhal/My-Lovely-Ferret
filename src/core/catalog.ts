@@ -4,7 +4,7 @@
 
 export type ItemKind = 'outfit' | 'decor';
 /** Where an item goes. Wearing a second item in the same slot takes the first off. */
-export type ItemSlot = 'head' | 'neck';
+export type ItemSlot = 'head' | 'neck' | 'wall' | 'floor' | 'rug' | 'corner';
 
 export interface CatalogItem {
   id: string;
@@ -20,6 +20,18 @@ export const CATALOG: readonly CatalogItem[] = [
   { id: 'bell_collar', kind: 'outfit', slot: 'neck', price: 30 },
   { id: 'bandana', kind: 'outfit', slot: 'neck', price: 35 },
   { id: 'scarf', kind: 'outfit', slot: 'neck', price: 45 },
+  // The room (Part 1L.6): one wall colour, one floor, one rug, and one piece of furniture at a time.
+  { id: 'wall_sage', kind: 'decor', slot: 'wall', price: 40 },
+  { id: 'wall_sky', kind: 'decor', slot: 'wall', price: 40 },
+  { id: 'wall_blush', kind: 'decor', slot: 'wall', price: 40 },
+  { id: 'floor_pale', kind: 'decor', slot: 'floor', price: 40 },
+  { id: 'floor_dark', kind: 'decor', slot: 'floor', price: 40 },
+  { id: 'floor_slate', kind: 'decor', slot: 'floor', price: 50 },
+  { id: 'rug_blue', kind: 'decor', slot: 'rug', price: 30 },
+  { id: 'rug_green', kind: 'decor', slot: 'rug', price: 30 },
+  { id: 'rug_red', kind: 'decor', slot: 'rug', price: 30 },
+  { id: 'plant', kind: 'decor', slot: 'corner', price: 60 },
+  { id: 'lamp', kind: 'decor', slot: 'corner', price: 70 },
 ];
 
 export function findItem(id: string): CatalogItem | undefined {

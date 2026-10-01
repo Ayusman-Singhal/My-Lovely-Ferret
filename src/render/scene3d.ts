@@ -49,7 +49,8 @@ import { CLIPS, CLIP_FPS, frameIntervalMs, playbackRate, type AnimationName } fr
 import { COAT_TINT } from './coats3d';
 import { ROOM } from './layout';
 import { browserLoopDeps, cappedPixelRatio, createRenderLoop } from './loop';
-import { OUTFIT_PARTS } from './outfits3d';
+import { CORNER_AT, CORNER_PARTS, FLOOR_SKINS, RUG_SKINS, WALL_SKINS, darker } from './decor3d';
+import { OUTFIT_PARTS, type OutfitPart } from './outfits3d';
 import { PALETTE, VIEW } from './palette';
 import type { PetAnimator, PetScene, PickTarget, SceneHit, ScenePointer, ScenePropsState } from './petScene';
 import { M_PER_PX, PET_SCALE, logicalToWorld, planeToLogical } from './stageMap';
@@ -83,6 +84,9 @@ const CLOSE = { radius: 0.56, lookAtHeight: 0.1 } as const;
 const PREVIEW_DROP_M = 0.22;
 /** And how much closer the camera comes, so a bow or a bell is easy to see. */
 const PREVIEW_ZOOM_M = 0.12;
+/** On the room tab the room is lifted and shrunk a little so all of it shows above the sheet. */
+const ROOM_DROP_M = 0.26;
+const ROOM_ZOOM_OUT_M = 0.24;
 const CLOSE_CLIPS: readonly AnimationName[] = ['eat', 'drink', 'sleep'];
 const SOCK_SIZE = { w: 0.1, h: 0.035, d: 0.045 } as const;
 
@@ -139,6 +143,8 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   let closeness = 0;
   /** 0 to 1, how far the shop has moved the pet up the screen to leave room for its sheet. */
   let previewShift = 0;
+  /** Same for the room tab: the whole room is moved up and made smaller to fit above the sheet. */
+  let roomShift = 0;
   const petRef: { root?: Object3D } = {};
   const placeCamera = (): void => {
     const k = closeness * closeness * (3 - 2 * closeness);
@@ -152,8 +158,8 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     // Pull the camera back until the wanted part of the room fits across the screen, whatever the
     // shape. Narrow screens are limited by their width, wide ones by their height.
     const half = Math.tan((CAMERA.vfov * Math.PI) / 360) * Math.min(1, camera.aspect);
-    lookAt.y -= PREVIEW_DROP_M * previewShift * k; // looking lower puts the pet higher on screen
-    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k - PREVIEW_ZOOM_M * previewShift * k;
+    lookAt.y -= PREVIEW_DROP_M * previewShift * k + ROOM_DROP_M * roomShift; // looking lower puts things higher on screen
+    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k - PREVIEW_ZOOM_M * previewShift * k + ROOM_ZOOM_OUT_M * roomShift;
     const distance = radius / half;
     const pitch = (CAMERA.pitchDeg * Math.PI) / 180;
     const yaw = (CAMERA.yawDeg * Math.PI) / 180;
@@ -194,13 +200,26 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   const WALL_H = 1.0;
   const floorMidZ = 0;
 
-  box(ROOM_W, 0.08, ROOM_D, PALETTE.floorShade, 0, -0.04, floorMidZ); // the slab, its sides show
-  box(ROOM_W - 0.02, 0.004, ROOM_D - 0.02, PALETTE.floor, 0, 0.002, floorMidZ);
-  for (let z = BACK_Z + 0.13; z < ROOM_D / 2 - 0.05; z += 0.13) box(ROOM_W - 0.02, 0.002, 0.008, PALETTE.floorShade, 0, 0.005, z);
-  box(ROOM_W, WALL_H, 0.05, PALETTE.wall, 0, WALL_H / 2, BACK_Z - 0.025); // back wall
-  box(0.05, WALL_H, ROOM_D, PALETTE.wall, LEFT_X - 0.025, WALL_H / 2, floorMidZ); // left wall
-  box(ROOM_W, 0.12, 0.02, PALETTE.wallShade, 0, 0.06, BACK_Z + 0.01); // base bands
-  box(0.02, 0.12, ROOM_D, PALETTE.wallShade, LEFT_X + 0.01, 0.06, floorMidZ);
+  // The walls, floor and rug have materials of their own so a decoration can change their colour.
+  const wallMat = flat(PALETTE.wall);
+  const wallBandMat = flat(PALETTE.wallShade);
+  const floorMat = flat(PALETTE.floor);
+  const floorLineMat = flat(PALETTE.floorShade);
+  const rugBorderMat = flat(PALETTE.gold);
+  const rugInnerMat = flat(PALETTE.belly);
+  const boxWith = (w: number, h: number, d: number, material: MeshLambertMaterial, x: number, y: number, z: number): Mesh => {
+    const mesh = new Mesh(new BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z);
+    stage.add(mesh);
+    return mesh;
+  };
+  boxWith(ROOM_W, 0.08, ROOM_D, floorLineMat, 0, -0.04, floorMidZ); // the slab, its sides show
+  boxWith(ROOM_W - 0.02, 0.004, ROOM_D - 0.02, floorMat, 0, 0.002, floorMidZ);
+  for (let z = BACK_Z + 0.13; z < ROOM_D / 2 - 0.05; z += 0.13) boxWith(ROOM_W - 0.02, 0.002, 0.008, floorLineMat, 0, 0.005, z);
+  boxWith(ROOM_W, WALL_H, 0.05, wallMat, 0, WALL_H / 2, BACK_Z - 0.025); // back wall
+  boxWith(0.05, WALL_H, ROOM_D, wallMat, LEFT_X - 0.025, WALL_H / 2, floorMidZ); // left wall
+  boxWith(ROOM_W, 0.12, 0.02, wallBandMat, 0, 0.06, BACK_Z + 0.01); // base bands
+  boxWith(0.02, 0.12, ROOM_D, wallBandMat, LEFT_X + 0.01, 0.06, floorMidZ);
 
   // Window on the back wall: frame, pane, and two bars.
   const win = { x: -0.42, y: 0.62 };
@@ -218,8 +237,49 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   box(0.06, 0.1, 0.06, PALETTE.waterBlue, LEFT_X + 0.08, 0.42, -0.2);
 
   // A rug in the middle of the roaming area, with a border.
-  box(1.04, 0.008, 0.74, PALETTE.gold, 0.0, 0.008, 0.1);
-  box(0.98, 0.01, 0.68, PALETTE.belly, 0.0, 0.009, 0.1);
+  boxWith(1.04, 0.008, 0.74, rugBorderMat, 0.0, 0.008, 0.1);
+  boxWith(0.98, 0.01, 0.68, rugInnerMat, 0.0, 0.009, 0.1);
+
+  // Corner furniture from the shop: built when chosen, standing in the back right corner.
+  const cornerGroups = new Map<string, Group>();
+  const partsGroup = (parts: readonly OutfitPart[]): Group => {
+    const g = new Group();
+    for (const part of parts) {
+      const mesh = new Mesh(new BoxGeometry(...part.size), flat(part.color));
+      mesh.position.set(...part.at);
+      mesh.rotation.set(0, part.rotY ?? 0, part.rotZ ?? 0);
+      g.add(mesh);
+    }
+    g.position.set(CORNER_AT.x, 0, CORNER_AT.z);
+    return g;
+  };
+  let decorKey = '';
+  const decorate = (ids: readonly string[]): void => {
+    const key = ids.join('|');
+    if (key === decorKey) return;
+    decorKey = key;
+    const wall = ids.map((id) => WALL_SKINS[id]).find((c) => c !== undefined) ?? PALETTE.wall;
+    const floor = ids.map((id) => FLOOR_SKINS[id]).find((c) => c !== undefined) ?? PALETTE.floor;
+    const rug = ids.map((id) => RUG_SKINS[id]).find((c) => c !== undefined) ?? [PALETTE.gold, PALETTE.belly];
+    wallMat.color.setHex(wall);
+    wallBandMat.color.setHex(wall === PALETTE.wall ? PALETTE.wallShade : darker(wall));
+    floorMat.color.setHex(floor);
+    floorLineMat.color.setHex(floor === PALETTE.floor ? PALETTE.floorShade : darker(floor));
+    rugBorderMat.color.setHex(rug[0]);
+    rugInnerMat.color.setHex(rug[1]);
+    for (const group of cornerGroups.values()) group.removeFromParent();
+    for (const id of ids) {
+      const parts = CORNER_PARTS[id];
+      if (!parts) continue;
+      let group = cornerGroups.get(id);
+      if (!group) {
+        group = partsGroup(parts);
+        cornerGroups.set(id, group);
+      }
+      stage.add(group);
+    }
+    loop?.request();
+  };
 
   // Furniture along the walls, outside the roaming rectangle: a crate stack at the back left and a
   // cushion at the front right.
@@ -523,19 +583,24 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
 
     // The camera comes close while the pet does something close, and goes back to the whole room after.
     const props0 = options.getProps?.();
-    const wantsClose = Boolean(props0?.pressing) || Boolean(props0?.preview) || CLOSE_CLIPS.includes(base) || nowMs < focusUntil;
+    const wantsClose = Boolean(props0?.pressing) || props0?.preview === 'pet' || CLOSE_CLIPS.includes(base) || nowMs < focusUntil;
     const goal = wantsClose && !props0?.toy ? 1 : 0;
     const before = closeness;
     closeness += (goal - closeness) * Math.min(1, dt * 2.6);
     if (Math.abs(goal - closeness) < 0.002) closeness = goal;
-    const beforeShift = previewShift;
-    previewShift += ((props0?.preview ? 1 : 0) - previewShift) * Math.min(1, dt * 4);
-    if (Math.abs((props0?.preview ? 1 : 0) - previewShift) < 0.002) previewShift = props0?.preview ? 1 : 0;
-    if (closeness !== before || closeness > 0 || previewShift !== beforeShift) placeCamera();
+    const beforeShift = previewShift + roomShift;
+    const petGoal = props0?.preview === 'pet' ? 1 : 0;
+    const roomGoal = props0?.preview === 'room' ? 1 : 0;
+    previewShift += (petGoal - previewShift) * Math.min(1, dt * 4);
+    roomShift += (roomGoal - roomShift) * Math.min(1, dt * 4);
+    if (Math.abs(petGoal - previewShift) < 0.002) previewShift = petGoal;
+    if (Math.abs(roomGoal - roomShift) < 0.002) roomShift = roomGoal;
+    if (closeness !== before || closeness > 0 || previewShift + roomShift !== beforeShift) placeCamera();
 
     const props = props0;
     if (props) {
-      wear(props.outfit);
+      wear(props.outfit.filter((id) => OUTFIT_PARTS[id] !== undefined));
+      decorate(props.outfit);
       roomBall.visible = !props.toy;
       if (props.ball.carried) {
         carryBone.getWorldPosition(tmp);

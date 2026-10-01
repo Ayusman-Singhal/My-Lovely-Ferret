@@ -67,8 +67,8 @@ export interface Game {
   tick(frameMs: number, scene: BrainScene): void;
   /** What the scene should draw besides the room and the pet: the sock, the toy, and the timer. */
   props(): ScenePropsState;
-  /** The shop is open (true) or closed: the camera comes close to show what the pet wears. */
-  setPreview(on: boolean): void;
+  /** The shop is open on a tab (or closed, null): the camera shows what the pet wears, or the whole room. */
+  setPreview(mode: 'pet' | 'room' | null): void;
   /**
    * Pointer input in logical room coordinates. Times are real milliseconds (event.timeStamp), not
    * game time, so a long press lasts 2 real seconds even when the preview runs the game faster.
@@ -98,7 +98,7 @@ export function createGame(options: GameOptions): Game {
   let toyTarget = 180;
   let lastFrame = 0;
   let pressingPet = false;
-  let preview = false;
+  let preview: 'pet' | 'room' | null = null;
   // Touching the room (Part 1L.2): a tap on the floor calls the pet, a tap on the ball throws it, a
   // drag moves the ball or the sock, a tap on the window makes the pet look out, a tap on a bowl or
   // the hammock is the same as the button.
@@ -269,13 +269,13 @@ export function createGame(options: GameOptions): Game {
       if (chase.over) finishPlay(scene, frameMs);
     },
 
-    setPreview(on) {
-      if (on === preview) return;
-      preview = on;
-      if (chase) return;
-      // Open: the pet comes to the middle and faces the player. Closed: it carries on with its day.
-      if (on) brain.script(previewPlan());
-      else brain.script([{ kind: 'do', anim: 'idle', ms: 200 }]);
+    setPreview(mode) {
+      const was = preview;
+      preview = mode;
+      if (chase || was === mode) return;
+      // On the pet tab it comes to the middle and faces the player. Leaving it, it carries on with its day.
+      if (mode === 'pet') brain.script(previewPlan());
+      else if (was === 'pet') brain.script([{ kind: 'do', anim: 'idle', ms: 200 }]);
     },
 
     props() {

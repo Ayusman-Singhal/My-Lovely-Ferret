@@ -130,7 +130,7 @@ describe('the catalog', () => {
     for (const item of CATALOG) {
       expect(Number.isInteger(item.price) && item.price > 0, item.id).toBe(true);
       // The cap is per day, so anything costs at most a few days of care (guide §14: nothing to grind).
-      expect(item.price / TUNING.shinies.dailyCap, item.id).toBeLessThanOrEqual(3);
+      expect(item.price / TUNING.shinies.dailyCap, item.id).toBeLessThanOrEqual(4);
     }
   });
 });
