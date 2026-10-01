@@ -108,6 +108,21 @@ How the start-up is arranged: `src/main.tsx` starts the model download and the l
 
 Smoke test (`npm run smoke`) passes in real Chrome. Frame rate is not measured here (software rendering). A real low-end Android check is still task 1J.4.
 
+### 3.4 The real app at the end of Part 1L (make it a game), 2026-10-01
+
+Same method as §3.3, after the touch room, 17 clips, tunnel and furniture, gifts, shop, outfits, decorations, and tricks.
+
+| Measure | Result | Budget (section 1) |
+|---|---|---|
+| Initial JS including the lazy 3D scene chunk, gzip | **196.8 KB** (app 36.4 KB + three.js scene 160.4 KB) | 1 MB |
+| Model file | 385 KB raw, **92.3 KB gzip** (17 clips) | first-run assets 10 MB |
+| Over the wire for a first visit | 294.1 KB | n/a |
+| Loading text visible, slow 4G + 4x CPU | **0.97 s** | under 1.5 s |
+| Scene ready, slow 4G + 4x CPU | **median 2.8 s** (2.75 to 2.85 s, five runs) | at most 5 s |
+| Scene ready, no throttle | median 0.31 s | n/a |
+
+The shop, the album, the tricks sheet, and the outfit and decoration looks cost about 14 KB gzip of app code together. They are not a lazy chunk (the plan said they might be): they are small, and a second request would cost more than it saves on a slow link. Frame rate and idle CPU on a real low-end phone are still task 1J.4; the render loop is unchanged (on demand, paused when hidden, 10 frames a second asleep).
+
 ## 4. Decisions made to stay within budget
 
 | Date | Decision | Reason |
