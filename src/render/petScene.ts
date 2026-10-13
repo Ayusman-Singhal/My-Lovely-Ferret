@@ -30,7 +30,7 @@ export interface PetScene {
 }
 
 /** A thing in the room the player can touch. */
-export type PickTarget = 'window' | 'foodBowl' | 'waterBowl' | 'hammock' | 'ball' | 'sock';
+export type PickTarget = 'window' | 'foodBowl' | 'waterBowl' | 'hammock' | 'ball' | 'sock' | 'cup0' | 'cup1' | 'cup2';
 
 /** What a touch landed on besides the pet: the floor spot under the finger, and the thing, if any. */
 export interface SceneHit {
@@ -53,6 +53,8 @@ export interface ScenePropsState {
   marker: { x: number; z: number; t: number } | null;
   /** The toy in the mini-game, on the floor at x. */
   toy: { id: ToyId; x: number } | null;
+  /** Treat pop is running: which cup the treat is in, null while none is up. */
+  game: { active: number | null } | null;
   /** 1 at the start of the mini-game down to 0 at the end, null outside it. */
   timerFraction: number | null;
   /** The player is pressing the pet, so the camera moves in close. */

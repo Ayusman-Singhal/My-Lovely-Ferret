@@ -194,19 +194,23 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
     const message = tDynamic(`play.band.${r.band}`);
     const noReward = r.result.outcome.ok && !r.result.outcome.rewarded ? ` ${t('play.noReward', { name })}` : '';
     const earned = r.result.outcome.ok && r.result.outcome.shinyGain > 0 ? ` ${t('result.shinies', { amount: r.result.outcome.shinyGain })}` : '';
-    setFeedback(`${t('play.result', { name, count: r.catches, message })}${noReward}${earned}`);
+    setFeedback(`${t('treat.result', { name, count: r.catches, message })}${noReward}${earned}`);
   };
 
   const game = gameRef.current;
   const pet = game?.getPet() ?? initialPet;
-  const playing = game?.minigame() != null;
+  const mini = game?.minigame() ?? null;
+  const playing = mini != null;
   const act = (command: Command): void => {
     if (!game) return;
     setFeedback(describeResult(game.dispatch(command), name));
   };
   // No "put to bed" hint for a pet that is already asleep.
   const hint = pet.state.sleepState === 'asleep' ? null : nextHint(counters);
-  const statusLine = playing ? t('play.instructions', { name }) : feedback || (hint ? t(`hint.${hint}`, { name }) : t('hint.room', { name }));
+  const instructions = mini ? t('treat.instructions', { name }) : null;
+  const statusLine = instructions ?? (feedback || (hint ? t(`hint.${hint}`, { name }) : t('hint.room', { name })));
+  /** Screen-reader (and smoke-test) narration of the game. */
+  const gameLive = mini && mini.phase === 'show' && mini.spot !== null ? t('treat.pop', { name, cup: tDynamic(`treat.cup.${mini.spot}`, { name }) }) : '';
 
   return (
     <div class="app">
@@ -230,6 +234,20 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
             refresh();
           }}
         />
+        {mini && (
+          <div class="game-overlay">
+            <p class="game-round">
+              {t('play.round', { n: mini.round + 1, total: mini.rounds })} · {t('treat.progress', { name, count: mini.score })}
+            </p>
+            <div class="sr-only" role="group" aria-label={t('treat.instructions', { name })}>
+              {[0, 1, 2].map((i) => (
+                <button key={i} type="button" class="sr-cup" onClick={() => gameRef.current?.tapCell(i)}>
+                  {tDynamic(`treat.cup.${i}`, { name })}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div class="bottom">
         <p class="status" role="status">
@@ -241,7 +259,7 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
           onFeed={() => act({ type: 'FeedPet', foodId: pet.state.favoriteFood })}
           onWater={() => act({ type: 'GiveWater' })}
           onPlay={() => {
-            if (!game) return;
+            if (!game || game.minigame()) return;
             const r = game.startPlay(pet.state.favoriteToy);
             setFeedback(r.outcome.ok ? '' : describeResult(r, name));
           }}
@@ -261,6 +279,9 @@ export function Home({ save, pet: initialPet, welcome, clock, offsetClock, store
       )}
       <div class="sr-only" aria-live="polite">
         {live}
+      </div>
+      <div class="sr-only game-live" aria-live="polite">
+        {gameLive}
       </div>
 
       {welcome && welcomeOpen && (

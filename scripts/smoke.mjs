@@ -1,4 +1,4 @@
-/* global window */
+/* global window, document */
 // End-to-end smoke test in real Chrome (guide §19): first run, naming, caring, the mini-game,
 // a reload that keeps the pet, a backup export, and the welcome-back summary after time away.
 // Run after a build: npm run build && npm run smoke. Uses the Chrome installed on the machine
@@ -100,25 +100,34 @@ try {
   await page.waitForTimeout(900);
   await page.screenshot({ path: 'shots/smoke-3b-called.png' });
 
-  stepName('play: the toy-chase mini-game runs about 20 seconds, then reports a result');
+  stepName('play: treat pop shows six treats, then reports treats gobbled');
   await page.getByRole('button', { name: 'Play' }).click();
-  ok((await page.locator('.status').textContent()).includes('Drag the toy'), 'instructions are shown');
+  ok((await page.locator('.status').textContent()).includes('Tap the cup'), 'instructions are shown');
   ok(await page.getByRole('button', { name: 'Feed' }).isDisabled(), 'other actions wait while playing');
-  const stage = await page.locator('.stage > div').boundingBox();
-  const px = (x) => stage.x + (x / 360) * stage.width;
-  const py = stage.y + (400 / 540) * stage.height; // just above the floor line the pet stands on
-  await page.mouse.move(px(200), py);
-  await page.mouse.down();
-  const t0 = Date.now();
-  while (Date.now() - t0 < 21500) {
-    const phase = Math.floor((Date.now() - t0) / 2000) % 2;
-    await page.mouse.move(px(phase === 0 ? 150 : 260), py, { steps: 6 });
-    await page.waitForTimeout(1000);
+  for (let round = 0; round < 6; round++) {
+    // The narration names the cup; the cups themselves are canvas taps, also exposed
+    // as screen-reader buttons activated here the keyboard way (canvas taps are covered
+    // by the controller unit tests).
+    let narration = '';
+    for (let i = 0; i < 100; i++) {
+      narration = (await page.locator('.game-live').textContent()) ?? '';
+      if (narration.includes('pops up in')) break;
+      await page.waitForTimeout(100);
+    }
+    ok(narration.includes('pops up in'), `round ${round + 1} shows a treat (${narration.trim()})`);
+    const cup = ['Left cup', 'Middle cup', 'Right cup'].find((name) => narration.includes(name));
+    ok(cup !== undefined, 'the narration names the cup');
+    await page.evaluate((label) => {
+      const buttons = Array.from(document.querySelectorAll('.sr-cup'));
+      const match = buttons.find((b) => b.textContent === label);
+      if (match) match.click();
+    }, cup);
+    await page.waitForTimeout(900); // the gap before the next treat
   }
-  await page.mouse.up();
+  await page.locator('.game-overlay').waitFor({ state: 'detached', timeout: 15000 });
   await page.waitForTimeout(600);
   const result = await page.locator('.status').textContent();
-  ok(/caught the toy \d+ times/.test(result), `the result is shown (${result})`);
+  ok(/gobbled \d+ treats/.test(result), `the result is shown (${result})`);
   ok(/\+\d+ shinies/.test(result), 'playing earned shinies and the result says so');
 
   stepName('shop: the shinies chip opens a sheet, and what is too dear says how many more it takes');

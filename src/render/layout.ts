@@ -26,11 +26,11 @@ export const ROOM = {
   windowX: 92,
   /** Where a fetched ball is brought and dropped, in front of the player. */
   fetchDropX: 190,
-  fetchDropZ: 70,
+  fetchDropZ: 10,
   /** The tunnel along the front edge: the pet runs in at one mouth and out of the other (Part 1L.3). */
-  tunnelAX: 72,
-  tunnelBX: 212,
-  tunnelZ: 131,
+  tunnelAX: 88,
+  tunnelBX: 228,
+  tunnelZ: 100,
   /** The line the toy-chase mini-game is played on. */
   chaseZ: 10,
   /** Ground line the pet stands on. */
@@ -42,9 +42,18 @@ export const ROOM = {
   maxX: 274,
   minZ: -73,
   maxZ: 94,
-  /** The most the brain lets a scripted walk go past that, for the tunnel and a wide turn. */
-  reachMinX: 20,
-  reachMaxX: 340,
-  reachMinZ: -90,
-  reachMaxZ: 150,
+  /** The most the brain lets a scripted walk go past that, for the tunnel and a wide turn.
+   *  Kept off the walls by about a nose length where there is a wall (left, back). */
+  reachMinX: 40,
+  reachMaxX: 320,
+  reachMinZ: -80,
+  reachMaxZ: 130,
+  /** The treat-pop table: three bowls in a row on the rug, watched from behind. */
+  gameCups: [
+    { x: 120, z: 30 },
+    { x: 180, z: 30 },
+    { x: 240, z: 30 },
+  ],
+  /** Where the ferret sits to watch the game, behind the table facing the player. */
+  gameWatch: { x: 140, z: -75 },
 } as const;

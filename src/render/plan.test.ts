@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Behavior, Decision } from '../core/petAI';
 import { ANIMATION_NAMES } from './clipSpec';
-import { PREVIEW_HEADING, SPEED, WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z, planFor, spotToX, spotToZ, stashSpot, trickPlan, type Phase } from './plan';
+import { LANE_EDGES, LANE_NODES, OBSTACLES, PREVIEW_HEADING, SPEED, WALK_MAX_X, WALK_MAX_Z, WALK_MIN_X, WALK_MIN_Z, freeSpot, planFor, routePoints, segmentClear, spotToX, spotToZ, stashSpot, trickPlan, type Phase } from './plan';
 import { ROOM } from './layout';
 
 const BEHAVIORS: Behavior[] = ['idle', 'wander', 'sniff', 'curious', 'eat', 'drink', 'playful', 'steal', 'sleep', 'stretch', 'dig', 'tunnel', 'dance', 'tailchase'];
@@ -162,5 +162,101 @@ describe('trickPlan (Part 1L.7)', () => {
 
   it('an unknown trick is a short pause, never an error', () => {
     expect(trickPlan('backflip')).toEqual([{ kind: 'do', anim: 'idle', ms: 300 }]);
+  });
+});
+
+describe('obstacle avoidance (furniture is walked around, never through)', () => {
+  const goes = (plan: Phase[]): Array<Extract<Phase, { kind: 'go' }>> => plan.filter((p): p is Extract<Phase, { kind: 'go' }> => p.kind === 'go');
+
+  it('every lane edge stays clear of every obstacle', () => {
+    for (const [a, b] of LANE_EDGES) {
+      const p = LANE_NODES[a] as { x: number; z: number };
+      const q = LANE_NODES[b] as { x: number; z: number };
+      expect(segmentClear(p.x, p.z, q.x, q.z), `lane ${a}-${b}`).toBe(true);
+    }
+  });
+
+  it('every lane node and every fixed standing point is free', () => {
+    const points: Array<[string, number, number]> = [
+      ...LANE_NODES.map((n, i): [string, number, number] => [`lane${i}`, n.x, n.z]),
+      ['eat', 109, ROOM.foodBowlZ],
+      ['drink', 251, ROOM.waterBowlZ],
+      ['window', ROOM.windowX, WALK_MIN_Z],
+      ['sleep', ROOM.hammockX, ROOM.hammockApproachZ],
+      ['preview', 180, 24],
+      ['fetchDrop', ROOM.fetchDropX, ROOM.fetchDropZ],
+      ['watch', ROOM.gameWatch.x, ROOM.gameWatch.z],
+      ['sock', 130, 0],
+      ['ball', ROOM.toyX, ROOM.toyZ],
+    ];
+    for (const [name, x, z] of points) {
+      expect(freeSpot(x, z), name).toEqual({ x, z });
+    }
+  });
+
+  it('routePoints goes straight when clear and bends through the lanes around the tube', () => {
+    expect(routePoints({ x: 180, z: 0 }, { x: 200, z: -20 })).toEqual([{ x: 200, z: -20 }]);
+    const legs = routePoints({ x: 270, z: 72 }, { x: 109, z: ROOM.foodBowlZ });
+    expect(legs.length).toBeGreaterThan(1);
+    expect(legs.at(-1)).toEqual({ x: 109, z: ROOM.foodBowlZ });
+    let from = { x: 270, z: 72 };
+    for (const to of legs) {
+      expect(segmentClear(from.x, from.z, to.x, to.z)).toBe(true);
+      from = to;
+    }
+  });
+
+  it('freeSpot ejects a tube-interior point north and leaves free points alone', () => {
+    expect(freeSpot(150, 80)).toEqual({ x: 150, z: 30 });
+    expect(freeSpot(ROOM.foodBowlX, ROOM.foodBowlZ)).not.toEqual({ x: ROOM.foodBowlX, z: ROOM.foodBowlZ }); // the bowl itself is furniture
+    expect(freeSpot(180, 0)).toEqual({ x: 180, z: 0 });
+  });
+
+  it('mapped spots never end inside furniture: a sweep over all spots stays clear', () => {
+    for (let s = 0; s < 1000; s += 7) {
+      const p = freeSpot(spotToX(s), spotToZ(s));
+      expect(segmentClear(p.x, p.z, p.x, p.z)).toBe(true);
+    }
+  });
+
+  it('every behavior walks clear furniture from anywhere and ends exactly on target', () => {
+    const starts = [
+      { x: 100, z: -60 },
+      { x: 260, z: 60 },
+      { x: 270, z: 72 },
+      { x: 180, z: 0 },
+    ];
+    for (const behavior of BEHAVIORS) {
+      for (const from of starts) {
+        const plan = planFor(decision(behavior, 5000), { ...CTX, x: from.x, z: from.z });
+        let at = from;
+        for (const leg of goes(plan)) {
+          // The tunnel's own through-run is the designed exception (see below).
+          if (behavior === 'tunnel') continue;
+          expect(segmentClear(at.x, at.z, leg.x, leg.z), `${behavior} from (${from.x},${from.z})`).toBe(true);
+          at = { x: leg.x, z: leg.z };
+        }
+      }
+    }
+  });
+
+  it('the tunnel through-run is the designed exception: it travels inside the tube', () => {
+    const tube = OBSTACLES.find((o) => o.kind === 'rect') as Extract<(typeof OBSTACLES)[number], { kind: 'rect' }>;
+    const inTube = (x: number, z: number): boolean => x > tube.x0 && x < tube.x1 && z > tube.z0 && z < tube.z1;
+    const plan = planFor(decision('tunnel'), { ...CTX, x: 100 });
+    const legs = goes(plan);
+    expect(legs).toHaveLength(2);
+    const [enter, through] = legs as [typeof legs[0], typeof legs[0]];
+    // The mouths themselves are free ground; only the through leg crosses furniture.
+    expect(inTube(enter.x, enter.z)).toBe(false);
+    expect(segmentClear(enter.x, enter.z, through.x, through.z)).toBe(false);
+    expect(inTube(through.x, through.z)).toBe(false);
+  });
+
+  it('routing is deterministic: the same walk always bends the same way', () => {
+    const a = planFor(decision('eat', 5000), { ...CTX, x: 270, z: 72 });
+    const b = planFor(decision('eat', 5000), { ...CTX, x: 270, z: 72 });
+    expect(a).toEqual(b);
+    expect(goes(a).length).toBeGreaterThan(1); // it bends around the tube
   });
 });

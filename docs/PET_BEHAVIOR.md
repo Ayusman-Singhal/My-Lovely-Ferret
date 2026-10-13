@@ -102,6 +102,17 @@ One room, fixed layout, no customization yet (guide §7.6, §5).
 
 Furniture that changes behavior (tunnel, blanket, climbing structure) and `mess` arrive in Phase 2. `mess` is not simulated in Phase 1.
 
+### 5.1 Obstacles: walked around, never through
+
+Furniture has footprints (`OBSTACLES` in `src/render/plan.ts`: both bowls, the cushion,
+the crate stack, and the tunnel tube as a blocked rectangle with free mouths), each
+inflated by half a ferret width. Every walk bends around them through open-floor lane
+waypoints (`routePoints`); mapped spots and carried-item spots are pushed out
+(`freeSpot`), so in-place animations never play inside furniture either. The tunnel's
+own mouth-to-mouth run is the one designed exception: it travels inside the tube.
+A test pins every lane edge clear and sweeps every behavior from several corners, so a
+moved prop fails loudly instead of clipping quietly.
+
 ## 6. History (guide §7.7)
 
 Memorable events only, never low-level stat changes. Each event: `id`, `t` (epoch ms), `type`, `actor` (`owner`, `caretaker`, or `pet`), small `payload`. Store the last 500 events (guide §7.7).

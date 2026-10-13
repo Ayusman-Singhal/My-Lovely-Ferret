@@ -4,10 +4,10 @@
 // DOM itself. The UI calls dispatch() and reads getPet().
 
 import { applyCommand, type Command, type CommandResult } from '../core/commands';
+import { bandFromTaps, createTreatPop, stepTreatPop, tapTreat, TREAT_POP, type TreatPhase, type TreatPopState } from '../core/treatPop';
 import type { AIWorld } from '../core/petAI';
 import { hashString } from '../core/rng';
 import type { Clock } from '../core/time';
-import { CHASE, bandFromCatches, createChase, stepChase, type ChaseState } from '../core/toyChase';
 import { createTouchTracker } from '../core/touch';
 import { findTrick } from '../core/tricks';
 import type { HistoryEvent, PetRecord, ToyId } from '../core/types';
@@ -18,6 +18,7 @@ import { callPlan, clampX, clampZ, fetchPlan, previewPlan, trickPlan, windowPlan
 
 export interface PlayResult {
   band: 0 | 1 | 2 | 3;
+  /** Treats tapped: the score behind the band. */
   catches: number;
   result: CommandResult;
 }
@@ -46,9 +47,14 @@ export interface GameOptions {
 export type RoomTouch = 'call' | 'fetch' | 'window';
 
 export interface MiniGameStatus {
-  toyId: ToyId;
   remainingMs: number;
-  catches: number;
+  /** Treats tapped so far. */
+  score: number;
+  round: number;
+  rounds: number;
+  phase: TreatPhase;
+  /** Which grid cell the treat is in, null while none is up. */
+  spot: number | null;
 }
 
 export interface Game {
@@ -59,11 +65,13 @@ export interface Game {
   replacePet(next: PetRecord): void;
   /** Run a command through the command layer and show its effects. */
   dispatch(command: Command): CommandResult;
-  /** StartPlay, and if the pet is willing, begin the toy-chase mini-game. */
+  /** StartPlay, and if the pet is willing, begin treat pop. */
   startPlay(toyId: ToyId): CommandResult;
   minigame(): MiniGameStatus | null;
+  /** The player's tap on a cup. Only the cup with the shown treat scores. */
+  tapCell(index: number): void;
   /** Raw mini-game state for the debug overlay and scripts. */
-  debugChase(): { toyTarget: number; chase: ChaseState | null };
+  debugGame(): TreatPopState | null;
   /** Scene hooks. */
   tick(frameMs: number, scene: BrainScene): void;
   /** What the scene should draw besides the room and the pet: the sock, the toy, and the timer. */
@@ -84,8 +92,6 @@ export interface Game {
 /** Where a touch counts as touching the pet, around its feet position. */
 const PET_HIT = { halfWidth: 80, top: 62, bottom: 12 } as const;
 
-const clampToy = (x: number): number => Math.min(284, Math.max(76, x));
-
 function hitsPet(scene: BrainScene, x: number, y: number): boolean {
   return Math.abs(x - scene.x) <= PET_HIT.halfWidth && y >= scene.y - PET_HIT.top && y <= scene.y + PET_HIT.bottom;
 }
@@ -96,9 +102,8 @@ export function createGame(options: GameOptions): Game {
   const touch = createTouchTracker();
   let lastScene: BrainScene | null = null;
 
-  let chase: ChaseState | null = null;
-  let chaseToy: ToyId = 'ball';
-  let toyTarget = 180;
+  let treat: TreatPopState | null = null;
+  let lastGameKey = '';
   let lastFrame = 0;
   let pressingPet = false;
   let preview: 'pet' | 'room' | null = null;
@@ -171,6 +176,17 @@ export function createGame(options: GameOptions): Game {
   };
   const awake = (): boolean => pet.state.sleepState === 'awake';
 
+  /** One path for taps on the treat grid. */
+  const applyTap = (index: number): void => {
+    if (!treat || !Number.isInteger(index) || index < 0 || index >= TREAT_POP.cells) return;
+    const next = tapTreat(treat, index);
+    if (next !== treat) {
+      treat = next;
+      if (lastScene && lastFrame > 0) lastScene.animator.react('happy', lastFrame);
+      options.onChange?.();
+    }
+  };
+
   /** Throw the ball somewhere on the floor and send the pet after it. */
   const throwBall = (): void => {
     if (!awake() || brain.ball.carried) return;
@@ -181,7 +197,7 @@ export function createGame(options: GameOptions): Game {
     flight = { fromX: brain.ball.x, fromZ: brain.ball.z, startMs: lastFrame };
     brain.ball.x = x;
     brain.ball.z = z;
-    brain.script(fetchPlan({ x, z }));
+    brain.script(fetchPlan(lastScene ? { x: lastScene.x, z: lastScene.z } : { x: 180, z: 0 }, { x, z }));
     options.onRoomTouch?.('fetch');
   };
 
@@ -192,7 +208,7 @@ export function createGame(options: GameOptions): Game {
     }
     if (!awake()) return; // a sleeping pet is not called
     if (hit.target === 'window') {
-      brain.script(windowPlan());
+      brain.script(windowPlan(lastScene ? { x: lastScene.x, z: lastScene.z } : { x: 180, z: 0 }));
       options.onRoomTouch?.('window');
       return;
     }
@@ -203,17 +219,31 @@ export function createGame(options: GameOptions): Game {
     }
   };
 
+  const treatTotalMs = TREAT_POP.gapMs + TREAT_POP.rounds * (TREAT_POP.showMs + TREAT_POP.gapMs);
+
   const finishPlay = (scene: BrainScene, frameMs: number): void => {
-    const played = chase as ChaseState;
-    const band = bandFromCatches(played.catches);
+    const state = treat as TreatPopState;
+    const band = bandFromTaps(state.tapped);
     const result = dispatch({ type: 'FinishPlay', band });
-    chase = null;
+    treat = null;
     scene.y = ROOM.groundY;
     scene.heading = null;
     scene.animator.setBase('idle', frameMs);
     brain.setPaused(false);
-    options.onPlayEnd?.({ band, catches: played.catches, result });
+    if (band >= 2) {
+      // A great game ends with a happy war dance.
+      brain.script(trickPlan('dance'));
+    }
+    options.onPlayEnd?.({ band, catches: state.tapped, result });
     options.onChange?.();
+  };
+
+  /** Notify the UI when something it shows changed (round, phase, score, or the ferret's focus). */
+  const notifyGame = (key: string): void => {
+    if (key !== lastGameKey) {
+      lastGameKey = key;
+      options.onChange?.();
+    }
   };
 
   return {
@@ -230,22 +260,36 @@ export function createGame(options: GameOptions): Game {
     startPlay(toyId) {
       const result = dispatch({ type: 'StartPlay', toyId });
       if (result.outcome.ok && lastScene) {
-        chaseToy = toyId;
-        toyTarget = clampToy(lastScene.x + lastScene.facing * 60);
-        chase = createChase(lastScene.x, toyTarget);
+        treat = createTreatPop(`${pet.pet.id}|treat|${options.clock.nowMs()}`);
+        // Sit behind the table facing the player to watch the game.
+        lastScene.x = ROOM.gameWatch.x;
+        lastScene.z = ROOM.gameWatch.z;
         lastScene.y = ROOM.groundY;
-        lastScene.z = ROOM.chaseZ;
-        lastScene.heading = null;
+        lastScene.heading = 0;
+        lastGameKey = '';
         brain.setPaused(true);
         options.onChange?.();
       }
       return result;
     },
 
-    debugChase: () => ({ toyTarget, chase }),
+    debugGame: () => treat,
 
-    minigame: () =>
-      chase ? { toyId: chaseToy, remainingMs: Math.max(0, CHASE.durationMs - chase.elapsedMs), catches: chase.catches } : null,
+    minigame: () => {
+      if (!treat) return null;
+      return {
+        remainingMs: Math.max(0, treatTotalMs - treat.elapsedMs),
+        score: treat.tapped,
+        round: treat.round,
+        rounds: TREAT_POP.rounds,
+        phase: treat.phase,
+        spot: treat.phase === 'show' ? ((treat.spots[treat.round] ?? 0) as number) : null,
+      };
+    },
+
+    tapCell(index) {
+      applyTap(index);
+    },
 
     tick(frameMs, scene) {
       lastScene = scene;
@@ -256,25 +300,26 @@ export function createGame(options: GameOptions): Game {
         lastNotify = frameMs;
         options.onPetChange?.();
       }
-      if (!chase) {
+      if (!treat) {
         brain.tick(frameMs, scene);
         return;
       }
-      const before = scene.x;
-      chase = stepChase(chase, dt, toyTarget);
-      scene.x = chase.ferretX;
-      scene.z = ROOM.chaseZ;
-      scene.facing = chase.facing;
-      scene.heading = null;
-      const moved = Math.abs(chase.ferretX - before) > 0.05;
-      scene.animator.setBase(chase.pauseMs > 0 ? 'idle' : moved ? 'run' : 'curious', frameMs);
-      if (chase.justCaught) scene.animator.react('happy', frameMs);
-      if (chase.over) finishPlay(scene, frameMs);
+      treat = stepTreatPop(treat, dt);
+      if (treat.phase === 'show') {
+        // Watch the treat: face its side, nose up with curiosity.
+        const col = (treat.spots[treat.round] ?? 1) % 3;
+        scene.facing = col === 0 ? -1 : 1;
+        scene.animator.setBase('curious', frameMs);
+      } else {
+        scene.animator.setBase('idle', frameMs);
+      }
+      notifyGame(`treat|${treat.round}|${treat.phase}|${treat.tapped}`);
+      if (treat.over) finishPlay(scene, frameMs);
     },
 
     doTrick(id) {
       const trick = findTrick(id);
-      if (!trick || chase || !awake() || pet.state.bond < trick.bond) return false;
+      if (!trick || treat || !awake() || pet.state.bond < trick.bond) return false;
       brain.script(trickPlan(id));
       return true;
     },
@@ -282,29 +327,47 @@ export function createGame(options: GameOptions): Game {
     setPreview(mode) {
       const was = preview;
       preview = mode;
-      if (chase || was === mode) return;
+      if (treat || was === mode) return;
       // On the pet tab it comes to the middle and faces the player. Leaving it, it carries on with its day.
-      if (mode === 'pet') brain.script(previewPlan());
+      if (mode === 'pet') brain.script(previewPlan(lastScene ? { x: lastScene.x, z: lastScene.z } : { x: 180, z: 0 }));
       else if (was === 'pet') brain.script([{ kind: 'do', anim: 'idle', ms: 200 }]);
     },
 
     props() {
+      const game = treat;
       return {
         sock: { x: brain.sock.x, z: brain.sock.z, carried: brain.sock.carried },
         ball: { x: brain.ball.x, z: brain.ball.z, carried: brain.ball.carried, flight: flightNow() },
         marker: markerNow(),
         outfit: pet.inventory.equipped,
         preview,
-        toy: chase ? { id: chaseToy, x: toyTarget } : null,
-        timerFraction: chase ? Math.max(0, 1 - chase.elapsedMs / CHASE.durationMs) : null,
+        toy: null,
+        game: game ? { active: game.phase === 'show' ? ((game.spots[game.round] ?? 0) as number) : null } : null,
+        timerFraction: game ? Math.max(0, 1 - game.elapsedMs / treatTotalMs) : null,
         pressing: pressingPet,
       };
     },
 
     pointerDown(x, y, realMs, hit) {
-      if (chase) {
+      if (treat) {
+        // Taps land on the table: a cup directly, or the nearest cup to a floor tap.
         gameTouch = true;
-        toyTarget = clampToy(x);
+        const target = hit?.target;
+        if (target === 'cup0' || target === 'cup1' || target === 'cup2') {
+          applyTap(Number(target.slice(3)));
+        } else if (hit?.floor) {
+          let best = 0;
+          let bestD = Infinity;
+          for (let i = 0; i < ROOM.gameCups.length; i++) {
+            const cup = ROOM.gameCups[i] as { x: number; z: number };
+            const d = (cup.x - hit.floor.x) * (cup.x - hit.floor.x) + (cup.z - hit.floor.z) * (cup.z - hit.floor.z);
+            if (d < bestD) {
+              bestD = d;
+              best = i;
+            }
+          }
+          applyTap(best);
+        }
         return;
       }
       if (lastScene && hitsPet(lastScene, x, y)) {
@@ -324,10 +387,7 @@ export function createGame(options: GameOptions): Game {
     },
 
     pointerMove(x, _y, hit) {
-      if (chase) {
-        toyTarget = clampToy(x);
-        return;
-      }
+      if (treat) return; // taps only during the mini-game: nothing to drag
       if (dragging && hit?.floor) {
         if (!dragMoved && dragFrom && Math.hypot(hit.floor.x - dragFrom.x, hit.floor.z - dragFrom.z) < 10) return;
         dragMoved = true;
@@ -340,11 +400,11 @@ export function createGame(options: GameOptions): Game {
     },
 
     pointerUp(realMs, hit) {
-      if (chase) return;
       if (gameTouch) {
         gameTouch = false;
         return;
       }
+      if (treat) return; // a touch that began during the mini-game is the game's
       if (pressingPet) {
         pressingPet = false;
         const { session } = touch.up(realMs);

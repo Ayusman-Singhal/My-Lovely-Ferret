@@ -171,16 +171,25 @@ First matching rule wins. All thresholds are hundredths.
 
 A session is 1 to 3 minutes: open, read the "what happened" summary, care for the one or two needs that are low, play the mini-game once, watch the pet. An occasional gift and the album of what has been found give a reason to return. **No timers gate care, no streak penalties, no punishment for skipping days.** No notifications in the web build.
 
-## 7. Mini-game: toy chase (guide §7.8)
+## 7. Mini-game: treat pop (guide §7.8)
 
-- About 20 seconds. Pointer only. The player drags a toy around the room, and the ferret chases it and pounces.
-- One **catch** = the ferret's paws reach the toy while it is still or slow (under 70 px per second). Score is the number of catches.
-- After a catch the toy must be dragged 80 px in total (path length) before it can be caught again, so holding it still never farms catches. The ferret then pauses 0.7 s to pounce. The ferret runs at 120 px/s, slower than a hand.
-- Rules found by playing it in a real browser (2026-09-30): re-arming by distance from the last catch spot stranded players whose drags straddled it, and re-arming by distance from the paws broke when the ferret turned around. Path length works with slides, jumps, and turns. Small wiggles (under 80 px of path) never re-arm.
-- Tuning note: a player who keeps dragging and stopping gets about 10 catches (band 3) and a casual one 4 to 6 in scripted runs. Band 3 may be too easy. Revisit with tester feedback at the Phase 1 gate.
-- Result band from catches: 0 to 1 catches is band 0, 2 to 4 is band 1, 5 to 7 is band 2, 8 or more is band 3.
+One short game behind `StartPlay(toyId)` / `FinishPlay(band)`: six treats, about 15
+seconds, tap only. When the game starts the camera swings top-down over a table
+(three bowls in a row on the rug), so the game reads flat (2D); the ferret sits
+behind the table facing the player to watch. A big treat pops out of one bowl;
+**tap the cup with the treat**. Each treat stays up 1.6 seconds, then a 0.6 second
+breather, then the next. A missed treat just sinks: no penalty, no fail state.
+Every tap earns a happy hop; a great game ends with a war dance. No room mapping,
+no choices, no fake-outs: tap exactly what you see.
+
+- Score is treats tapped, 0 to 6. Band: 0 is band 0, 1 to 2 is band 1, 3 to 4 is band 2,
+  5 to 6 is band 3. Anyone who taps gets most of them; an idle player gets band 0.
 - The band is the only thing sent to `FinishPlay`. Raw scores never leave the mini-game (guide §7.8).
-- Failing is gentle: band 0 still gives energy cost and a small happiness gain, and the pet does something cute.
+- Failing is gentle: band 0 still costs energy and gives a small happiness gain.
+- Screen-reader players get three cup buttons plus a narration naming the cup, so the
+  game is fully playable without the canvas.
+- Tuning note: `showMs` (1600 ms) sets the difficulty. Shorten it if testers find band 3
+  too easy; lengthen it if anyone misses.
 
 ## 8. Welcome-back summary
 

@@ -78,6 +78,8 @@ const FADE_S = 0.2;
 // never pans or turns it.
 const CAMERA = { vfov: 22, pitchDeg: 32, yawDeg: 28 } as const;
 const OVERVIEW = { x: 0, y: 0.3, z: 0.0, radius: 0.84 } as const;
+/** Treat pop plays here: nearly top-down over the rug, so the table reads flat (2D). */
+const GAME_VIEW = { x: 0, y: 0.05, z: 0.19, radius: 0.38, pitchDeg: 75 } as const;
 const CLOSE = { radius: 0.56, lookAtHeight: 0.1 } as const;
 /** Clips during which the camera comes close. Wandering and sniffing do not: the camera must not swing about. */
 /** How far below the pet the camera looks while the shop is open, so the pet sits above the sheet. */
@@ -145,6 +147,8 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   let previewShift = 0;
   /** Same for the room tab: the whole room is moved up and made smaller to fit above the sheet. */
   let roomShift = 0;
+  /** Same for treat pop: the camera swings top-down over the table while the game runs. */
+  let gameShift = 0;
   const petRef: { root?: Object3D } = {};
   const placeCamera = (): void => {
     const k = closeness * closeness * (3 - 2 * closeness);
@@ -157,11 +161,15 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     );
     // Pull the camera back until the wanted part of the room fits across the screen, whatever the
     // shape. Narrow screens are limited by their width, wide ones by their height.
+    // Treat pop blends to its own flat view: the table fills the screen from almost straight above.
     const half = Math.tan((CAMERA.vfov * Math.PI) / 360) * Math.min(1, camera.aspect);
     lookAt.y -= PREVIEW_DROP_M * previewShift * k + ROOM_DROP_M * roomShift; // looking lower puts things higher on screen
-    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k - PREVIEW_ZOOM_M * previewShift * k + ROOM_ZOOM_OUT_M * roomShift;
+    lookAt.x += (GAME_VIEW.x - lookAt.x) * gameShift;
+    lookAt.y += (GAME_VIEW.y - lookAt.y) * gameShift;
+    lookAt.z += (GAME_VIEW.z - lookAt.z) * gameShift;
+    const radius = OVERVIEW.radius + (CLOSE.radius - OVERVIEW.radius) * k - PREVIEW_ZOOM_M * previewShift * k + ROOM_ZOOM_OUT_M * roomShift + (GAME_VIEW.radius - OVERVIEW.radius) * gameShift;
     const distance = radius / half;
-    const pitch = (CAMERA.pitchDeg * Math.PI) / 180;
+    const pitch = ((CAMERA.pitchDeg + (GAME_VIEW.pitchDeg - CAMERA.pitchDeg) * gameShift) * Math.PI) / 180;
     const yaw = (CAMERA.yawDeg * Math.PI) / 180;
     camera.position.set(
       lookAt.x + distance * Math.cos(pitch) * Math.sin(yaw),
@@ -289,17 +297,18 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   box(0.2, 0.02, 0.2, PALETTE.belly, 0.64, 0.075, 0.56);
 
   // A play tunnel along the front edge: a half-pipe the pet runs through (Part 1L.3). Open ended, and
-  // drawn from both sides so the inside shows. A little longer than the ferret, so it is mostly hidden.
+  // drawn from both sides so the inside shows. A little longer than the ferret, and tall enough
+  // (0.21 m bore) that its head clears the mouth rims instead of clipping over them.
   const tunnelLength = (ROOM.tunnelBX - ROOM.tunnelAX) * M_PER_PX;
   const tunnel = new Mesh(
-    new CylinderGeometry(0.15, 0.15, tunnelLength, 14, 1, true, 0, Math.PI),
+    new CylinderGeometry(0.21, 0.21, tunnelLength, 14, 1, true, 0, Math.PI),
     new MeshLambertMaterial({ color: PALETTE.waterBlue, side: DoubleSide }),
   );
   tunnel.rotation.z = Math.PI / 2; // the half-pipe lies along x with its opening down
   tunnel.position.set(((ROOM.tunnelAX + ROOM.tunnelBX) / 2 - VIEW.width / 2) * M_PER_PX, 0, ROOM.tunnelZ * M_PER_PX);
   stage.add(tunnel);
   for (const x of [ROOM.tunnelAX, ROOM.tunnelBX]) {
-    const rim = new Mesh(new TorusGeometry(0.15, 0.012, 4, 14, Math.PI), flat(PALETTE.floorShade));
+    const rim = new Mesh(new TorusGeometry(0.21, 0.012, 4, 14, Math.PI), flat(PALETTE.floorShade));
     rim.rotation.y = Math.PI / 2; // a ring standing across the tunnel mouth
     rim.position.set((x - VIEW.width / 2) * M_PER_PX, 0, ROOM.tunnelZ * M_PER_PX);
     stage.add(rim);
@@ -329,7 +338,7 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
   pickable('hammock', new BoxGeometry(0.6, 0.22, 0.34), hammock.x, hammock.y + 0.08, hammock.z);
 
   // Bowls: a coloured bowl with a lighter inside.
-  const bowl = (logicalX: number, logicalZ: number, color: number, inside: number, target: PickTarget): void => {
+  const bowl = (logicalX: number, logicalZ: number, color: number, inside: number, target: PickTarget, parent: Object3D = stage): Group => {
     const g = new Group();
     const body = new Mesh(new CylinderGeometry(0.1, 0.085, 0.06, 10), flat(color));
     body.position.y = 0.03;
@@ -338,11 +347,26 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     top.position.y = 0.0605;
     g.add(body, top);
     g.position.set(px(logicalX), 0, pz(logicalZ));
-    stage.add(g);
+    parent.add(g);
     pickable(target, new CylinderGeometry(0.14, 0.14, 0.16, 8), px(logicalX), 0.06, pz(logicalZ));
+    return g;
   };
   bowl(ROOM.foodBowlX, ROOM.foodBowlZ, PALETTE.bowlRed, PALETTE.wallShade, 'foodBowl');
   bowl(ROOM.waterBowlX, ROOM.waterBowlZ, PALETTE.waterBlue, PALETTE.cream, 'waterBowl');
+
+  // The treat-pop table: three bowls in a row on the rug, watched from behind. Hidden
+  // unless the game runs, when the camera swings over it (GAME_VIEW). Taps land on the
+  // generous invisible cylinders, so a finger never has to hit the bowl itself.
+  const gameTable = new Group();
+  stage.add(gameTable);
+  for (let i = 0; i < ROOM.gameCups.length; i++) {
+    const cup = ROOM.gameCups[i] as { x: number; z: number };
+    bowl(cup.x, cup.z, PALETTE.bowlRed, PALETTE.cream, `cup${i}` as PickTarget, gameTable);
+  }
+  gameTable.visible = false;
+  const gameTreat = new Mesh(new IcosahedronGeometry(0.05, 1), flat(PALETTE.gold));
+  gameTreat.visible = false;
+  stage.add(gameTreat);
 
   // Toys. The ball on the floor is the room's own; the others appear in the mini-game.
   const toy = (geometry: BufferGeometry, color: number): Mesh => new Mesh(geometry, flat(color));
@@ -582,8 +606,9 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     shadow.position.set(target.x, 0.003, renderZ);
 
     // The camera comes close while the pet does something close, and goes back to the whole room after.
+    // Treat pop instead swings top-down over the table, and never comes close: the game owns the view.
     const props0 = options.getProps?.();
-    const wantsClose = Boolean(props0?.pressing) || props0?.preview === 'pet' || CLOSE_CLIPS.includes(base) || nowMs < focusUntil;
+    const wantsClose = (Boolean(props0?.pressing) || props0?.preview === 'pet' || CLOSE_CLIPS.includes(base) || nowMs < focusUntil) && !props0?.game;
     const goal = wantsClose && !props0?.toy ? 1 : 0;
     const before = closeness;
     closeness += (goal - closeness) * Math.min(1, dt * 2.6);
@@ -595,7 +620,11 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
     roomShift += (roomGoal - roomShift) * Math.min(1, dt * 4);
     if (Math.abs(petGoal - previewShift) < 0.002) previewShift = petGoal;
     if (Math.abs(roomGoal - roomShift) < 0.002) roomShift = roomGoal;
-    if (closeness !== before || closeness > 0 || previewShift + roomShift !== beforeShift) placeCamera();
+    const beforeGame = gameShift;
+    const gameGoal = props0?.game ? 1 : 0;
+    gameShift += (gameGoal - gameShift) * Math.min(1, dt * 3);
+    if (Math.abs(gameGoal - gameShift) < 0.002) gameShift = gameGoal;
+    if (closeness !== before || closeness > 0 || previewShift + roomShift !== beforeShift || gameShift !== beforeGame) placeCamera();
 
     const props = props0;
     if (props) {
@@ -622,6 +651,17 @@ export async function createScene3D(host: HTMLElement, options: Scene3DOptions):
         marker.position.set(at.x, 0.012, at.z);
         marker.scale.setScalar(0.7 + props.marker.t * 0.9);
         markerMaterial.opacity = 0.9 * (1 - props.marker.t);
+      }
+      // Treat pop: the table shows, and the treat bobs over the active cup.
+      gameTable.visible = props.game !== null;
+      const activeCup = props.game?.active ?? null;
+      const activePos = activeCup === null ? undefined : (ROOM.gameCups[activeCup] as { x: number; z: number } | undefined);
+      if (activePos) {
+        const at = logicalToWorld(activePos.x, ROOM.groundY, activePos.z);
+        gameTreat.position.set(at.x, 0.1 + ((Math.sin(nowMs / 150) + 1) / 2) * 0.02, at.z);
+        gameTreat.visible = true;
+      } else {
+        gameTreat.visible = false;
       }
       for (const [id, object] of Object.entries(toyMeshes)) object.visible = props.toy?.id === id;
       if (props.toy) toyMeshes[props.toy.id].position.set(px(props.toy.x), 0, pz(ROOM.chaseZ));

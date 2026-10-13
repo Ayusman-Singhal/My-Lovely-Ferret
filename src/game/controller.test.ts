@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HOUR, T0, makePet } from '../core/testkit';
 import { createManualClock } from '../core/time';
-import { CHASE } from '../core/toyChase';
 import type { PetRecord } from '../core/types';
 import type { AnimationName } from '../render/clipSpec';
 import type { BrainScene } from '../render/brain';
@@ -169,39 +168,39 @@ describe('touching the pet', () => {
   });
 });
 
-describe('the toy-chase mini-game', () => {
-  it('starts, pauses the brain, ends after 20 seconds, and applies FinishPlay with a band', () => {
+describe('the treat-pop mini-game', () => {
+  /** Play perfectly by tapping every treat. */
+  const playPerfect = (t: ReturnType<typeof setup>): void => {
+    let frames = 0;
+    while (t.game.minigame() && frames < 4000) {
+      const mini = t.game.minigame();
+      if (mini && mini.phase === 'show' && mini.spot !== null) t.game.tapCell(mini.spot);
+      t.run(1);
+      frames++;
+    }
+  };
+
+  it('starts, pauses the brain, ends after its rounds, and applies FinishPlay with a band', () => {
     const t = setup(makePet({ id: 'play', state: { energy: 9000, happiness: 5000, bond: 1000 } }));
     t.run(5);
     const start = t.game.startPlay('ball');
     expect(start.outcome.ok).toBe(true);
-    expect(t.game.minigame()).toMatchObject({ toyId: 'ball', catches: 0 });
+    expect(t.game.minigame()).toMatchObject({ score: 0 });
     expect(t.game.getPet().state.playStartedAt).not.toBeNull();
 
-    // Drag the toy away and hold it, every 2 seconds, like a good player.
-    let x = 200;
-    let frames = 0;
-    while (t.game.minigame() && frames < 2000) {
-      const phase = Math.floor((frames * 16) / 2000) % 2;
-      const target = phase === 0 ? 150 : 260;
-      x += Math.max(-8, Math.min(8, target - x)); // slide up to 8 px per frame, then hold
-      t.game.pointerMove(x, ROOM.groundY);
-      t.run(1);
-      frames++;
-    }
+    playPerfect(t);
     expect(t.game.minigame()).toBeNull();
-    expect(frames * 16).toBeGreaterThanOrEqual(CHASE.durationMs);
     expect(t.plays).toHaveLength(1);
     const played = t.plays[0] as PlayResult;
-    expect(played.catches).toBeGreaterThanOrEqual(5);
-    expect(played.band).toBeGreaterThanOrEqual(2);
+    expect(played.catches).toBe(6);
+    expect(played.band).toBe(3);
     const p = t.game.getPet();
     expect(p.state.playStartedAt).toBeNull();
     expect(p.state.energy).toBeLessThan(8000); // 1500 spent
     expect(p.state.happiness).toBeGreaterThan(5000);
     expect(p.state.bond).toBeGreaterThan(1000);
     expect(p.history.some((e) => e.type === 'PET_PLAYED')).toBe(true);
-    expect(t.reactions).toContain('happy'); // pounces
+    expect(t.reactions).toContain('happy'); // taps
   });
 
   it('a tired pet refuses to play, and no game starts', () => {
@@ -219,15 +218,9 @@ describe('the toy-chase mini-game', () => {
     t.run(5);
     t.game.startPlay('feather');
     t.run(1);
-    for (let i = 0; i < 200; i++) {
-      t.game.pointerMove(200, ROOM.groundY);
-      t.run(1);
-    }
+    for (let i = 0; i < 200; i++) t.run(1);
     expect(t.game.brain.current()).not.toBeNull();
-    while (t.game.minigame()) {
-      t.game.pointerMove(200, ROOM.groundY);
-      t.run(1);
-    }
+    playPerfect(t);
     t.run(30);
     expect(t.game.brain.current()?.behavior).toBeDefined();
     expect(t.scene.y).toBe(ROOM.groundY);
@@ -238,10 +231,7 @@ describe('the toy-chase mini-game', () => {
     t.run(5);
     const finish = (): void => {
       t.game.startPlay('ball');
-      while (t.game.minigame()) {
-        t.game.pointerMove(200, ROOM.groundY);
-        t.run(1);
-      }
+      playPerfect(t);
     };
     finish();
     const energyAfterFirst = t.game.getPet().state.energy;
@@ -257,6 +247,62 @@ describe('the toy-chase mini-game', () => {
     t.clock.advance(3 * HOUR);
     t.game.startPlay('ball');
     expect(t.game.getPet().timestamps.lastSimulationTime).toBeGreaterThan(T0);
+  });
+  it('a great game ends with a happy war dance', () => {
+    const t = setup(makePet({ id: 'dance', state: { energy: 9000, happiness: 5000, bond: 1000 } }));
+    t.run(5);
+    expect(t.game.startPlay('ball').outcome.ok).toBe(true);
+    playPerfect(t);
+    t.run(100);
+    expect(t.bases).toContain('warDance');
+  });
+
+  it('wrong cups never score and an idle player gets nothing', () => {
+    const t = setup(makePet({ id: 'miss', state: { energy: 9000 } }));
+    t.run(5);
+    t.game.startPlay('ring');
+    let frames = 0;
+    while (t.game.minigame() && frames < 5000) {
+      const mini = t.game.minigame();
+      if (mini && mini.phase === 'show' && mini.spot !== null) {
+        t.game.tapCell((mini.spot + 1) % 3); // always the wrong cup
+      }
+      t.run(1);
+      frames++;
+    }
+    const played = t.plays[0] as PlayResult;
+    expect(played.catches).toBe(0);
+    expect(played.band).toBe(0);
+  });
+
+  it('taps on the 3D cups count, and floor taps fall back to the nearest cup', () => {
+    const t = setup(makePet({ id: 'cups', state: { energy: 9000 } }));
+    t.run(5);
+    t.game.startPlay('ball');
+    let frames = 0;
+    while (t.game.minigame()?.phase !== 'show' && frames < 1000) {
+      t.run(1);
+      frames++;
+    }
+    const spot = t.game.minigame()?.spot;
+    expect(spot).not.toBeNull();
+    t.game.pointerDown(180, 200, 1000, { floor: null, target: `cup${spot}` as 'cup0' | 'cup1' | 'cup2' });
+    t.game.pointerUp(1050);
+    expect(t.game.debugGame()?.tapped).toBe(1);
+    // Floor taps near the table count too, through the nearest cup.
+    let taps = 0;
+    frames = 0;
+    while (t.game.minigame() && frames < 5000) {
+      const mini = t.game.minigame();
+      if (mini && mini.phase === 'show') {
+        t.game.pointerDown(180, 200, 2000 + taps, { floor: { x: 180, z: 30 }, target: null });
+        t.game.pointerUp(2050 + taps);
+        taps++;
+      }
+      t.run(1);
+      frames++;
+    }
+    expect((t.plays[0] as PlayResult).catches).toBeGreaterThanOrEqual(2);
   });
 });
 
